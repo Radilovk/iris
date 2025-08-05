@@ -99,8 +99,10 @@ async function handleAnalysisRequest(request, env) {
             sleep: formData.get("sleep"),
             stress: formData.get("stress"),
         };
-        const leftEyeBase64 = await fileToBase64(leftEyeFile);
-        const rightEyeBase64 = await fileToBase64(rightEyeFile);
+        const [leftEyeBase64, rightEyeBase64] = await Promise.all([
+            fileToBase64(leftEyeFile),
+            fileToBase64(rightEyeFile)
+        ]);
         log("Данните от формуляра са обработени успешно.");
 
         // 2. СТЪПКА 1: ИДЕНТИФИКАЦИЯ НА RAG КЛЮЧОВЕ
