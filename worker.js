@@ -111,6 +111,13 @@ async function handleAnalysisRequest(request, env) {
         let ragKeys;
         try {
             ragKeys = JSON.parse(keysResponse);
+            if (!(Array.isArray(ragKeys) && ragKeys.every(k => typeof k === 'string'))) {
+                console.error("Невалиден формат на RAG ключовете:", ragKeys);
+                return new Response(JSON.stringify({ error: "RAG ключовете трябва да са масив от низове" }), {
+                    status: 400,
+                    headers: corsHeaders(request, env),
+                });
+            }
         } catch (parseError) {
             console.error("Неуспешно парсване на AI отговора:", parseError);
             return new Response(JSON.stringify({ error: "Невалиден JSON от AI" }), {
@@ -224,8 +231,8 @@ async function callOpenAIAPI(prompt, options, leftEyeBase64, rightEyeBase64, env
 
 // --- RAG ИЗВЛИЧАНЕ ОТ KV ---
 async function fetchRagData(keys, env) {
-    if (!Array.isArray(keys)) {
-        console.warn("RAG ключовете не са масив. Пропускане на извличане от KV.", keys);
+    if (!(Array.isArray(keys) && keys.every(k => typeof k === 'string'))) {
+        console.warn("RAG ключовете трябва да са масив от низове. Пропускане на извличане от KV.", keys);
         return {};
     }
     const { iris_rag_kv } = env;
