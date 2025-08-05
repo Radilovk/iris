@@ -98,7 +98,17 @@ async function handleAnalysisRequest(request, env) {
         console.log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const keysResponse = await identificationApiCaller(IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
-        const ragKeys = JSON.parse(keysResponse);
+        console.log("Суров отговор от AI:", keysResponse);
+        let ragKeys;
+        try {
+            ragKeys = JSON.parse(keysResponse);
+        } catch (parseError) {
+            console.error("Неуспешно парсване на AI отговора:", parseError);
+            return new Response(JSON.stringify({ error: "Невалиден JSON от AI" }), {
+                status: 500,
+                headers: corsHeaders(request, env),
+            });
+        }
         console.log("Получени RAG ключове за извличане:", ragKeys);
 
         // 3. СТЪПКА 2: ИЗВЛИЧАНЕ НА ДАННИ ОТ KV
