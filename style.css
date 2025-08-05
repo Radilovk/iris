@@ -315,6 +315,28 @@ body {
     text-align: left;
 }
 
+/* Message Box Styles */
+.error-box,
+.success-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.error-box {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.success-box {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
 /* Fade In Animations */
 .fade-in { animation: fadeInAnim 1s ease-in-out forwards; }
 .fade-in-up { opacity: 0; animation: fadeInUpAnim 0.8s ease-out forwards; }

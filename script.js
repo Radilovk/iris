@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextBtns = document.querySelectorAll('.next-btn');
     const prevBtns = document.querySelectorAll('.prev-btn');
     const stepperSteps = document.querySelectorAll('.step');
+    const messageBox = document.getElementById('message-box');
 
     let currentStep = 1;
 
@@ -46,6 +47,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    function showError(message) {
+        if (!messageBox) return;
+        messageBox.textContent = message;
+        messageBox.className = 'error-box';
+    }
+
     // File Upload Preview
     function setupFileUpload(inputId, previewId) {
         const input = document.getElementById(inputId);
@@ -85,6 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Моля, изчакайте...';
         submitBtn.disabled = true;
 
+        if (messageBox) {
+            messageBox.textContent = '';
+            messageBox.className = '';
+        }
+
         const formData = new FormData(this);
         
         // ВАЖНО: Уверете се, че този URL е правилният адрес на вашия Cloudflare Worker
@@ -120,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Критична грешка при изпращане на формуляра:', error);
-            alert('Възникна грешка при анализа: ' + error.message);
+            showError('Възникна грешка при анализа: ' + error.message);
             
             // Връщаме бутона в нормалното му състояние, за да може потребителят да опита отново
             submitBtn.innerHTML = originalBtnText;
