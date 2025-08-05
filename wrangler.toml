@@ -8,3 +8,4 @@ kv_namespaces = [{ binding = "iris_rag_kv", id = "..." }]
 gemini_api_key = ""
 openai_api_key = ""
 allowed_origin = "*"
+DEBUG = "false" # Set to "true" for detailed logging
