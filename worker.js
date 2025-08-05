@@ -15,6 +15,14 @@ import { ROLE_PROMPT } from "./prompts";
 // --- КОНФИГУРАЦИЯ ---
 const AI_PROVIDER = "gemini"; // Променете на "openai" за GPT-4o
 
+// --- ОТЛОГВАНЕ ---
+// Активирайте подробно логване, като зададете DEBUG="true" в env.
+function debugLog(env, ...args) {
+    if (env.DEBUG === "true") {
+        console.log(...args);
+    }
+}
+
 // --- ПРОМПТОВЕ ЗА МНОГОСТЪПКОВИЯ ПРОЦЕС ---
 
 // ИЗПОЛЗВА СЕ В СТЪПКА 3 (СИНТЕЗ)
@@ -71,7 +79,8 @@ export default {
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
 async function handleAnalysisRequest(request, env) {
     try {
-        console.log("Получена е нова заявка за анализ.");
+        const log = (...args) => debugLog(env, ...args);
+        log("Получена е нова заявка за анализ.");
         const formData = await request.formData();
 
         // 1. Извличане и подготовка на данните
@@ -92,13 +101,13 @@ async function handleAnalysisRequest(request, env) {
         };
         const leftEyeBase64 = await fileToBase64(leftEyeFile);
         const rightEyeBase64 = await fileToBase64(rightEyeFile);
-        console.log("Данните от формуляра са обработени успешно.");
+        log("Данните от формуляра са обработени успешно.");
 
         // 2. СТЪПКА 1: ИДЕНТИФИКАЦИЯ НА RAG КЛЮЧОВЕ
-        console.log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
+        log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const keysResponse = await identificationApiCaller(IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
-        console.log("Суров отговор от AI:", keysResponse);
+        log("Суров отговор от AI (скъсен):", typeof keysResponse === "string" ? keysResponse.slice(0, 100) + "..." : keysResponse);
         let ragKeys;
         try {
             ragKeys = JSON.parse(keysResponse);
@@ -109,22 +118,22 @@ async function handleAnalysisRequest(request, env) {
                 headers: corsHeaders(request, env),
             });
         }
-        console.log("Получени RAG ключове за извличане:", ragKeys);
+        log("Получени RAG ключове за извличане:", Array.isArray(ragKeys) ? ragKeys.length : 0);
 
         // 3. СТЪПКА 2: ИЗВЛИЧАНЕ НА ДАННИ ОТ KV
-        console.log("Стъпка 2: Извличане на данни от KV базата...");
+        log("Стъпка 2: Извличане на данни от KV базата...");
         const ragData = await fetchRagData(ragKeys, env);
-        console.log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
+        log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
 
         // 4. СТЪПКА 3: ФИНАЛЕН СИНТЕЗ
-        console.log("Стъпка 3: Изпращане на заявка за финален синтез...");
+        log("Стъпка 3: Изпращане на заявка за финален синтез...");
         const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
             .replace('{{USER_DATA}}', formatUserData(userData))
             .replace('{{RAG_DATA}}', JSON.stringify(ragData, null, 2));
 
         const synthesisApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: ROLE_PROMPT }, leftEyeBase64, rightEyeBase64, env, true);
-        console.log("Финален анализ е генериран успешно.");
+        log("Финален анализ е генериран успешно.");
 
         // 5. Връщане на финалния отговор
         return new Response(finalAnalysis, { headers: corsHeaders(request, env, {'Content-Type': 'application/json; charset=utf-8'}) });
