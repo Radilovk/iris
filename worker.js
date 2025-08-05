@@ -72,7 +72,7 @@ const SYNTHESIS_PROMPT_TEMPLATE = `
 export default {
     async fetch(request, env, ctx) {
         if (request.method === "OPTIONS") {
-            return handleOptions();
+            return handleOptions(request, env);
         }
 
         const url = new URL(request.url);
@@ -135,11 +135,11 @@ async function handleAnalysisRequest(request, env) {
         console.log("Финален анализ е генериран успешно.");
 
         // 5. Връщане на финалния отговор
-        return new Response(finalAnalysis, { headers: corsHeaders({'Content-Type': 'application/json; charset=utf-8'}) });
+        return new Response(finalAnalysis, { headers: corsHeaders(request, env, {'Content-Type': 'application/json; charset=utf-8'}) });
 
     } catch (error) {
         console.error("Критична грешка в handleAnalysisRequest:", error);
-        return new Response(JSON.stringify({ error: "Вътрешна грешка на сървъра: " + error.message }), { status: 500, headers: corsHeaders() });
+        return new Response(JSON.stringify({ error: "Вътрешна грешка на сървъра: " + error.message }), { status: 500, headers: corsHeaders(request, env) });
     }
 }
 
@@ -265,15 +265,19 @@ async function fileToBase64(file) {
     return btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
 }
 
-function handleOptions() {
-    return new Response(null, { headers: corsHeaders() });
+function handleOptions(request, env) {
+    return new Response(null, { headers: corsHeaders(request, env) });
 }
 
-function corsHeaders(additionalHeaders = {}) {
+function corsHeaders(request, env, additionalHeaders = {}) {
+    const requestOrigin = request.headers.get("Origin");
+    const allowedOrigins = env.allowed_origin ? env.allowed_origin.split(",").map(o => o.trim()) : [];
+    const origin = requestOrigin && allowedOrigins.includes(requestOrigin) ? requestOrigin : "null";
+
     return new Headers({
-        "Access-Control-Allow-Origin": "https://radilovk.github.io",
+        "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
         ...additionalHeaders
     });
 }
