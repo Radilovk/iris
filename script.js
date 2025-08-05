@@ -56,7 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupFileUpload(inputId, previewId) {
         const input = document.getElementById(inputId);
         const preview = document.getElementById(previewId);
-        
+        preview.addEventListener('click', () => input.click());
+
         input.addEventListener('change', function() {
             const file = this.files[0];
             if (file) {
