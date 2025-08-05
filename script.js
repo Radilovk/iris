@@ -10,14 +10,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateStepper() {
         stepperSteps.forEach((step, index) => {
             const stepNumber = index + 1;
+            // изчистваме старите състояния
+            step.classList.remove('active', 'completed');
+
             if (stepNumber === currentStep) {
                 step.classList.add('active');
             } else if (stepNumber < currentStep) {
-                // Ако искате миналите стъпки също да изглеждат "завършени"
-                step.classList.add('active'); 
-            }
-            else {
-                step.classList.remove('active');
+                step.classList.add('completed');
             }
         });
     }
