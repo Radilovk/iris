@@ -302,6 +302,13 @@ body {
     margin-top: 0.5rem;
 }
 
+.upload-note {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+}
+
 /* Disclaimer Note Style - ДОБАВЕН НОВ БЛОК */
 .disclaimer-note {
     display: flex;
