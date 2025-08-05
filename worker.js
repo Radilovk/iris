@@ -1,4 +1,4 @@
-import { ROLE_PROMPT } from "./prompts";
+import { ROLE_PROMPT } from "./prompts.js";
 
 /**
  * Iris-Holistica AI Backend - ВЕРСИЯ 2.2 (Коригирана)
@@ -261,9 +261,34 @@ function formatUserData(data) {
     `;
 }
 
+async function resizeImage(file, maxBytes = 5 * 1024 * 1024) {
+    const bitmap = await createImageBitmap(file);
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0);
+
+    let quality = 0.92;
+    let blob = await canvas.convertToBlob({ type: file.type, quality });
+    while (blob.size > maxBytes && quality > 0.5) {
+        quality -= 0.05;
+        blob = await canvas.convertToBlob({ type: file.type, quality });
+    }
+    return new File([blob], file.name, { type: file.type });
+}
+
 async function fileToBase64(file) {
+    if (file.size > 5 * 1024 * 1024) {
+        file = await resizeImage(file);
+    }
     const arrayBuffer = await file.arrayBuffer();
-    return btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+    let binary = '';
+    const bytes = new Uint8Array(arrayBuffer);
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
+    }
+    return btoa(binary);
 }
 
 function handleOptions(request, env) {
@@ -282,3 +307,5 @@ function corsHeaders(request, env, additionalHeaders = {}) {
         ...additionalHeaders
     });
 }
+
+export { fileToBase64, resizeImage };
