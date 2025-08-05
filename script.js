@@ -56,39 +56,47 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupFileUpload(inputId, previewId) {
         const input = document.getElementById(inputId);
         const preview = document.getElementById(previewId);
+        const fileNameEl = preview.parentElement.querySelector('.file-name');
         preview.addEventListener('click', () => input.click());
 
         input.addEventListener('change', function() {
             const file = this.files[0];
-            if (file) {
-                // Проверка за тип на файла
-                if (!file.type.startsWith('image/')) {
-                    showError('Моля, качете изображение.');
-                    input.value = '';
-                    return;
-                }
-
-                // Проверка за размер на файла (до 5MB)
-                const maxSize = 5 * 1024 * 1024;
-                if (file.size > maxSize) {
-                    showError('Файлът трябва да е до 5MB.');
-                    input.value = '';
-                    return;
-                }
-
-                const reader = new FileReader();
-                // Изчистване на иконата и текста, за да се види само снимката
-                const icon = preview.querySelector('i');
-                const text = preview.querySelector('p');
-                if (icon) icon.style.display = 'none';
-                if (text) text.style.display = 'none';
-
-                reader.onload = function(e) {
-                    preview.style.backgroundImage = `url(${e.target.result})`;
-                    preview.style.borderStyle = 'solid'; // Прави рамката плътна
-                }
-                reader.readAsDataURL(file);
+            if (!file) {
+                if (fileNameEl) fileNameEl.textContent = '';
+                return;
             }
+
+            // Проверка за тип на файла
+            if (!file.type.startsWith('image/')) {
+                showError('Моля, качете изображение.');
+                input.value = '';
+                if (fileNameEl) fileNameEl.textContent = '';
+                return;
+            }
+
+            // Проверка за размер на файла (до 5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showError('Файлът трябва да е до 5MB.');
+                input.value = '';
+                if (fileNameEl) fileNameEl.textContent = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            // Изчистване на иконата и текста, за да се види само снимката
+            const icon = preview.querySelector('i');
+            const text = preview.querySelector('p');
+            if (icon) icon.style.display = 'none';
+            if (text) text.style.display = 'none';
+
+            reader.onload = function(e) {
+                preview.style.backgroundImage = `url(${e.target.result})`;
+                preview.style.borderStyle = 'solid'; // Прави рамката плътна
+            }
+            reader.readAsDataURL(file);
+
+            if (fileNameEl) fileNameEl.textContent = file.name;
         });
     }
 
