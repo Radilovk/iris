@@ -148,6 +148,15 @@ body {
     color: var(--primary-color);
     font-weight: 600;
 }
+.step.completed span {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+.step.completed p {
+    color: var(--secondary-color);
+    font-weight: 600;
+}
 .step-line {
     flex-grow: 1;
     height: 2px;
