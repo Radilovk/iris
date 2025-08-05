@@ -8,9 +8,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateStepper() {
         stepperSteps.forEach((step, index) => {
-            if (index + 1 === currentStep) {
+            const stepNumber = index + 1;
+            if (stepNumber === currentStep) {
                 step.classList.add('active');
-            } else {
+            } else if (stepNumber < currentStep) {
+                // Ако искате миналите стъпки също да изглеждат "завършени"
+                step.classList.add('active'); 
+            }
+            else {
                 step.classList.remove('active');
             }
         });
@@ -50,10 +55,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = this.files[0];
             if (file) {
                 const reader = new FileReader();
-                preview.innerHTML = ''; // Clear icon and text
+                // Изчистване на иконата и текста, за да се види само снимката
+                const icon = preview.querySelector('i');
+                const text = preview.querySelector('p');
+                if (icon) icon.style.display = 'none';
+                if (text) text.style.display = 'none';
+
                 reader.onload = function(e) {
                     preview.style.backgroundImage = `url(${e.target.result})`;
-                    preview.style.borderStyle = 'solid';
+                    preview.style.borderStyle = 'solid'; // Прави рамката плътна
                 }
                 reader.readAsDataURL(file);
             }
@@ -63,16 +73,59 @@ document.addEventListener('DOMContentLoaded', function() {
     setupFileUpload('left-eye-upload', 'left-eye-preview');
     setupFileUpload('right-eye-upload', 'right-eye-preview');
 
-    // Form submission
+    // Form submission - НАПЪЛНО ОБНОВЕНА СЕКЦИЯ
     const form = document.getElementById('iridology-form');
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        // Here you would gather all form data and send to your backend (worker.js)
-        alert('Формулярът е изпратен за анализ!');
-        // const formData = new FormData(this);
-        // fetch('/your-worker-endpoint', { method: 'POST', body: formData })
-        // .then(response => response.json())
-        // .then(data => { console.log(data); window.location.href = 'report.html'; });
+        
+        const submitBtn = this.querySelector('.submit-btn');
+        const originalBtnText = submitBtn.innerHTML;
+
+        // Показване на индикатор за зареждане, за да знае потребителят, че се работи
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Моля, изчакайте...';
+        submitBtn.disabled = true;
+
+        const formData = new FormData(this);
+        
+        // ВАЖНО: Уверете се, че този URL е правилният адрес на вашия Cloudflare Worker
+        const workerUrl = 'https://iris.radilov-k.workers.dev/analyze';
+
+        fetch(workerUrl, { 
+            method: 'POST', 
+            body: formData 
+        })
+        .then(response => {
+            // Проверка дали отговорът от сървъра е успешен (статус 2xx)
+            if (!response.ok) {
+                // Ако има грешка, опитваме се да я прочетем като JSON
+                return response.json().then(errData => {
+                    // Хвърляме грешка с по-ясно съобщение от бекенда
+                    throw new Error(errData.error || `Грешка от сървъра: ${response.status}`);
+                }).catch(() => {
+                    // Ако тялото на грешката не е JSON, хвърляме обща грешка
+                    throw new Error(`Грешка от сървъра: ${response.status} ${response.statusText}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => { 
+            console.log("Получен успешен анализ:", data);
+            
+            // Съхраняваме получения JSON анализ в localStorage на браузъра
+            localStorage.setItem('iridologyReport', JSON.stringify(data));
+            
+            // Пренасочваме потребителя към страницата за показване на доклада
+            // (трябва да създадете файл 'report.html')
+            window.location.href = 'report.html';
+        })
+        .catch(error => {
+            console.error('Критична грешка при изпращане на формуляра:', error);
+            alert('Възникна грешка при анализа: ' + error.message);
+            
+            // Връщаме бутона в нормалното му състояние, за да може потребителят да опита отново
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+        });
     });
 
 });
