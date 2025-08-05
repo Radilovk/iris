@@ -61,6 +61,21 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function() {
             const file = this.files[0];
             if (file) {
+                // Проверка за тип на файла
+                if (!file.type.startsWith('image/')) {
+                    showError('Моля, качете изображение.');
+                    input.value = '';
+                    return;
+                }
+
+                // Проверка за размер на файла (до 5MB)
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    showError('Файлът трябва да е до 5MB.');
+                    input.value = '';
+                    return;
+                }
+
                 const reader = new FileReader();
                 // Изчистване на иконата и текста, за да се види само снимката
                 const icon = preview.querySelector('i');
