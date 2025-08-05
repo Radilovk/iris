@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ирисологичен доклад</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.5rem; border-bottom: 1px solid #e0e0e0; text-align: left; }
+        th { width: 30%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="analysis-section">
+            <h2>Вашият анализ</h2>
+            <div id="report-card" class="card"></div>
+            <div id="message"></div>
+            <div class="button-group" style="margin-top:2rem; text-align:center;">
+                <a href="index.html" class="cta-button">Връщане към началната страница</a>
+            </div>
+        </section>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const card = document.getElementById('report-card');
+        const message = document.getElementById('message');
+        let data;
+        try {
+            const raw = localStorage.getItem('iridologyReport');
+            if (!raw) throw new Error('Няма налични данни за анализ.');
+            data = JSON.parse(raw);
+        } catch (err) {
+            card.style.display = 'none';
+            message.textContent = 'Грешка: ' + err.message;
+            message.className = 'error-box';
+            return;
+        }
+        const table = document.createElement('table');
+        Object.entries(data).forEach(([key, value]) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<th>${key}</th><td>${value}</td>`;
+            table.appendChild(row);
+        });
+        card.appendChild(table);
+    });
+    </script>
+</body>
+</html>
