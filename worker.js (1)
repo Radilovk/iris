@@ -1,0 +1,267 @@
+/**
+ * Iris-Holistica AI Backend - ВЕРСИЯ 2.2 (Коригирана)
+ * Cloudflare Worker, който имплементира многостъпков RAG процес за ирисов анализ.
+ *
+ * Архитектура:
+ * 1. Получава данни и снимки от потребителя.
+ * 2. Стъпка 1: ИДЕНТИФИКАЦИЯ - Прави първа заявка към AI, за да идентифицира релевантните RAG ключове.
+ * 3. Стъпка 2: ИЗВЛИЧАНЕ - Извлича детайлната информация за тези ключове от Cloudflare KV (iris_rag_kv).
+ * 4. Стъпка 3: СИНТЕЗ - Прави втора, финална заявка към AI с всички данни (потребителски + RAG), за да генерира крайния анализ.
+ * 5. Връща финалния JSON анализ на фронтенда.
+ */
+
+// --- КОНФИГУРАЦИЯ ---
+const AI_PROVIDER = "gemini"; // Променете на "openai" за GPT-4o
+
+// --- ПРОМПТОВЕ ЗА МНОГОСТЪПКОВИЯ ПРОЦЕС ---
+
+// ИЗПОЛЗВА СЕ В СТЪПКА 3 (СИНТЕЗ)
+const ROLE_PROMPT = `
+# РОЛЯ И ЦЕЛ
+Ти си експертен AI ирисолог, наречен "Iris-Holistica AI". Твоята работа е базирана на научен синтез от три основни подхода в ирисовата диагностика...
+... [ТУК ПОСТАВЕТЕ ПЪЛНИЯ, ЦЯЛОСТЕН SYSTEM_PROMPT, КОЙТО ДЕФИНИРАХМЕ] ...
+# ВАЖЕН ДИСКЛЕЙМЪР
+**Винаги завършвай всеки анализ с този РАЗШИРЕН текст:**
+"**Важно:** Този анализ е базиран на принципите на ирисовата и склерологичната диагностика..."
+`;
+
+// ИЗПОЛЗВА СЕ В СТЪПКА 1 (ИДЕНТИФИКАЦИЯ)
+const IDENTIFICATION_PROMPT = `
+# ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
+Ти си AI асистент, специализиран в разпознаването на ирисови знаци. Разгледай предоставените снимки на ляво и дясно око.
+Твоята ЕДИНСТВЕНА задача е да идентифицираш всички значими конституционални типове, предразположения, диатези и специфични знаци.
+Резултатът трябва да бъде **ЕДИНСТВЕНО JSON масив от низове (string array)**, съдържащ съответните RAG ключове за всеки идентифициран знак.
+Не добавяй никакви обяснения. Само JSON масив.
+
+Пример за изход:
+["CONSTITUTION:COLOR:MIXED_BILIARY", "DISPOSITION:STRUCTURE:FLEXIBLE_ADAPTIVE", "SIGN:IRIS:RING:CONTRACTION_FURROWS", "SIGN:PUPIL:GENERAL_ANALYSIS"]
+`;
+
+// ИЗПОЛЗВА СЕ В СТЪПКА 3 (СИНТЕЗ)
+const SYNTHESIS_PROMPT_TEMPLATE = `
+# ЗАДАЧА: ФИНАЛЕН СИНТЕЗ
+Изпълни ролята си, дефинирана в ROLE_PROMPT.
+Анализирай предоставените данни и генерирай цялостен холистичен анализ в JSON формат, както е дефинирано в твоите инструкции.
+
+Ето цялата информация, с която разполагаш:
+
+--- ДАННИ ЗА ПОТРЕБИТЕЛЯ ---
+{{USER_DATA}}
+--- КРАЙ НА ДАННИТЕ ЗА ПОТРЕБИТЕЛЯ ---
+
+--- RAG ДАННИ ОТ НАШАТА БАЗА ЗНАНИЯ (ИЗВЛЕЧЕНИ НА БАЗА ТВОЯ ПЪРВОНАЧАЛЕН АНАЛИЗ) ---
+{{RAG_DATA}}
+--- КРАЙ НА RAG ДАННИТЕ ---
+
+Моля, използвай RAG данните като основен източник на истина за твоя анализ. Сега, генерирай финалния JSON доклад.
+`;
+
+// --- ОСНОВЕН КОНТРОЛЕР ---
+export default {
+    async fetch(request, env, ctx) {
+        if (request.method === "OPTIONS") {
+            return handleOptions();
+        }
+
+        const url = new URL(request.url);
+        if (request.method === "POST" && url.pathname === "/analyze") {
+            return handleAnalysisRequest(request, env);
+        }
+
+        return new Response("Добре дошли в Iris-Holistica AI Backend v2.2 (Active RAG)!", {
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+    },
+};
+
+// --- ОРКЕСТРАТОР НА АНАЛИЗА ---
+async function handleAnalysisRequest(request, env) {
+    try {
+        console.log("Получена е нова заявка за анализ.");
+        const formData = await request.formData();
+
+        // 1. Извличане и подготовка на данните
+        const leftEyeFile = formData.get("left-eye");
+        const rightEyeFile = formData.get("right-eye");
+        if (!leftEyeFile || !rightEyeFile) throw new Error("Липсват файлове за ляво или дясно око.");
+        
+        const userData = {
+            name: formData.get("name"),
+            age: formData.get("age"),
+            mainComplaint: formData.get("main-complaint"),
+            surgeries: formData.get("surgeries"),
+            familyHistory: formData.get("family-history"),
+            diet: formData.get("diet"),
+            water: formData.get("water"),
+            sleep: formData.get("sleep"),
+            stress: formData.get("stress"),
+        };
+        const leftEyeBase64 = await fileToBase64(leftEyeFile);
+        const rightEyeBase64 = await fileToBase64(rightEyeFile);
+        console.log("Данните от формуляра са обработени успешно.");
+
+        // 2. СТЪПКА 1: ИДЕНТИФИКАЦИЯ НА RAG КЛЮЧОВЕ
+        console.log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
+        const identificationApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
+        const keysResponse = await identificationApiCaller(IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
+        const ragKeys = JSON.parse(keysResponse);
+        console.log("Получени RAG ключове за извличане:", ragKeys);
+
+        // 3. СТЪПКА 2: ИЗВЛИЧАНЕ НА ДАННИ ОТ KV
+        console.log("Стъпка 2: Извличане на данни от KV базата...");
+        const ragData = await fetchRagData(ragKeys, env);
+        console.log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
+
+        // 4. СТЪПКА 3: ФИНАЛЕН СИНТЕЗ
+        console.log("Стъпка 3: Изпращане на заявка за финален синтез...");
+        const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
+            .replace('{{USER_DATA}}', formatUserData(userData))
+            .replace('{{RAG_DATA}}', JSON.stringify(ragData, null, 2));
+
+        const synthesisApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
+        const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: ROLE_PROMPT }, leftEyeBase64, rightEyeBase64, env, true);
+        console.log("Финален анализ е генериран успешно.");
+
+        // 5. Връщане на финалния отговор
+        return new Response(finalAnalysis, { headers: corsHeaders({'Content-Type': 'application/json; charset=utf-8'}) });
+
+    } catch (error) {
+        console.error("Критична грешка в handleAnalysisRequest:", error);
+        return new Response(JSON.stringify({ error: "Вътрешна грешка на сървъра: " + error.message }), { status: 500, headers: corsHeaders() });
+    }
+}
+
+
+// --- AI API ИНТЕГРАЦИИ (РЕФАКТОРИРАНИ И КОРИГИРАНИ) ---
+async function callGeminiAPI(prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
+    const apiKey = env.gemini_api_key;
+    if (!apiKey) throw new Error("API ключът за Gemini не е конфигуриран.");
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + apiKey;
+
+    const systemInstruction = options.systemPrompt ? { role: "system", parts: [{ text: options.systemPrompt }] } : null;
+
+    const requestBody = {
+        contents: [
+            ... (systemInstruction ? [systemInstruction] : []),
+            {
+                role: "user",
+                parts: [
+                    { text: prompt },
+                    { inline_data: { mime_type: "image/jpeg", data: leftEyeBase64 }},
+                    { text: "\n(Снимка на ЛЯВО око)" },
+                    { inline_data: { mime_type: "image/jpeg", data: rightEyeBase64 }},
+                    { text: "\n(Снимка на ДЯСНО око)" }
+                ]
+            }
+        ],
+        generationConfig: {}
+    };
+    if (expectJson) {
+        requestBody.generationConfig.response_mime_type = "application/json";
+    }
+
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+    const responseData = await response.json();
+
+    // <--- КОРЕКЦИЯ 1: Правилна проверка за грешка с optional chaining.
+    if (!response.ok || !responseData.candidates?.[0]?.content) {
+        console.error("Грешка от Gemini API:", JSON.stringify(responseData, null, 2));
+        throw new Error("Неуспешна заявка към Gemini API.");
+    }
+    // <--- КОРЕКЦИЯ 2: Правилно извличане на текста от отговора.
+    return responseData.candidates[0].content.parts[0].text;
+}
+
+async function callOpenAIAPI(prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
+    const apiKey = env.openai_api_key;
+    if (!apiKey) throw new Error("API ключът за OpenAI не е конфигуриран.");
+    const url = "https://api.openai.com/v1/chat/completions";
+
+    const messages = [];
+    if (options.systemPrompt) {
+        messages.push({ role: "system", content: options.systemPrompt });
+    }
+    messages.push({
+        role: "user",
+        content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${leftEyeBase64}` }},
+            { type: "text", text: "\n(Снимка на ЛЯВО око)" },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${rightEyeBase64}` }},
+            { type: "text", text: "\n(Снимка на ДЯСНО око)" }
+        ]
+    });
+
+    const requestBody = { model: "gpt-4o", messages };
+    if (expectJson) {
+        requestBody.response_format = { type: "json_object" };
+    }
+
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify(requestBody) });
+    const responseData = await response.json();
+    
+    // <--- КОРЕКЦИЯ 3: Правилна проверка за грешка с optional chaining.
+    if (!response.ok || !responseData.choices?.[0]?.message) {
+        console.error("Грешка от OpenAI API:", JSON.stringify(responseData, null, 2));
+        throw new Error("Неуспешна заявка към OpenAI API.");
+    }
+    // <--- КОРЕКЦИЯ 4: Правилно извличане на съдържанието от отговора.
+    return responseData.choices[0].message.content;
+}
+
+// --- RAG ИЗВЛИЧАНЕ ОТ KV ---
+async function fetchRagData(keys, env) {
+    if (!Array.isArray(keys)) {
+        console.warn("RAG ключовете не са масив. Пропускане на извличане от KV.", keys);
+        return {};
+    }
+    const { iris_rag_kv } = env;
+    if (!iris_rag_kv) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
+
+    const promises = keys.map(key => iris_rag_kv.getWithMetadata(key, 'json'));
+    const results = await Promise.all(promises);
+    
+    const data = {};
+    results.forEach((result, index) => {
+        if (result.value) {
+            data[keys[index]] = result.value;
+        } else {
+            console.warn(`Ключ '${keys[index]}' не е намерен в KV базата.`);
+        }
+    });
+    return data;
+}
+
+
+// --- ПОМОЩНИ ФУНКЦИИ ---
+function formatUserData(data) {
+    return `
+- Име: ${data.name || 'Не е посочено'}
+- Възраст: ${data.age || 'Не е посочена'}
+- Основно оплакване: ${data.mainComplaint || 'Няма'}
+- Операции/Травми: ${data.surgeries || 'Няма'}
+- Фамилна анамнеза: ${data.familyHistory || 'Няма'}
+- Диета: ${data.diet || 'Не е посочена'}
+- Прием на вода: ${data.water || 'Не е посочен'}
+- Сън: ${data.sleep ? data.sleep + ' часа' : 'Не е посочен'}
+- Ниво на стрес: ${data.stress ? data.stress + '/10' : 'Не е посочено'}
+    `;
+}
+
+async function fileToBase64(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+}
+
+function handleOptions() {
+    return new Response(null, { headers: corsHeaders() });
+}
+
+function corsHeaders(additionalHeaders = {}) {
+    return new Headers({
+        "Access-Control-Allow-Origin": "https://radilovk.github.io",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        ...additionalHeaders
+    });
+}
