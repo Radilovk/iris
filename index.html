@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris-Holistica AI - Вашият Прозорец към Здравето</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- СЕКЦИЯ 1: ВЪВЕДЕНИЕ -->
+        <header class="hero-section">
+            <div class="hero-content">
+                <h1 class="fade-in-up">Вашите очи са карта към вашето здраве.</h1>
+                <!-- START: Препоръчителна промяна 1 -->
+                <p class="fade-in-up delay-1">Iris-Holistica AI е вашият дигитален ирисолог, базиран на <strong>научен синтез от водещи европейски и американски школи</strong>. Чрез анализ на ириса (вашия генетичен отпечатък) и склерата (карта на текущите стресове), ние разграничаваме <strong>наследствените предразположения</strong> от <strong>придобитите състояния</strong>, за да ви дадем цялостна картина на вашето здраве.</p>
+                <!-- END: Препоръчителна промяна 1 -->
+                <a href="#analysis-section" class="cta-button fade-in-up delay-2">Започнете своя анализ сега</a>
+            </div>
+            <div class="hero-image fade-in">
+                <img src="https://i.ibb.co/3k5fV1Z/iris-hero-image.png" alt="Стилизиран ирис">
+            </div>
+        </header>
+
+        <!-- СЕКЦИЯ 2: АНАЛИЗ -->
+        <section id="analysis-section" class="analysis-section">
+            <h2>Процес на анализ в 3 лесни стъпки</h2>
+
+            <form id="iridology-form" class="card">
+                <!-- НАВИГАЦИЯ НА СТЪПКИТЕ -->
+                <div class="stepper-nav">
+                    <div class="step active" data-step="1"><span>1</span><p>Основна информация</p></div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="2"><span>2</span><p>Начин на живот</p></div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="3"><span>3</span><p>Качване на снимки</p></div>
+                </div>
+
+                <!-- СТЪПКА 1: ВЪПРОСНИК - ДЕМОГРАФСКИ И ЗДРАВНИ -->
+                <div class="form-step active" data-step="1">
+                    <h3>Стъпка 1: Разкажете ни малко за себе си</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Име:</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Възраст:</label>
+                            <input type="number" id="age" name="age" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="main-complaint">Основна причина за консултацията / Основни оплаквания:</label>
+                            <textarea id="main-complaint" name="main-complaint" rows="3"></textarea>
+                        </div>
+                        <div class="form-group full-width">
+                             <!-- START: Препоръчителна промяна 3 -->
+                             <label>Претърпявали ли сте операции или сериозни травми? (напр. апендектомия, премахване на сливици, фрактури)</label>
+                             <!-- END: Препоръчителна промяна 3 -->
+                            <input type="text" id="surgeries" name="surgeries" placeholder="Ако да, опишете накратко">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Фамилна анамнеза (сърдечни проблеми, диабет, рак и др.):</label>
+                            <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'">
+                        </div>
+                    </div>
+                    <button type="button" class="next-btn">Продължи към Стъпка 2 <i class="fas fa-arrow-right"></i></button>
+                </div>
+
+                <!-- СТЪПКА 2: ВЪПРОСНИК - НАЧИН НА ЖИВОТ -->
+                <div class="form-step" data-step="2">
+                    <h3>Стъпка 2: Вашите навици и начин на живот</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="diet">Как бихте описали диетата си?</label>
+                            <select id="diet" name="diet">
+                                <option>Смесена</option>
+                                <option>Вегетарианска</option>
+                                <option>Веганска</option>
+                                <option>Високо-протеинова</option>
+                                <option>Високо-въглехидратна</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="water">Прием на вода на ден:</label>
+                            <select id="water" name="water">
+                                <option>Под 1 литър</option>
+                                <option>1-2 литра</option>
+                                <option>Над 2 литра</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                             <label for="sleep">Средно часове сън:</label>
+                            <input type="number" id="sleep" name="sleep">
+                        </div>
+                        <div class="form-group">
+                            <label for="stress">Ниво на стрес (1-10):</label>
+                            <input type="range" id="stress" name="stress" min="1" max="10" value="5" oninput="this.nextElementSibling.value = this.value">
+                            <output>5</output>
+                        </div>
+                    </div>
+                     <div class="button-group">
+                        <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Предишна стъпка</button>
+                        <button type="button" class="next-btn">Продължи към Стъпка 3 <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- СТЪПКА 3: КАЧВАНЕ НА СНИМКИ -->
+                <div class="form-step" data-step="3">
+                    <h3>Стъпка 3: Качете снимки на вашите очи</h3>
+                    <div class="upload-instructions">
+                        <i class="fas fa-camera"></i>
+                        <h4>Инструкции за перфектната снимка:</h4>
+                        <ul>
+                            <li><i class="fas fa-check-circle"></i> Използвайте <strong>задната камера</strong> на телефона си.</li>
+                            <li><i class="fas fa-check-circle"></i> Включете **светкавицата (режим 'фенерче')** под ъгъл.</li>
+                            <li><i class="fas fa-check-circle"></i> Приближете максимално, докато ирисът е на фокус.</li>
+                            <li><i class="fas fa-check-circle"></i> Дръжте клепачите широко отворени.</li>
+                        </ul>
+                    </div>
+                    <div class="upload-area-container">
+                        <div class="upload-area">
+                            <label for="left-eye-upload">Ляво око</label>
+                            <input type="file" id="left-eye-upload" name="left-eye" accept="image/*" required>
+                            <div class="upload-preview" id="left-eye-preview"><i class="fas fa-eye"></i><p>Качи снимка</p></div>
+                        </div>
+                        <div class="upload-area">
+                            <label for="right-eye-upload">Дясно око</label>
+                            <input type="file" id="right-eye-upload" name="right-eye" accept="image/*" required>
+                            <div class="upload-preview" id="right-eye-preview"><i class="fas fa-eye"></i><p>Качи снимка</p></div>
+                        </div>
+                    </div>
+                    
+                    <!-- START: Препоръчителна промяна 2 -->
+                    <div class="disclaimer-note">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Моля, обърнете внимание: Този анализ е предназначен за образователни цели и не представлява медицинска диагноза. Той идентифицира потенциални предразположения и области, нуждаещи се от подкрепа.</p>
+                    </div>
+                    <!-- END: Препоръчителна промяна 2 -->
+
+                    <div class="button-group">
+                         <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Предишна стъпка</button>
+                        <button type="submit" class="submit-btn">Изпрати за анализ <i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+            </form>
+        </section>
+
+    </div>
+    
+    <script src="script.js"></script>
+
+</body>
+</html>
