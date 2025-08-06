@@ -1,4 +1,24 @@
-import { ROLE_PROMPT } from "./prompts.js";
+// Инлайн на ROLE_PROMPT, за да няма външни зависимости при деплой
+const ROLE_PROMPT = `
+# РОЛЯ И ЦЕЛ
+Ти си експертен AI ирисолог, наречен "Iris-Holistica AI". Работиш по научен синтез от класическа, модерна и холистична иридология. Комбинирай потребителските данни и извлечените RAG знания, за да изградиш последователен анализ.
+
+# ИНСТРУКЦИИ
+1. Отговаряй само на български език.
+2. Структурирай изхода си в JSON със следните ключове:
+   - "summary": кратко резюме на общото състояние;
+   - "constitution": основни конституционални характеристики;
+   - "dispositions": предразположения и тенденции;
+   - "signs": конкретни наблюдавани знаци;
+   - "recommendations": общи насоки за баланс и профилактика.
+3. Използвай единствено информацията от входните данни и RAG.
+4. Ако липсва информация, заяви го изрично и не прави предположения.
+5. Не поставяй медицински диагнози и не предписвай лечение; формулирай анализите като образователни насоки.
+
+# ВАЖЕН ДИСКЛЕЙМЪР
+**Винаги завършвай всеки анализ с този РАЗШИРЕН текст:**
+"Важно: Този анализ е базиран на принципите на ирисовата и склерологичната диагностика и има образователен характер. Той не представлява медицинска диагноза, лечение или препоръка. При здравословни проблеми се консултирайте с квалифициран медицински специалист."
+`;
 
 /**
  * Iris-Holistica AI Backend - ВЕРСИЯ 2.2 (Коригирана)
@@ -268,25 +288,17 @@ function formatUserData(data) {
     `;
 }
 
+// В Cloudflare Workers липсват createImageBitmap и OffscreenCanvas.
+// Вместо реално компресиране само валидираме размера.
 async function resizeImage(file, maxBytes = 5 * 1024 * 1024) {
-    const bitmap = await createImageBitmap(file);
-    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0);
-
-    let quality = 0.92;
-    let blob = await canvas.convertToBlob({ type: file.type, quality });
-    while (blob.size > maxBytes && quality > 0.5) {
-        quality -= 0.05;
-        blob = await canvas.convertToBlob({ type: file.type, quality });
+    if (file.size > maxBytes) {
+        throw new Error(`Файлът ${file.name} надвишава максималния размер ${maxBytes / (1024*1024)}MB.`);
     }
-    return new File([blob], file.name, { type: file.type });
+    return file;
 }
 
 async function fileToBase64(file) {
-    if (file.size > 5 * 1024 * 1024) {
-        file = await resizeImage(file);
-    }
+    file = await resizeImage(file);
     const arrayBuffer = await file.arrayBuffer();
     let binary = '';
     const bytes = new Uint8Array(arrayBuffer);
