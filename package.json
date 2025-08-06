@@ -2,7 +2,7 @@
   "name": "iris",
   "version": "1.0.0",
   "description": "Този проект съдържа Cloudflare Worker, който изпълнява многостъпков RAG анализ на ирисови изображения.",
-  "main": "prompts.js",
+  "main": "worker.js",
   "scripts": {
     "test": "node worker.test.js"
   },
@@ -10,7 +10,5 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "dependencies": {
-    "sharp": "^0.34.3"
-  }
+  "dependencies": {}
 }
