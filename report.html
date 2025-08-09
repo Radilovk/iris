@@ -26,12 +26,12 @@
             <!-- Контейнер за съобщения (грешки, зареждане) -->
             <div id="message-box"></div>
             
-            <div class="button-group" style="margin-top: 2rem; text-align: center;">
-                <a href="index.html" class="cta-button fade-in-up delay-3">Връщане към началната страница</a>
-            </div>
-        </section>
+    <div class="button-group" style="margin-top: 2rem; text-align: center;">
+        <a href="index.html" class="cta-button fade-in-up delay-3">Връщане към началната страница</a>
     </div>
-
+</section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const reportCard = document.getElementById('report-card');
@@ -87,7 +87,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     const listEl = document.createElement('ul');
                     value.forEach(itemText => {
                         const listItemEl = document.createElement('li');
-                        listItemEl.innerHTML = `<i class="fas fa-check-circle"></i> <span>${itemText}</span>`;
+                        const iconEl = document.createElement('i');
+                        iconEl.className = 'fas fa-check-circle';
+                        const spanEl = document.createElement('span');
+                        spanEl.textContent = DOMPurify.sanitize(itemText);
+                        listItemEl.appendChild(iconEl);
+                        listItemEl.appendChild(spanEl);
                         listEl.appendChild(listItemEl);
                     });
                     sectionEl.appendChild(listEl);
@@ -104,7 +109,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (disclaimer) {
                 const disclaimerEl = document.createElement('div');
                 disclaimerEl.className = 'report-disclaimer';
-                disclaimerEl.innerHTML = `<i class="fas fa-info-circle"></i> <p>${disclaimer}</p>`;
+                const iconEl = document.createElement('i');
+                iconEl.className = 'fas fa-info-circle';
+                const pEl = document.createElement('p');
+                pEl.textContent = DOMPurify.sanitize(disclaimer);
+                disclaimerEl.appendChild(iconEl);
+                disclaimerEl.appendChild(pEl);
                 reportCard.appendChild(disclaimerEl);
             }
 
