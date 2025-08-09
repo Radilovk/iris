@@ -317,7 +317,7 @@ body {
     text-align: center;
 }
 
-/* Disclaimer Note Style - ДОБАВЕН НОВ БЛОК */
+/* Disclaimer Note Style */
 .disclaimer-note {
     display: flex;
     align-items: center;
@@ -366,28 +366,13 @@ body {
 .fade-in-up { opacity: 0; animation: fadeInUpAnim 0.8s ease-out forwards; }
 .delay-1 { animation-delay: 0.2s; }
 .delay-2 { animation-delay: 0.4s; }
+.delay-3 { animation-delay: 0.6s; }
+
 
 @keyframes fadeInAnim { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fadeInUpAnim { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Responsive Design */
-@media (max-width: 992px) {
-    .hero-section {
-        flex-direction: column;
-        text-align: center;
-        min-height: auto;
-        padding-top: 2rem;
-    }
-    .hero-image {
-        margin-top: 2rem;
-    }
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-    .upload-area-container {
-        flex-direction: column;
-        align-items: center;
-    }
+
 /* =============================================== */
 /* === СТИЛОВЕ ЗА СТРАНИЦАТА С ДОКЛАД (REPORT) === */
 /* =============================================== */
@@ -421,9 +406,10 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
-.report-section:last-child {
+.report-section:last-of-type { /* Променено за по-добра съвместимост */
     border-bottom: none;
     margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .report-section h3 {
@@ -468,6 +454,11 @@ body {
     margin-top: 5px; /* Лека корекция за по-добро вертикално подравняване */
 }
 
+/* Нулираме padding-left за p, когато е пряк наследник, за да не се дублира*/
+.report-section > p {
+    padding-left: 0;
+}
+
 .report-disclaimer {
     display: flex;
     align-items: flex-start;
@@ -505,4 +496,25 @@ body {
 .loading-box i {
     margin-right: 1rem;
     font-size: 1.5rem;
+}
+
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .hero-section {
+        flex-direction: column;
+        text-align: center;
+        min-height: auto;
+        padding-top: 2rem;
+    }
+    .hero-image {
+        margin-top: 2rem;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .upload-area-container {
+        flex-direction: column;
+        align-items: center;
+    }
 }
