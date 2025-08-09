@@ -507,6 +507,31 @@ body {
     font-size: 1.5rem;
 }
 
+/* Прогрес барове за аналитичните показатели */
+.analytics-card, .main-indexes {
+    margin-top: 2rem;
+}
+
+.progress-group {
+    margin: 0.75rem 0;
+}
+
+.progress-group label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.progress-group progress {
+    width: 100%;
+    height: 1rem;
+}
+
+.progress-value {
+    margin-left: 0.5rem;
+    font-weight: 600;
+}
+
 
 /* =============================================== */
 /* === RESPONSIVE DESIGN (TABLET & MOBILE) === */
