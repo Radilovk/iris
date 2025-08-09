@@ -23,6 +23,16 @@ async function bulkUpload(entries) {
   console.log('Качването завърши успешно.');
 }
 
+async function verifyToken() {
+  const res = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+    headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Невалиден API токен: ${text}`);
+  }
+}
+
 async function fetchExistingKeys() {
   const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/keys`;
   const keys = [];
@@ -54,6 +64,7 @@ async function main() {
   }
 
   const files = await fs.readdir(KV_DIR);
+  await verifyToken();
   const existingKeys = await fetchExistingKeys();
   const toDelete = existingKeys.filter(k => !files.includes(k));
 
@@ -83,6 +94,6 @@ async function main() {
 }
 
 main().catch(err => {
-  console.error(err);
+  console.error(err.message);
   process.exit(1);
 });
