@@ -24,7 +24,7 @@ const ROLE_PROMPT = `
 const AI_PROVIDER = "gemini"; // Променете на "openai" за GPT-4o
 
 // --- ОТЛОГВАНЕ ---
-function debugLog(env, ...args) {
+function debugLog(env = {}, ...args) {
     if (env.DEBUG === "true") {
         console.log("[DEBUG]", ...args);
     }
@@ -256,6 +256,11 @@ async function validateImageSize(file, env, maxBytes = 5 * 1024 * 1024) {
     return file;
 }
 
+// Съвместимост с тестовете: resizeImage е алиас към validateImageSize
+async function resizeImage(file, env, maxBytes) {
+    return validateImageSize(file, env, maxBytes);
+}
+
 async function fileToBase64(file, env) {
     await validateImageSize(file, env);
     const arrayBuffer = await file.arrayBuffer();
@@ -299,3 +304,5 @@ function corsHeaders(request, env, additionalHeaders = {}) {
 
     return new Headers(headers);
 }
+
+export { fileToBase64, resizeImage, corsHeaders };

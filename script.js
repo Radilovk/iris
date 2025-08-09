@@ -150,7 +150,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Съхраняваме получения JSON анализ в localStorage на браузъра
             localStorage.setItem('iridologyReport', JSON.stringify(data));
-            
+
+            // Известяваме всички отворени страници, че логът е обновен,
+            // за да се обновят динамично прогрес баровете
+            window.dispatchEvent(new Event('storage'));
+
             // Пренасочваме потребителя към страницата за показване на доклада
             // (трябва да създадете файл 'report.html')
             window.location.href = 'report.html';

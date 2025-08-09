@@ -23,6 +23,32 @@
                 <!-- Скриптът ще попълни съдържанието тук -->
             </div>
 
+            <!-- Динамични прогрес барове за аналитични показатели -->
+            <div class="analytics-card card fade-in-up">
+                <h3><i class="fas fa-chart-bar"></i> Аналитични показатели</h3>
+                <div class="progress-group">
+                    <label>Хидратация</label>
+                    <progress max="100" value="0" data-key="hydration"></progress>
+                </div>
+                <div class="progress-group">
+                    <label>Стрес</label>
+                    <progress max="100" value="0" data-key="stress"></progress>
+                </div>
+            </div>
+
+            <!-- Основни индекси -->
+            <div class="main-indexes card fade-in-up">
+                <h3><i class="fas fa-gauge-high"></i> Основни индекси</h3>
+                <div class="progress-group">
+                    <label>Индекс A</label>
+                    <progress max="100" value="0" data-key="indexA"></progress>
+                </div>
+                <div class="progress-group">
+                    <label>Индекс B</label>
+                    <progress max="100" value="0" data-key="indexB"></progress>
+                </div>
+            </div>
+
             <!-- Контейнер за съобщения (грешки, зареждане) -->
             <div id="message-box"></div>
             
@@ -32,6 +58,7 @@
         </section>
     </div>
 
+<script src="analytics.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const reportCard = document.getElementById('report-card');
