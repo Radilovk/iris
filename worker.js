@@ -328,7 +328,7 @@ function corsHeaders(request, env, additionalHeaders = {}) {
     }
 
     const headers = {
-        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Origin":  "https://radilovk.github.io",// Важно: URL на фронтенда,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         ...additionalHeaders,
