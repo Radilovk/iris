@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resizeImage, fileToBase64, corsHeaders } from './worker.js';
+import { resizeImage, fileToBase64, corsHeaders, fetchRagData } from './worker.js';
 
 test('resizeImage връща грешка при твърде голям файл', async () => {
   const bigBuffer = Buffer.alloc(6 * 1024 * 1024, 0); // 6MB
@@ -35,4 +35,31 @@ test('corsHeaders връща null за неразрешен домейн', () =>
   const headers = corsHeaders(request, { allowed_origin: 'https://myapp.example' });
   assert.equal(headers.get('Access-Control-Allow-Origin'), 'null');
   assert.equal(headers.get('Vary'), 'Origin');
+});
+
+test('fetchRagData извлича ключове за новите категории', async () => {
+  const keys = [
+    'MIASM:PSORA',
+    'SYNDROME:CARDIO_RENAL',
+    'EMOTION:IRIS_LIVER',
+    'RECOMMENDATION:PRACTICE:CASTOR_OIL_PACK'
+  ];
+
+  const env = {
+    iris_rag_kv: {
+      async get(key) {
+        const fs = await import('fs/promises');
+        const filePath = `KV/${key.replace(/:/g, '_')}`;
+        try {
+          const content = await fs.readFile(filePath, 'utf8');
+          return JSON.parse(content);
+        } catch {
+          return null;
+        }
+      }
+    }
+  };
+
+  const data = await fetchRagData(keys, env);
+  assert.equal(Object.keys(data).length, keys.length);
 });
