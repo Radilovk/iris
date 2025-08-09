@@ -19,6 +19,7 @@ test('corsHeaders поддържа wildcard "*"', () => {
   const request = new Request('https://api.example', { headers: { Origin: 'https://myapp.example' }});
   const headers = corsHeaders(request, { allowed_origin: '*' });
   assert.equal(headers.get('Access-Control-Allow-Origin'), '*');
+  assert.equal(headers.get('Vary'), null);
 });
 
 test('corsHeaders позволява конкретен домейн', () => {
@@ -26,10 +27,12 @@ test('corsHeaders позволява конкретен домейн', () => {
   const env = { allowed_origin: 'https://myapp.example,https://other.example' };
   const headers = corsHeaders(request, env);
   assert.equal(headers.get('Access-Control-Allow-Origin'), 'https://myapp.example');
+  assert.equal(headers.get('Vary'), 'Origin');
 });
 
 test('corsHeaders връща null за неразрешен домейн', () => {
   const request = new Request('https://api.example', { headers: { Origin: 'https://evil.example' }});
   const headers = corsHeaders(request, { allowed_origin: 'https://myapp.example' });
   assert.equal(headers.get('Access-Control-Allow-Origin'), 'null');
+  assert.equal(headers.get('Vary'), 'Origin');
 });
