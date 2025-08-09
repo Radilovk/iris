@@ -24,7 +24,7 @@ const ROLE_PROMPT = `
 const AI_PROVIDER = "gemini"; // Променете на "openai" за GPT-4o
 
 // --- ОТЛОГВАНЕ ---
-function debugLog(env, ...args) {
+function debugLog(env = {}, ...args) {
     if (env.DEBUG === "true") {
         console.log("[DEBUG]", ...args);
     }
@@ -247,7 +247,7 @@ function formatUserData(data) {
 }
 
 // ПРЕПОРЪКА #3: Преименувана функция за по-голяма яснота
-async function validateImageSize(file, env, maxBytes = 5 * 1024 * 1024) {
+async function validateImageSize(file, env = {}, maxBytes = 5 * 1024 * 1024) {
     const log = (...args) => debugLog(env, ...args);
     log(`Валидиране на файл: ${file.name}, размер: ${file.size} байта.`);
     if (file.size > maxBytes) {
@@ -256,7 +256,12 @@ async function validateImageSize(file, env, maxBytes = 5 * 1024 * 1024) {
     return file;
 }
 
-async function fileToBase64(file, env) {
+async function resizeImage(file, env = {}, maxBytes = 5 * 1024 * 1024) {
+    await validateImageSize(file, env, maxBytes);
+    return file;
+}
+
+async function fileToBase64(file, env = {}) {
     await validateImageSize(file, env);
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
@@ -271,12 +276,12 @@ function handleOptions(request, env) {
     return new Response(null, { headers: corsHeaders(request, env) });
 }
 
-function corsHeaders(request, env, additionalHeaders = {}) {
+function corsHeaders(request, env = {}, additionalHeaders = {}) {
     const requestOrigin = request.headers.get("Origin");
-    
+
     // Cloudflare secrets са низове, затова използваме split.
     // Позволява множество разрешени адреси, разделени със запетая.
-    const allowedOrigins = (env.ALLOWED_ORIGINS || "https://radilovk.github.io").split(",");
+    const allowedOrigins = (env.ALLOWED_ORIGINS || env.allowed_origin || "https://radilovk.github.io").split(",");
     
     let origin = "null"; // По подразбиране блокираме
     if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
@@ -299,3 +304,5 @@ function corsHeaders(request, env, additionalHeaders = {}) {
 
     return new Headers(headers);
 }
+
+export { resizeImage, fileToBase64, corsHeaders };
