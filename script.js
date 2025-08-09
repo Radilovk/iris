@@ -1,3 +1,5 @@
+import { WORKER_URL } from './config.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     const formSteps = document.querySelectorAll('.form-step');
     const nextBtns = document.querySelectorAll('.next-btn');
@@ -122,8 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData(this);
         
-        // ВАЖНО: Уверете се, че този URL е правилният адрес на вашия Cloudflare Worker
-        const workerUrl = 'https://iris.radilov-k.workers.dev/analyze';
+        // Взимаме URL на Worker-а от конфигурацията
+        const workerUrl = WORKER_URL;
 
         fetch(workerUrl, { 
             method: 'POST', 
