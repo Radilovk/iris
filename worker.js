@@ -21,7 +21,10 @@ const ROLE_PROMPT = `
 `;
 
 // --- КОНФИГУРАЦИЯ ---
-const AI_PROVIDER = "gemini"; // Променете на "openai" за GPT-4o
+// Чете AI_PROVIDER от environment с подразбиране към "gemini"
+export function getAIProvider(env = {}) {
+    return env.AI_PROVIDER || "gemini";
+}
 
 // --- ОТЛОГВАНЕ ---
 function debugLog(env = {}, ...args) {
@@ -81,6 +84,7 @@ export default {
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
 async function handleAnalysisRequest(request, env) {
     const log = (...args) => debugLog(env, ...args);
+    const provider = getAIProvider(env);
     try {
         log("Получена е нова заявка за анализ.");
         const formData = await request.formData();
@@ -99,7 +103,7 @@ async function handleAnalysisRequest(request, env) {
         log("Данните от формуляра са обработени успешно.");
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
-        const identificationApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
+        const identificationApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const keysResponse = await identificationApiCaller(IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
         
         let ragKeys;
@@ -123,7 +127,7 @@ async function handleAnalysisRequest(request, env) {
             .replace('{{USER_DATA}}', formatUserData(userData))
             .replace('{{RAG_DATA}}', JSON.stringify(ragData, null, 2));
 
-        const synthesisApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
+        const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: ROLE_PROMPT }, leftEyeBase64, rightEyeBase64, env, true);
         log("Финален анализ е генериран успешно.");
 
