@@ -285,8 +285,8 @@ body {
     display: none;
 }
 .upload-area .upload-preview {
-    width: 180px;
-    height: 180px;
+    width: clamp(120px, 40vw, 180px);
+    height: clamp(120px, 40vw, 180px);
     border: 2px dashed var(--border-color);
     border-radius: 50%;
     display: flex;
