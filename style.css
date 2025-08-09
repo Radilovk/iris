@@ -339,6 +339,35 @@ body {
     text-align: left;
 }
 
+/* Report Sections */
+.report-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--card-bg);
+}
+
+.report-section h3,
+.report-section h4,
+.report-section h5,
+.report-section h6 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.report-section ul {
+    margin-left: 1.5rem;
+    list-style: disc;
+}
+
+.report-section.disclaimer {
+    border-left: 4px solid var(--primary-color);
+    background-color: #f8f9fa;
+    color: #555;
+    font-size: 0.9rem;
+}
+
 /* Message Box Styles */
 .error-box,
 .success-box {

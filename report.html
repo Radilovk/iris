@@ -8,11 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 0.5rem; border-bottom: 1px solid #e0e0e0; text-align: left; }
-        th { width: 30%; }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -40,13 +35,41 @@
             message.className = 'error-box';
             return;
         }
-        const table = document.createElement('table');
-        Object.entries(data).forEach(([key, value]) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<th>${key}</th><td>${value}</td>`;
-            table.appendChild(row);
-        });
-        card.appendChild(table);
+        function renderValue(value, level = 3) {
+            if (Array.isArray(value)) {
+                const ul = document.createElement('ul');
+                value.forEach(item => {
+                    const li = document.createElement('li');
+                    if (item && typeof item === 'object') {
+                        li.appendChild(renderValue(item, level + 1));
+                    } else {
+                        li.textContent = String(item);
+                    }
+                    ul.appendChild(li);
+                });
+                return ul;
+            } else if (value && typeof value === 'object') {
+                const fragment = document.createDocumentFragment();
+                Object.entries(value).forEach(([key, val]) => {
+                    const section = document.createElement('div');
+                    section.className = 'report-section';
+                    if (key.toLowerCase().includes('disclaimer') || key.toLowerCase().includes('дисклеймер')) {
+                        section.classList.add('disclaimer');
+                    }
+                    const heading = document.createElement('h' + Math.min(level, 6));
+                    heading.textContent = key;
+                    section.appendChild(heading);
+                    section.appendChild(renderValue(val, Math.min(level + 1, 6)));
+                    fragment.appendChild(section);
+                });
+                return fragment;
+            } else {
+                const p = document.createElement('p');
+                p.textContent = String(value);
+                return p;
+            }
+        }
+        card.appendChild(renderValue(data));
     });
     </script>
 </body>
