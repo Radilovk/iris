@@ -327,12 +327,18 @@ function corsHeaders(request, env, additionalHeaders = {}) {
         origin = requestOrigin;
     }
 
-    return new Headers({
+    const headers = {
         "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         ...additionalHeaders,
-    });
+    };
+
+    if (origin !== "*") {
+        headers["Vary"] = "Origin";
+    }
+
+    return new Headers(headers);
 }
 
 export { fileToBase64, resizeImage, corsHeaders };
