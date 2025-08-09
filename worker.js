@@ -316,15 +316,23 @@ function handleOptions(request, env) {
 
 function corsHeaders(request, env, additionalHeaders = {}) {
     const requestOrigin = request.headers.get("Origin");
-    const allowedOrigins = env.allowed_origin ? env.allowed_origin.split(",").map(o => o.trim()) : [];
-    const origin = requestOrigin && allowedOrigins.includes(requestOrigin) ? requestOrigin : "null";
+    const allowedOrigins = env.allowed_origin
+        ? env.allowed_origin.split(",").map(o => o.trim())
+        : [];
+
+    let origin = "null";
+    if (allowedOrigins.includes("*")) {
+        origin = "*";
+    } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+        origin = requestOrigin;
+    }
 
     return new Headers({
         "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        ...additionalHeaders
+        ...additionalHeaders,
     });
 }
 
-export { fileToBase64, resizeImage };
+export { fileToBase64, resizeImage, corsHeaders };
