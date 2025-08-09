@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resizeImage, fileToBase64, corsHeaders } from './worker.js';
+import { resizeImage, fileToBase64, corsHeaders, getAIProvider } from './worker.js';
 
 test('resizeImage връща грешка при твърде голям файл', async () => {
   const bigBuffer = Buffer.alloc(6 * 1024 * 1024, 0); // 6MB
@@ -35,4 +35,12 @@ test('corsHeaders връща null за неразрешен домейн', () =>
   const headers = corsHeaders(request, { allowed_origin: 'https://myapp.example' });
   assert.equal(headers.get('Access-Control-Allow-Origin'), 'null');
   assert.equal(headers.get('Vary'), 'Origin');
+});
+
+test('getAIProvider избира "gemini" по подразбиране', () => {
+  assert.equal(getAIProvider({}), 'gemini');
+});
+
+test('getAIProvider може да избира OpenAI', () => {
+  assert.equal(getAIProvider({ AI_PROVIDER: 'openai' }), 'openai');
 });
