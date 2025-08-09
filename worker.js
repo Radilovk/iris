@@ -34,12 +34,13 @@ function debugLog(env = {}, ...args) {
 const IDENTIFICATION_PROMPT = `
 # ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
 Ти си AI асистент, специализиран в разпознаването на ирисови знаци. Разгледай предоставените снимки на ляво и дясно око.
-Твоята ЕДИНСТВЕНА задача е да идентифицираш всички значими конституционални типове, предразположения, диатези и специфични знаци.
-Резултатът трябва да бъде **ЕДИНСТВЕНО JSON масив от низове (string array)**, съдържащ съответните RAG ключове за всеки идентифициран знак.
+Твоята ЕДИНСТВЕНА задача е да идентифицираш всички значими конституционални типове, предразположения, диатези, специфични знаци, миазми, синдроми, емоционални връзки и общи препоръки.
+За всеки открит елемент върни RAG ключ с един от следните префикси: "CONSTITUTION:", "DISPOSITION:", "DIATHESIS:", "SIGN:", "MIASM:", "SYNDROME:", "EMOTION:", "RECOMMENDATION:".
+Резултатът трябва да бъде **ЕДИНСТВЕНО JSON масив от низове (string array)**, съдържащ съответните RAG ключове.
 Не добавяй никакви обяснения. Само JSON масив.
 
 Пример за изход:
-["CONSTITUTION:COLOR:MIXED_BILIARY", "DISPOSITION:STRUCTURE:FLEXIBLE_ADAPTIVE", "SIGN:IRIS:RING:CONTRACTION_FURROWS", "SIGN:PUPIL:GENERAL_ANALYSIS"]
+["CONSTITUTION:COLOR:MIXED_BILIARY", "DISPOSITION:STRUCTURE:FLEXIBLE_ADAPTIVE", "DIATHESIS:OVERLAY:HYPERACIDIC", "SIGN:IRIS:RING:CONTRACTION_FURROWS", "MIASM:PSORA", "SYNDROME:CARDIO_RENAL", "EMOTION:IRIS_LIVER", "RECOMMENDATION:PRACTICE:CASTOR_OIL_PACK"]
 `;
 
 // КОРЕКЦИЯ #1: Премахната е директната референция към "ROLE_PROMPT"
@@ -305,4 +306,4 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
     return new Headers(headers);
 }
 
-export { resizeImage, fileToBase64, corsHeaders };
+export { resizeImage, fileToBase64, corsHeaders, fetchRagData };
