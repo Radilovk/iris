@@ -33,6 +33,12 @@ async function main() {
   const entries = [];
   for (const file of files) {
     const value = await fs.readFile(path.join(KV_DIR, file), 'utf8');
+    try {
+      JSON.parse(value);
+    } catch (err) {
+      console.error(`Файлът ${file} съдържа невалиден JSON: ${err.message}`);
+      process.exit(1);
+    }
     entries.push({ key: file, value });
   }
   await bulkUpload(entries);
