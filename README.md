@@ -64,3 +64,16 @@ AI_PROVIDER = "openai" # или "gemini" (по подразбиране)
 ```js
 const base64 = await fileToBase64(largeFile); // автоматично компресира и връща Base64
 ```
+
+## Синхронизация с Cloudflare KV
+
+В директорията [`KV`](KV/) се съхраняват всички ключове и стойности, които трябва да бъдат налични в пространството **`iris_rag_kv`**. За да ги качите:
+
+```bash
+export CF_ACCOUNT_ID="<your-account-id>"
+export CF_KV_NAMESPACE_ID="<namespace-id>"
+export CF_API_TOKEN="<api-token>"
+npm run upload-kv
+```
+
+Скриптът използва [Cloudflare KV Bulk API](https://developers.cloudflare.com/api/operations/kv-namespace-write-multiple-key-value-pairs) и качва съдържанието на всички файлове в `KV` директорията. При неуспех се извежда описателна грешка.
