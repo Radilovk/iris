@@ -20,34 +20,17 @@ const ROLE_PROMPT = `
 "Важно: Този анализ е базиран на принципите на ирисовата и склерологичната диагностика и има образователен характер. Той не представлява медицинска диагноза, лечение или препоръка. При здравословни проблеми се консултирайте с квалифициран медицински специалист."
 `;
 
-/**
- * Iris-Holistica AI Backend - ВЕРСИЯ 2.2 (Коригирана)
- * Cloudflare Worker, който имплементира многостъпков RAG процес за ирисов анализ.
- *
- * Архитектура:
- * 1. Получава данни и снимки от потребителя.
- * 2. Стъпка 1: ИДЕНТИФИКАЦИЯ - Прави първа заявка към AI, за да идентифицира релевантните RAG ключове.
- * 3. Стъпка 2: ИЗВЛИЧАНЕ - Извлича детайлната информация за тези ключове от Cloudflare KV (iris_rag_kv).
- * 4. Стъпка 3: СИНТЕЗ - Прави втора, финална заявка към AI с всички данни (потребителски + RAG), за да генерира крайния анализ.
- * 5. Връща финалния JSON анализ на фронтенда.
- */
-
 // --- КОНФИГУРАЦИЯ ---
 const AI_PROVIDER = "gemini"; // Променете на "openai" за GPT-4o
 
 // --- ОТЛОГВАНЕ ---
-// Активирайте подробно логване, като зададете DEBUG="true" в env.
 function debugLog(env, ...args) {
     if (env.DEBUG === "true") {
-        console.log(...args);
+        console.log("[DEBUG]", ...args);
     }
 }
 
-// --- ПРОМПТОВЕ ЗА МНОГОСТЪПКОВИЯ ПРОЦЕС ---
-
-// ИЗПОЛЗВА СЕ В СТЪПКА 3 (СИНТЕЗ)
-
-// ИЗПОЛЗВА СЕ В СТЪПКА 1 (ИДЕНТИФИКАЦИЯ)
+// --- ПРОМПТОВЕ ---
 const IDENTIFICATION_PROMPT = `
 # ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
 Ти си AI асистент, специализиран в разпознаването на ирисови знаци. Разгледай предоставените снимки на ляво и дясно око.
@@ -59,11 +42,10 @@ const IDENTIFICATION_PROMPT = `
 ["CONSTITUTION:COLOR:MIXED_BILIARY", "DISPOSITION:STRUCTURE:FLEXIBLE_ADAPTIVE", "SIGN:IRIS:RING:CONTRACTION_FURROWS", "SIGN:PUPIL:GENERAL_ANALYSIS"]
 `;
 
-// ИЗПОЛЗВА СЕ В СТЪПКА 3 (СИНТЕЗ)
+// КОРЕКЦИЯ #1: Премахната е директната референция към "ROLE_PROMPT"
 const SYNTHESIS_PROMPT_TEMPLATE = `
 # ЗАДАЧА: ФИНАЛЕН СИНТЕЗ
-Изпълни ролята си, дефинирана в ROLE_PROMPT.
-Анализирай предоставените данни и генерирай цялостен холистичен анализ в JSON формат, както е дефинирано в твоите инструкции.
+Ти получи системни инструкции за твоята роля. Сега, анализирай предоставените данни и генерирай цялостен холистичен анализ в JSON формат, както е дефинирано в твоите инструкции.
 
 Ето цялата информация, с която разполагаш:
 
@@ -90,7 +72,7 @@ export default {
             return handleAnalysisRequest(request, env);
         }
 
-        return new Response("Добре дошли в Iris-Holistica AI Backend v2.2 (Active RAG)!", {
+        return new Response("Добре дошли в Iris-Holistica AI Backend v2.3 (Active RAG)!", {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' },
         });
     },
@@ -98,61 +80,44 @@ export default {
 
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
 async function handleAnalysisRequest(request, env) {
+    const log = (...args) => debugLog(env, ...args);
     try {
-        const log = (...args) => debugLog(env, ...args);
         log("Получена е нова заявка за анализ.");
         const formData = await request.formData();
 
-        // 1. Извличане и подготовка на данните
         const leftEyeFile = formData.get("left-eye");
         const rightEyeFile = formData.get("right-eye");
         if (!leftEyeFile || !rightEyeFile) throw new Error("Липсват файлове за ляво или дясно око.");
         
         const userData = {
-            name: formData.get("name"),
-            age: formData.get("age"),
-            mainComplaint: formData.get("main-complaint"),
-            surgeries: formData.get("surgeries"),
-            familyHistory: formData.get("family-history"),
-            diet: formData.get("diet"),
-            water: formData.get("water"),
-            sleep: formData.get("sleep"),
-            stress: formData.get("stress"),
+            name: formData.get("name"), age: formData.get("age"), mainComplaint: formData.get("main-complaint"),
+            surgeries: formData.get("surgeries"), familyHistory: formData.get("family-history"), diet: formData.get("diet"),
+            water: formData.get("water"), sleep: formData.get("sleep"), stress: formData.get("stress"),
         };
-        const leftEyeBase64 = await fileToBase64(leftEyeFile);
-        const rightEyeBase64 = await fileToBase64(rightEyeFile);
+        const leftEyeBase64 = await fileToBase64(leftEyeFile, env);
+        const rightEyeBase64 = await fileToBase64(rightEyeFile, env);
         log("Данните от формуляра са обработени успешно.");
 
-        // 2. СТЪПКА 1: ИДЕНТИФИКАЦИЯ НА RAG КЛЮЧОВЕ
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = AI_PROVIDER === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const keysResponse = await identificationApiCaller(IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
-        log("Суров отговор от AI (скъсен):", typeof keysResponse === "string" ? keysResponse.slice(0, 100) + "..." : keysResponse);
+        
         let ragKeys;
         try {
             ragKeys = JSON.parse(keysResponse);
-            if (!(Array.isArray(ragKeys) && ragKeys.every(k => typeof k === 'string'))) {
-                console.error("Невалиден формат на RAG ключовете:", ragKeys);
-                return new Response(JSON.stringify({ error: "RAG ключовете трябва да са масив от низове" }), {
-                    status: 400,
-                    headers: corsHeaders(request, env),
-                });
+            if (!Array.isArray(ragKeys) || !ragKeys.every(k => typeof k === 'string')) {
+                throw new Error("AI върна невалиден формат на RAG ключовете.");
             }
         } catch (parseError) {
-            console.error("Неуспешно парсване на AI отговора:", parseError);
-            return new Response(JSON.stringify({ error: "Невалиден JSON от AI" }), {
-                status: 500,
-                headers: corsHeaders(request, env),
-            });
+            log("Суров отговор от AI при грешка в парсването:", keysResponse);
+            throw new Error(`Невалиден JSON от AI в стъпка 1: ${parseError.message}`);
         }
-        log("Получени RAG ключове за извличане:", Array.isArray(ragKeys) ? ragKeys.length : 0);
+        log("Получени RAG ключове за извличане:", ragKeys);
 
-        // 3. СТЪПКА 2: ИЗВЛИЧАНЕ НА ДАННИ ОТ KV
         log("Стъпка 2: Извличане на данни от KV базата...");
         const ragData = await fetchRagData(ragKeys, env);
         log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
 
-        // 4. СТЪПКА 3: ФИНАЛЕН СИНТЕЗ
         log("Стъпка 3: Изпращане на заявка за финален синтез...");
         const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
             .replace('{{USER_DATA}}', formatUserData(userData))
@@ -162,27 +127,22 @@ async function handleAnalysisRequest(request, env) {
         const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: ROLE_PROMPT }, leftEyeBase64, rightEyeBase64, env, true);
         log("Финален анализ е генериран успешно.");
 
-        // 5. Връщане на финалния отговор
         return new Response(finalAnalysis, { headers: corsHeaders(request, env, {'Content-Type': 'application/json; charset=utf-8'}) });
 
     } catch (error) {
-        console.error("Критична грешка в handleAnalysisRequest:", error);
+        console.error("Критична грешка в handleAnalysisRequest:", error.stack);
         return new Response(JSON.stringify({ error: "Вътрешна грешка на сървъра: " + error.message }), { status: 500, headers: corsHeaders(request, env) });
     }
 }
 
-
-// --- AI API ИНТЕГРАЦИИ (РЕФАКТОРИРАНИ И КОРИГИРАНИ) ---
+// --- AI API ИНТЕГРАЦИИ ---
 async function callGeminiAPI(prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
     const apiKey = env.gemini_api_key;
     if (!apiKey) throw new Error("API ключът за Gemini не е конфигуриран.");
-    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + apiKey;
-
-    const systemInstruction = options.systemPrompt ? { role: "system", parts: [{ text: options.systemPrompt }] } : null;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`;
 
     const requestBody = {
         contents: [
-            ... (systemInstruction ? [systemInstruction] : []),
             {
                 role: "user",
                 parts: [
@@ -196,6 +156,10 @@ async function callGeminiAPI(prompt, options, leftEyeBase64, rightEyeBase64, env
         ],
         generationConfig: {}
     };
+
+    if (options.systemPrompt) {
+        requestBody.system_instruction = { role: "system", parts: [{ text: options.systemPrompt }] };
+    }
     if (expectJson) {
         requestBody.generationConfig.response_mime_type = "application/json";
     }
@@ -203,12 +167,10 @@ async function callGeminiAPI(prompt, options, leftEyeBase64, rightEyeBase64, env
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
     const responseData = await response.json();
 
-    // <--- КОРЕКЦИЯ 1: Правилна проверка за грешка с optional chaining.
-    if (!response.ok || !responseData.candidates?.[0]?.content) {
+    if (!response.ok || !responseData.candidates?.[0]?.content.parts?.[0]?.text) {
         console.error("Грешка от Gemini API:", JSON.stringify(responseData, null, 2));
-        throw new Error("Неуспешна заявка към Gemini API.");
+        throw new Error("Неуспешна или невалидна заявка към Gemini API.");
     }
-    // <--- КОРЕКЦИЯ 2: Правилно извличане на текста от отговора.
     return responseData.candidates[0].content.parts[0].text;
 }
 
@@ -240,38 +202,34 @@ async function callOpenAIAPI(prompt, options, leftEyeBase64, rightEyeBase64, env
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify(requestBody) });
     const responseData = await response.json();
     
-    // <--- КОРЕКЦИЯ 3: Правилна проверка за грешка с optional chaining.
-    if (!response.ok || !responseData.choices?.[0]?.message) {
+    if (!response.ok || !responseData.choices?.[0]?.message?.content) {
         console.error("Грешка от OpenAI API:", JSON.stringify(responseData, null, 2));
-        throw new Error("Неуспешна заявка към OpenAI API.");
+        throw new Error("Неуспешна или невалидна заявка към OpenAI API.");
     }
-    // <--- КОРЕКЦИЯ 4: Правилно извличане на съдържанието от отговора.
     return responseData.choices[0].message.content;
 }
 
 // --- RAG ИЗВЛИЧАНЕ ОТ KV ---
 async function fetchRagData(keys, env) {
-    if (!(Array.isArray(keys) && keys.every(k => typeof k === 'string'))) {
-        console.warn("RAG ключовете трябва да са масив от низове. Пропускане на извличане от KV.", keys);
+    if (!Array.isArray(keys) || keys.length === 0) {
         return {};
     }
     const { iris_rag_kv } = env;
     if (!iris_rag_kv) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
 
-    const promises = keys.map(key => iris_rag_kv.getWithMetadata(key, 'json'));
+    const promises = keys.map(key => iris_rag_kv.get(key, 'json'));
     const results = await Promise.all(promises);
     
     const data = {};
-    results.forEach((result, index) => {
-        if (result.value) {
-            data[keys[index]] = result.value;
+    results.forEach((value, index) => {
+        if (value) {
+            data[keys[index]] = value;
         } else {
             console.warn(`Ключ '${keys[index]}' не е намерен в KV базата.`);
         }
     });
     return data;
 }
-
 
 // --- ПОМОЩНИ ФУНКЦИИ ---
 function formatUserData(data) {
@@ -288,24 +246,23 @@ function formatUserData(data) {
     `;
 }
 
-// В Cloudflare Workers липсват createImageBitmap и OffscreenCanvas.
-// Вместо реално компресиране само валидираме размера.
-async function resizeImage(file, maxBytes = 5 * 1024 * 1024) {
+// ПРЕПОРЪКА #3: Преименувана функция за по-голяма яснота
+async function validateImageSize(file, env, maxBytes = 5 * 1024 * 1024) {
+    const log = (...args) => debugLog(env, ...args);
+    log(`Валидиране на файл: ${file.name}, размер: ${file.size} байта.`);
     if (file.size > maxBytes) {
-        throw new Error(`Файлът ${file.name} надвишава максималния размер ${maxBytes / (1024*1024)}MB.`);
+        throw new Error(`Файлът ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) надвишава максималния размер от ${maxBytes / 1024 / 1024}MB.`);
     }
     return file;
 }
 
-async function fileToBase64(file) {
-    file = await resizeImage(file);
+async function fileToBase64(file, env) {
+    await validateImageSize(file, env);
     const arrayBuffer = await file.arrayBuffer();
-    let binary = '';
     const bytes = new Uint8Array(arrayBuffer);
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, chunk);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
     }
     return btoa(binary);
 }
@@ -316,19 +273,21 @@ function handleOptions(request, env) {
 
 function corsHeaders(request, env, additionalHeaders = {}) {
     const requestOrigin = request.headers.get("Origin");
-    const allowedOrigins = env.allowed_origin
-        ? env.allowed_origin.split(",").map(o => o.trim())
-        : [];
-
-    let origin = "null";
-    if (allowedOrigins.includes("*")) {
-        origin = "*";
-    } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    
+    // Cloudflare secrets са низове, затова използваме split.
+    // Позволява множество разрешени адреси, разделени със запетая.
+    const allowedOrigins = (env.ALLOWED_ORIGINS || "https://radilovk.github.io").split(",");
+    
+    let origin = "null"; // По подразбиране блокираме
+    if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
         origin = requestOrigin;
+    } else if (allowedOrigins.includes("*")) {
+        origin = "*";
     }
-
+    
+    // КОРЕКЦИЯ #2: Използваме динамично определения 'origin'
     const headers = {
-        "Access-Control-Allow-Origin":  "https://radilovk.github.io",// Важно: URL на фронтенда,
+        "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         ...additionalHeaders,
@@ -340,5 +299,3 @@ function corsHeaders(request, env, additionalHeaders = {}) {
 
     return new Headers(headers);
 }
-
-export { fileToBase64, resizeImage, corsHeaders };
