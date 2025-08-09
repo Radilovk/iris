@@ -85,17 +85,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 // **КЛЮЧОВО ПОДОБРЕНИЕ:** Правилно обработваме масиви и низове
                 if (Array.isArray(value)) {
                     const listEl = document.createElement('ul');
-                    value.forEach(itemText => {
+                    value.forEach(item => {
                         const listItemEl = document.createElement('li');
                         const iconEl = document.createElement('i');
                         iconEl.className = 'fas fa-check-circle';
                         const spanEl = document.createElement('span');
-                        spanEl.textContent = DOMPurify.sanitize(itemText);
+                        const text = typeof item === 'object' ? (item.text || item.content || '') : item;
+                        spanEl.textContent = DOMPurify.sanitize(text);
                         listItemEl.appendChild(iconEl);
                         listItemEl.appendChild(spanEl);
+
+                        if (typeof item === 'object' && item.source) {
+                            const sourceEl = document.createElement('p');
+                            sourceEl.className = 'item-source';
+                            sourceEl.textContent = `Източник: ${DOMPurify.sanitize(item.source)}`;
+                            listItemEl.appendChild(sourceEl);
+                        }
+
                         listEl.appendChild(listItemEl);
                     });
                     sectionEl.appendChild(listEl);
+                } else if (typeof value === 'object') {
+                    const contentEl = document.createElement('p');
+                    contentEl.textContent = DOMPurify.sanitize(value.text || value.content || '');
+                    sectionEl.appendChild(contentEl);
+                    if (value.source) {
+                        const sourceEl = document.createElement('p');
+                        sourceEl.className = 'item-source';
+                        sourceEl.textContent = `Източник: ${DOMPurify.sanitize(value.source)}`;
+                        sectionEl.appendChild(sourceEl);
+                    }
                 } else if (typeof value === 'string') {
                     const contentEl = document.createElement('p');
                     contentEl.textContent = value;

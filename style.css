@@ -477,6 +477,14 @@ body {
     margin-top: 5px;
 }
 
+.report-section .item-source {
+    font-size: 0.85rem;
+    color: #666;
+    margin-left: 2rem;
+    margin-top: 0.3rem;
+    font-style: italic;
+}
+
 .report-disclaimer {
     display: flex;
     align-items: flex-start;
