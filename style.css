@@ -246,6 +246,14 @@ body {
     background-color: #ddd;
 }
 
+.cta-button:active,
+.next-btn:active,
+.prev-btn:active,
+.submit-btn:active {
+    transform: scale(0.97);
+    filter: brightness(0.9);
+}
+
 
 /* Upload Area */
 .upload-instructions {
