@@ -560,7 +560,7 @@ body {
 
     /* Намаляваме размера на главното заглавие, за да не е твърде голямо */
     .hero-content h1 {
-        font-size: 2.8rem;
+        font-size: clamp(1.8rem, 6vw, 3.5rem);
         line-height: 1.2;
     }
 
