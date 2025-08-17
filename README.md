@@ -67,7 +67,7 @@ const base64 = await fileToBase64(largeFile); // автоматично комп
 
 ## Синхронизация с Cloudflare KV
 
-В директорията [`KV`](KV/) се съхраняват всички ключове и стойности, които трябва да бъдат налични в пространството **`iris_rag_kv`**. За да ги качите:
+В директорията [`KV`](KV/) се съхраняват всички ключове и стойности, които трябва да бъдат налични в пространството **`iris_rag_kv`**. Преди качване задайте променливите `CF_ACCOUNT_ID`, `CF_KV_NAMESPACE_ID` и `CF_API_TOKEN` (в `.env` или в CI/CD):
 
 ```bash
 export CF_ACCOUNT_ID="<your-account-id>"
@@ -110,3 +110,7 @@ npm run sync:kv
 ```
 
 Скриптът изисква зададени променливи `CF_ACCOUNT_ID`, `CF_KV_NAMESPACE_ID` и `CF_API_TOKEN`.
+
+### Автоматично обновяване в GitHub
+
+След merge в `main` се изпълнява GitHub Action, което стартира `upload-kv.js` и синхронизира съдържанието на `KV/` с Cloudflare KV. За да работи, задайте в настройките на репозиторията Secrets `CF_ACCOUNT_ID`, `CF_KV_NAMESPACE_ID` и `CF_API_TOKEN`.
