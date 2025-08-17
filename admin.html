@@ -14,13 +14,14 @@
   <div class="container admin-container">
     <h1>Администрация</h1>
     <div class="admin-actions">
+      <button id="new-key-btn" class="cta-button">Нов ключ</button>
       <button id="sync-btn" class="cta-button">Синхронизирай KV</button>
     </div>
     <h2>Ключове в KV</h2>
     <ul id="kv-list"></ul>
     <div id="editor" class="admin-editor" style="display:none;">
       <h3>Редакция на ключ</h3>
-      <input id="kv-key" type="text" readonly>
+      <input id="kv-key" type="text">
       <textarea id="kv-value"></textarea>
       <div class="button-group">
         <button id="save-btn" class="cta-button">Запази</button>

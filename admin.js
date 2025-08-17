@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const valueTextarea = document.getElementById('kv-value');
   const saveBtn = document.getElementById('save-btn');
   const deleteBtn = document.getElementById('delete-btn');
+  const newKeyBtn = document.getElementById('new-key-btn');
 
   async function loadKeys() {
     listEl.innerHTML = '';
@@ -75,6 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       alert('Грешка: ' + err.message);
     }
+  });
+
+  newKeyBtn.addEventListener('click', () => {
+    keyInput.value = '';
+    valueTextarea.value = '';
+    editor.style.display = 'block';
+    keyInput.focus();
   });
 
   syncBtn.addEventListener('click', async () => {
