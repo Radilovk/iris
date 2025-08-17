@@ -49,6 +49,33 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    cursor: pointer;
+}
+
+.admin-editor {
+    margin-top: 1rem;
+    background: var(--card-bg);
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.admin-editor input,
+.admin-editor textarea {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.admin-editor textarea {
+    height: 200px;
+    font-family: monospace;
+}
+
+.admin-editor .button-group {
+    display: flex;
+    gap: 0.5rem;
 }
 
 /* =============================================== */
