@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MockAgent, setGlobalDispatcher, Agent } from 'undici';
 import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
@@ -52,23 +51,11 @@ test('/admin/keys изисква Basic Auth', async () => {
   const resNoAuth = await worker.fetch(reqNoAuth, {});
   assert.equal(resNoAuth.status, 401);
 
-  const mockAgent = new MockAgent();
-  mockAgent.disableNetConnect();
-  setGlobalDispatcher(mockAgent);
-  const cf = mockAgent.get('https://api.cloudflare.com');
-  cf.intercept({
-    path: '/client/v4/accounts/accid/storage/kv/namespaces/ns/keys',
-    method: 'GET',
-    query: { limit: '1000' }
-  }).reply(200, { result: [], result_info: { list_complete: true } });
-
   const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
   const env = {
     ADMIN_USER: 'admin',
     ADMIN_PASS: 'pass',
-    CF_ACCOUNT_ID: 'accid',
-    CF_KV_NAMESPACE_ID: 'ns',
-    CF_API_TOKEN: 'tok'
+    iris_rag_kv: { list: async () => ({ keys: [] }) }
   };
   const reqAuth = new Request('https://example.com/admin/keys', {
     headers: { Authorization: auth }
@@ -76,36 +63,19 @@ test('/admin/keys изисква Basic Auth', async () => {
   const resAuth = await worker.fetch(reqAuth, env);
   assert.equal(resAuth.status, 200);
   assert.deepEqual(await resAuth.json(), { keys: [] });
-
-  mockAgent.assertNoPendingInterceptors();
-  mockAgent.close();
-  setGlobalDispatcher(new Agent());
 });
 
 test('/admin/sync синхронизира данни', async () => {
-  const mockAgent = new MockAgent();
-  mockAgent.disableNetConnect();
-  setGlobalDispatcher(mockAgent);
-  const cf = mockAgent.get('https://api.cloudflare.com');
-  cf.intercept({ path: '/client/v4/user/tokens/verify', method: 'GET' })
-    .reply(200, { success: true });
-  cf.intercept({
-    path: '/client/v4/accounts/accid/storage/kv/namespaces/ns/keys',
-    method: 'GET',
-    query: { limit: '1000' }
-  }).reply(200, { result: [], result_info: { list_complete: true } });
-  cf.intercept({
-    path: '/client/v4/accounts/accid/storage/kv/namespaces/ns/bulk',
-    method: 'PUT'
-  }).reply(200, { success: true });
-
   const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
+  const store = {};
   const env = {
     ADMIN_USER: 'admin',
     ADMIN_PASS: 'pass',
-    CF_ACCOUNT_ID: 'accid',
-    CF_KV_NAMESPACE_ID: 'ns',
-    CF_API_TOKEN: 'tok'
+    iris_rag_kv: {
+      list: async () => ({ keys: [] }),
+      put: async (k, v) => { store[k] = v; },
+      delete: async k => { delete store[k]; }
+    }
   };
   const req = new Request('https://example.com/admin/sync', {
     method: 'POST',
@@ -118,38 +88,5 @@ test('/admin/sync синхронизира данни', async () => {
   assert.equal(body.deleted.length, 0);
   const expectedKeys = Object.keys(KV_DATA).sort();
   assert.deepEqual(body.updated.sort(), expectedKeys);
-
-  mockAgent.assertNoPendingInterceptors();
-  mockAgent.close();
-  setGlobalDispatcher(new Agent());
-});
-
-test('/admin/sync обработва грешки от Cloudflare API', async () => {
-  const mockAgent = new MockAgent();
-  mockAgent.disableNetConnect();
-  setGlobalDispatcher(mockAgent);
-  const cf = mockAgent.get('https://api.cloudflare.com');
-  cf.intercept({ path: '/client/v4/user/tokens/verify', method: 'GET' })
-    .reply(403, 'bad token');
-
-  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
-  const env = {
-    ADMIN_USER: 'admin',
-    ADMIN_PASS: 'pass',
-    CF_ACCOUNT_ID: 'accid',
-    CF_KV_NAMESPACE_ID: 'ns',
-    CF_API_TOKEN: 'tok'
-  };
-  const req = new Request('https://example.com/admin/sync', {
-    method: 'POST',
-    headers: { Authorization: auth, 'Content-Type': 'application/json' },
-    body: '{}'
-  });
-  const res = await worker.fetch(req, env);
-  assert.equal(res.status, 500);
-  assert.equal(await res.text(), 'bad token');
-
-  mockAgent.assertNoPendingInterceptors();
-  mockAgent.close();
-  setGlobalDispatcher(new Agent());
+  assert.deepEqual(Object.keys(store).sort(), expectedKeys);
 });

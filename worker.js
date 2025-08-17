@@ -134,11 +134,6 @@ function verifyBasicAuth(request, env) {
 }
 
 async function adminSync(env, request) {
-    const { CF_ACCOUNT_ID, CF_KV_NAMESPACE_ID, CF_API_TOKEN } = env;
-    if (!CF_ACCOUNT_ID || !CF_KV_NAMESPACE_ID || !CF_API_TOKEN) {
-        return new Response('Липсват CF_* променливи.', { status: 500 });
-    }
-
     let data;
     try {
         data = await request.json();
@@ -146,19 +141,11 @@ async function adminSync(env, request) {
         return new Response('Невалиден JSON', { status: 400 });
     }
 
-    const verify = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
-        headers: { 'Authorization': `Bearer ${CF_API_TOKEN}` }
-    });
-    if (!verify.ok) {
-        const text = await verify.text();
-        return new Response(text, { status: 500 });
-    }
-
     const files = Object.keys(data);
-    const existingKeys = await fetchExistingKeysCF(env);
+    const { keys } = await env.iris_rag_kv.list({ limit: 1000 });
+    const existingKeys = keys.map(k => k.name);
     const toDelete = existingKeys.filter(k => !files.includes(k));
 
-    const entries = [];
     for (const file of files) {
         const value = data[file];
         try {
@@ -166,25 +153,10 @@ async function adminSync(env, request) {
         } catch {
             return new Response(`Невалиден JSON в ${file}`, { status: 400 });
         }
-        entries.push({ key: file, value });
+        await env.iris_rag_kv.put(file, value);
     }
     for (const key of toDelete) {
-        entries.push({ key, delete: true });
-    }
-
-    const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NAMESPACE_ID}/bulk`;
-    const res = await fetch(url, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${CF_API_TOKEN}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(entries)
-    });
-
-    if (!res.ok) {
-        const text = await res.text();
-        return new Response(text, { status: 500 });
+        await env.iris_rag_kv.delete(key);
     }
 
     return new Response(JSON.stringify({ updated: files, deleted: toDelete }), {
@@ -194,8 +166,8 @@ async function adminSync(env, request) {
 
 async function adminKeys(env) {
     try {
-        const keys = await fetchExistingKeysCF(env);
-        return new Response(JSON.stringify({ keys }), {
+        const { keys } = await env.iris_rag_kv.list({ limit: 1000 });
+        return new Response(JSON.stringify({ keys: keys.map(k => k.name) }), {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (err) {
@@ -266,30 +238,6 @@ async function adminDelete(env, key) {
     }
 }
 
-async function fetchExistingKeysCF(env) {
-    const { CF_ACCOUNT_ID, CF_KV_NAMESPACE_ID, CF_API_TOKEN } = env;
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NAMESPACE_ID}/keys`;
-    const keys = [];
-    let cursor;
-    do {
-        const params = new URLSearchParams({ limit: '1000' });
-        if (cursor) params.set('cursor', cursor);
-        const res = await fetch(`${baseUrl}?${params.toString()}`, {
-            headers: { 'Authorization': `Bearer ${CF_API_TOKEN}` }
-        });
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Неуспешно извличане на ключове: ${text}`);
-        }
-        const data = await res.json();
-        keys.push(...data.result.map(k => k.name));
-        cursor = data.result_info?.cursor;
-        if (data.result_info?.cursor === undefined || data.result_info?.list_complete) {
-            cursor = null;
-        }
-    } while (cursor);
-    return keys;
-}
 
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
 async function handleAnalysisRequest(request, env) {
