@@ -58,7 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl.innerHTML = '';
     showLoading();
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, { credentials: 'include' });
+        const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+      }
+    });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       data.keys.forEach(k => {
@@ -77,7 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function showKey(key) {
     showLoading();
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(key)}`, { credentials: 'include' });
+        const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(key)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+      }
+    });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       let val = data.value || '';
@@ -97,8 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         const res = await fetch(`${WORKER_BASE_URL}/admin/diff`, {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+        },
         body: JSON.stringify(KV_DATA)
       });
       if (!res.ok) throw new Error(await res.text());
@@ -117,8 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+        },
         body: JSON.stringify(KV_DATA)
       });
       if (!res.ok) throw new Error(await res.text());
@@ -137,8 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+        },
         body: JSON.stringify(KV_DATA)
       });
       if (!res.ok) throw new Error(await res.text());
