@@ -1,4 +1,5 @@
 import { KV_DATA } from './kv-data.js';
+import { WORKER_BASE_URL } from './config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const syncBtn = document.getElementById('sync-btn');
@@ -56,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl.innerHTML = '';
     showLoading();
     try {
-      const res = await fetch('/admin/keys', { credentials: 'include' });
+        const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, { credentials: 'include' });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       data.keys.forEach(k => {
@@ -75,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function showKey(key) {
     showLoading();
     try {
-      const res = await fetch(`/admin/get?key=${encodeURIComponent(key)}`, { credentials: 'include' });
+        const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(key)}`, { credentials: 'include' });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       let val = data.value || '';
@@ -93,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncBtn.disabled = true;
     showLoading();
     try {
-      const res = await fetch('/admin/diff', {
+        const res = await fetch(`${WORKER_BASE_URL}/admin/diff`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -114,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideDiffModal();
     showLoading();
     try {
-      const res = await fetch('/admin/sync', {
+        const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

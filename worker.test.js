@@ -38,6 +38,12 @@ test('corsHeaders връща null за неразрешен домейн', () =>
   assert.equal(headers.get('Vary'), 'Origin');
 });
 
+test('corsHeaders включва всички методи', () => {
+  const request = new Request('https://api.example', { headers: { Origin: 'https://foo.example' }});
+  const headers = corsHeaders(request, { allowed_origin: '*' });
+  assert.equal(headers.get('Access-Control-Allow-Methods'), 'GET, POST, PUT, DELETE, OPTIONS');
+});
+
 test('getAIProvider избира "gemini" по подразбиране', () => {
   assert.equal(getAIProvider({}), 'gemini');
 });
