@@ -1,3 +1,5 @@
+import { KV_DATA } from './kv-data.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const syncBtn = document.getElementById('sync-btn');
   const listEl = document.getElementById('kv-list');
@@ -78,7 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
   syncBtn.addEventListener('click', async () => {
     syncBtn.disabled = true;
     try {
-      const res = await fetch('/admin/sync', { method: 'POST', credentials: 'include' });
+      const res = await fetch('/admin/sync', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(KV_DATA)
+      });
       if (!res.ok) throw new Error(await res.text());
       alert('KV синхронизацията завърши успешно');
       await loadKeys();

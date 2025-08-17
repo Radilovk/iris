@@ -116,7 +116,8 @@ test('/admin/sync синхронизира данни', async () => {
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.deleted.length, 0);
-  assert.equal(body.updated.length, Object.keys(KV_DATA).length);
+  const expectedKeys = Object.keys(KV_DATA).sort();
+  assert.deepEqual(body.updated.sort(), expectedKeys);
 
   mockAgent.assertNoPendingInterceptors();
   mockAgent.close();
