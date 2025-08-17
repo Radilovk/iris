@@ -109,7 +109,8 @@ test('/admin/sync синхронизира данни', async () => {
   };
   const req = new Request('https://example.com/admin/sync', {
     method: 'POST',
-    headers: { Authorization: auth }
+    headers: { Authorization: auth, 'Content-Type': 'application/json' },
+    body: JSON.stringify(KV_DATA)
   });
   const res = await worker.fetch(req, env);
   assert.equal(res.status, 200);
@@ -140,7 +141,8 @@ test('/admin/sync обработва грешки от Cloudflare API', async ()
   };
   const req = new Request('https://example.com/admin/sync', {
     method: 'POST',
-    headers: { Authorization: auth }
+    headers: { Authorization: auth, 'Content-Type': 'application/json' },
+    body: '{}'
   });
   const res = await worker.fetch(req, env);
   assert.equal(res.status, 500);

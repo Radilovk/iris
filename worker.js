@@ -1,5 +1,3 @@
-import { KV_DATA } from './kv-data.js';
-
 // Инлайн на ROLE_PROMPT, за да няма външни зависимости при деплой
 const ROLE_PROMPT = `
 # РОЛЯ И ЦЕЛ
@@ -36,8 +34,7 @@ function debugLog(env = {}, ...args) {
 }
 
 function toBase64(str) {
-    if (typeof btoa !== 'undefined') return btoa(str);
-    return Buffer.from(str, 'utf8').toString('base64');
+    return btoa(str);
 }
 
 // --- ПРОМПТОВЕ ---
@@ -110,7 +107,7 @@ async function handleAdmin(request, env) {
 
     const url = new URL(request.url);
     if (url.pathname === '/admin/sync' && request.method === 'POST') {
-        return adminSync(env);
+        return adminSync(env, request);
     }
     if (url.pathname === '/admin/keys' && request.method === 'GET') {
         return adminKeys(env);
@@ -136,10 +133,17 @@ function verifyBasicAuth(request, env) {
     return request.headers.get('Authorization') === expected;
 }
 
-async function adminSync(env) {
+async function adminSync(env, request) {
     const { CF_ACCOUNT_ID, CF_KV_NAMESPACE_ID, CF_API_TOKEN } = env;
     if (!CF_ACCOUNT_ID || !CF_KV_NAMESPACE_ID || !CF_API_TOKEN) {
         return new Response('Липсват CF_* променливи.', { status: 500 });
+    }
+
+    let data;
+    try {
+        data = await request.json();
+    } catch {
+        return new Response('Невалиден JSON', { status: 400 });
     }
 
     const verify = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
@@ -150,17 +154,17 @@ async function adminSync(env) {
         return new Response(text, { status: 500 });
     }
 
-    const files = Object.keys(KV_DATA);
+    const files = Object.keys(data);
     const existingKeys = await fetchExistingKeysCF(env);
     const toDelete = existingKeys.filter(k => !files.includes(k));
 
     const entries = [];
     for (const file of files) {
-        const value = KV_DATA[file];
+        const value = data[file];
         try {
             JSON.parse(value);
-        } catch (err) {
-            return new Response(`Невалиден JSON в ${file}`, { status: 500 });
+        } catch {
+            return new Response(`Невалиден JSON в ${file}`, { status: 400 });
         }
         entries.push({ key: file, value });
     }
