@@ -115,6 +115,17 @@ async function handleAdmin(request, env) {
     if (url.pathname === '/admin/keys' && request.method === 'GET') {
         return adminKeys(env);
     }
+    if (url.pathname === '/admin/get' && request.method === 'GET') {
+        const key = url.searchParams.get('key');
+        return adminGet(env, key);
+    }
+    if (url.pathname === '/admin/put' && request.method === 'PUT') {
+        return adminPut(env, request);
+    }
+    if (url.pathname === '/admin/delete' && request.method === 'DELETE') {
+        const key = url.searchParams.get('key');
+        return adminDelete(env, key);
+    }
     return new Response('Not Found', { status: 404 });
 }
 
@@ -181,6 +192,66 @@ async function adminKeys(env) {
     try {
         const keys = await fetchExistingKeysCF(env);
         return new Response(JSON.stringify({ keys }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}
+
+async function adminGet(env, key) {
+    if (!key) {
+        return new Response('Missing key parameter', { status: 400 });
+    }
+    try {
+        const value = await env.iris_rag_kv.get(key);
+        if (value === null) {
+            return new Response('Not Found', { status: 404 });
+        }
+        return new Response(JSON.stringify({ key, value }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}
+
+async function adminPut(env, request) {
+    try {
+        const { key, value } = await request.json();
+        if (!key || typeof value === 'undefined') {
+            return new Response('Missing key or value', { status: 400 });
+        }
+        try {
+            JSON.parse(value);
+        } catch (err) {
+            return new Response('Невалиден JSON', { status: 400 });
+        }
+        await env.iris_rag_kv.put(key, value);
+        return new Response(JSON.stringify({ ok: true }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}
+
+async function adminDelete(env, key) {
+    if (!key) {
+        return new Response('Missing key parameter', { status: 400 });
+    }
+    try {
+        await env.iris_rag_kv.delete(key);
+        return new Response(JSON.stringify({ deleted: key }), {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (err) {
