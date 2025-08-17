@@ -209,8 +209,9 @@ async function adminPut(env, request) {
         } catch (err) {
             return new Response('Невалиден JSON', { status: 400 });
         }
+        const exists = await env.iris_rag_kv.get(key);
         await env.iris_rag_kv.put(key, value);
-        return new Response(JSON.stringify({ ok: true }), {
+        return new Response(JSON.stringify({ ok: true, created: !exists }), {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (err) {
