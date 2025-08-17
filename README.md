@@ -70,10 +70,18 @@ const base64 = await fileToBase64(largeFile); // автоматично комп
 В директорията [`KV`](KV/) се съхраняват всички ключове и стойности, които трябва да бъдат налични в пространството **`iris_rag_kv`**. За да ги качите:
 
 ```bash
+cp .env.example .env
+# попълнете стойностите в .env
+npm run sync-kv
+```
+
+Скриптът автоматично зарежда променливите от `.env` файл чрез [dotenv](https://github.com/motdotla/dotenv). Алтернативно, може да зададете променливите през shell:
+
+```bash
 export CF_ACCOUNT_ID="<your-account-id>"
 export CF_KV_NAMESPACE_ID="<namespace-id>"
 export CF_API_TOKEN="<api-token>"
-npm run upload-kv
+npm run sync-kv
 ```
 
 Скриптът използва [Cloudflare KV Bulk API](https://developers.cloudflare.com/api/operations/kv-namespace-write-multiple-key-value-pairs) и качва съдържанието на всички файлове в `KV` директорията. При неуспех се извежда описателна грешка.
@@ -83,9 +91,16 @@ npm run upload-kv
 Примерна сесия:
 
 ```bash
-npm run upload-kv
+npm run sync-kv
 # Ще бъдат обновени ключове: SIGN_IRIS_RING_CONTRACTION_FURROWS
 # Ще бъдат изтрити ключове: OLD_KEY
+```
+
+За изпълнение на пълен деплой с автоматична синхронизация на KV, използвайте.
+Преди това се уверете, че `CF_ACCOUNT_ID`, `CF_KV_NAMESPACE_ID` и `CF_API_TOKEN` са зададени:
+
+```bash
+npm run deploy
 ```
 
 Така директорията `KV/` служи като източник на истина за съдържанието в Cloudflare KV и позволява синхронизация само с една команда.

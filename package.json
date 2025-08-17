@@ -5,11 +5,15 @@
   "main": "worker.js",
   "scripts": {
     "test": "node worker.test.js",
-    "upload-kv": "node upload-kv.js"
+    "upload-kv": "node upload-kv.js",
+    "sync-kv": "node upload-kv.js",
+    "deploy": "npm run sync-kv && wrangler publish"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
-  "dependencies": {}
+  "dependencies": {
+    "dotenv": "^17.2.1"
+  }
 }
