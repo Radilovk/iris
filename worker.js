@@ -13,6 +13,7 @@ const ROLE_PROMPT = `
    - "dispositions": предразположения и тенденции;
    - "signs": конкретни наблюдавани знаци;
    - "recommendations": общи насоки за баланс и профилактика.
+   - "holistic_analysis": пълен свободен анализ с вероятности и съвети.
 3. Използвай единствено информацията от входните данни и RAG.
 4. Ако липсва информация, заяви го изрично и не прави предположения.
 5. Не поставяй медицински диагнози и не предписвай лечение; формулирай анализите като образователни насоки.
@@ -67,7 +68,7 @@ const SYNTHESIS_PROMPT_TEMPLATE = `
 {{RAG_DATA}}
 --- КРАЙ НА RAG ДАННИТЕ ---
 
-Моля, използвай RAG данните като основен източник на истина за твоя анализ. Сега, генерирай финалния JSON доклад.
+Моля, използвай RAG данните като основен източник на истина за твоя анализ. Освен стандартните ключове, върни и поле "holistic_analysis", което представлява свободен анализ без ограничения от RAG, но при нужда можеш да ги цитираш. Сега, генерирай финалния JSON доклад.
 `;
 
 // --- ОСНОВЕН КОНТРОЛЕР ---
@@ -332,7 +333,27 @@ async function handleAnalysisRequest(request, env) {
         const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: ROLE_PROMPT }, leftEyeBase64, rightEyeBase64, env, true);
         log("Финален анализ е генериран успешно.");
 
-        return new Response(finalAnalysis, { headers: corsHeaders(request, env, {'Content-Type': 'application/json; charset=utf-8'}) });
+        let parsedAnalysis;
+        try {
+            parsedAnalysis = JSON.parse(finalAnalysis);
+            if (typeof parsedAnalysis.holistic_analysis !== 'string') {
+                throw new Error("AI върна анализ без поле 'holistic_analysis'.");
+            }
+        } catch (e) {
+            log("Суров отговор от AI при грешка в парсването на финалния анализ:", finalAnalysis);
+            throw e;
+        }
+
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem('lastAnalysis', JSON.stringify(parsedAnalysis));
+                localStorage.setItem('holistic_analysis', parsedAnalysis.holistic_analysis);
+            } catch (e) {
+                log('Неуспешен запис в localStorage:', e.message);
+            }
+        }
+
+        return new Response(JSON.stringify(parsedAnalysis), { headers: corsHeaders(request, env, {'Content-Type': 'application/json; charset=utf-8'}) });
 
     } catch (error) {
         console.error("Критична грешка в handleAnalysisRequest:", error.stack);
