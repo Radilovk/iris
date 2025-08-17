@@ -1,3 +1,5 @@
+import { validateKv, syncKv } from "./kv-sync.js";
+
 // Инлайн на ROLE_PROMPT, за да няма външни зависимости при деплой
 const ROLE_PROMPT = `
 # РОЛЯ И ЦЕЛ
@@ -180,30 +182,28 @@ async function adminSync(env, request) {
     try {
         data = await request.json();
     } catch {
-        return new Response('Невалиден JSON', { status: 400, headers: corsHeaders(request, env) });
+        return new Response("Невалиден JSON", { status: 400, headers: corsHeaders(request, env) });
     }
 
-    const files = Object.keys(data);
-    const { keys } = await env.iris_rag_kv.list({ limit: 1000 });
-    const existingKeys = keys.map(k => k.name);
-    const toDelete = existingKeys.filter(k => !files.includes(k));
-
-    for (const file of files) {
-        const value = data[file];
-        try {
-            JSON.parse(value);
-        } catch {
-            return new Response(`Невалиден JSON в ${file}`, { status: 400, headers: corsHeaders(request, env) });
-        }
-        await env.iris_rag_kv.put(file, value);
-    }
-    for (const key of toDelete) {
-        await env.iris_rag_kv.delete(key);
+    let entries;
+    try {
+        entries = validateKv(data);
+    } catch (err) {
+        return new Response(err.message, { status: 400, headers: corsHeaders(request, env) });
     }
 
-    return new Response(JSON.stringify({ updated: files, deleted: toDelete }), {
-        headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
-    });
+    try {
+        const result = await syncKv(entries, {
+            accountId: env.CF_ACCOUNT_ID,
+            namespaceId: env.CF_KV_NAMESPACE_ID,
+            apiToken: env.CF_API_TOKEN
+        });
+        return new Response(JSON.stringify(result), {
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
+        });
+    } catch (err) {
+        return new Response(err.message, { status: 500, headers: corsHeaders(request, env) });
+    }
 }
 
 async function adminKeys(env, request) {

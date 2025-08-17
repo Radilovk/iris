@@ -71,17 +71,33 @@ test('/admin/keys изисква Basic Auth', async () => {
   assert.deepEqual(await resAuth.json(), { keys: [] });
 });
 
+
 test('/admin/sync синхронизира данни', async () => {
   const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
   const store = {};
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    const u = typeof url === 'string' ? new URL(url) : url;
+    if (u.pathname.endsWith('/keys')) {
+      return new Response(JSON.stringify({ result: Object.keys(store).map(name => ({ name })), result_info: { list_complete: true } }), { status: 200 });
+    }
+    if (u.pathname.endsWith('/bulk')) {
+      const body = JSON.parse(options.body);
+      for (const entry of body) {
+        if (entry.delete) delete store[entry.key];
+        else store[entry.key] = entry.value;
+      }
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    }
+    return new Response('not found', { status: 404 });
+  };
+
   const env = {
     ADMIN_USER: 'admin',
     ADMIN_PASS: 'pass',
-    iris_rag_kv: {
-      list: async () => ({ keys: [] }),
-      put: async (k, v) => { store[k] = v; },
-      delete: async k => { delete store[k]; }
-    }
+    CF_ACCOUNT_ID: 'acc',
+    CF_KV_NAMESPACE_ID: 'ns',
+    CF_API_TOKEN: 'token'
   };
   const req = new Request('https://example.com/admin/sync', {
     method: 'POST',
@@ -89,6 +105,7 @@ test('/admin/sync синхронизира данни', async () => {
     body: JSON.stringify(KV_DATA)
   });
   const res = await worker.fetch(req, env);
+  globalThis.fetch = originalFetch;
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.deleted.length, 0);
@@ -96,3 +113,4 @@ test('/admin/sync синхронизира данни', async () => {
   assert.deepEqual(body.updated.sort(), expectedKeys);
   assert.deepEqual(Object.keys(store).sort(), expectedKeys);
 });
+
