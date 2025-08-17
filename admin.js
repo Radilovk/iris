@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewer = document.getElementById('kv-viewer');
   const loadingEl = document.getElementById('loading');
   const messageBox = document.getElementById('message-box');
+  const diffModal = document.getElementById('diff-modal');
+  const diffAdded = document.getElementById('diff-added');
+  const diffChanged = document.getElementById('diff-changed');
+  const diffDeleted = document.getElementById('diff-deleted');
+  const confirmBtn = document.getElementById('confirm-sync');
+  const cancelBtn = document.getElementById('cancel-sync');
 
   function showLoading() {
     loadingEl.style.display = 'flex';
@@ -18,6 +24,32 @@ document.addEventListener('DOMContentLoaded', () => {
   function showMessage(msg, type = 'error') {
     messageBox.textContent = msg;
     messageBox.className = type === 'error' ? 'error-box' : 'success-box';
+  }
+
+  function renderDiffList(el, items) {
+    el.innerHTML = '';
+    if (!items.length) {
+      const li = document.createElement('li');
+      li.textContent = '(няма)';
+      el.appendChild(li);
+    } else {
+      items.forEach(k => {
+        const li = document.createElement('li');
+        li.textContent = k;
+        el.appendChild(li);
+      });
+    }
+  }
+
+  function showDiffModal(diff) {
+    renderDiffList(diffAdded, diff.added);
+    renderDiffList(diffChanged, diff.changed);
+    renderDiffList(diffDeleted, diff.deleted);
+    diffModal.style.display = 'flex';
+  }
+
+  function hideDiffModal() {
+    diffModal.style.display = 'none';
   }
 
   async function loadKeys() {
@@ -59,6 +91,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   syncBtn.addEventListener('click', async () => {
     syncBtn.disabled = true;
+    showLoading();
+    try {
+      const res = await fetch('/admin/diff', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(KV_DATA)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const diff = await res.json();
+      showDiffModal(diff);
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
+      syncBtn.disabled = false;
+    } finally {
+      hideLoading();
+    }
+  });
+
+  confirmBtn.addEventListener('click', async () => {
+    hideDiffModal();
+    showLoading();
     try {
       const res = await fetch('/admin/sync', {
         method: 'POST',
@@ -73,8 +127,14 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showMessage('Грешка: ' + err.message);
     } finally {
+      hideLoading();
       syncBtn.disabled = false;
     }
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    hideDiffModal();
+    syncBtn.disabled = false;
   });
 
   loadKeys();

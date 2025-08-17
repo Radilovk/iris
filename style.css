@@ -78,6 +78,33 @@ body {
     color: var(--primary-color);
 }
 
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+}
+
+.diff-section { margin-bottom: 1rem; }
+.diff-section ul { list-style: disc; margin-left: 1.5rem; }
+
+.modal-actions { text-align: right; margin-top: 1rem; }
+.modal-actions button { margin-left: 0.5rem; }
+
 /* =============================================== */
 /* === ОСНОВНА СТРАНИЦА (HERO & FORM) === */
 /* =============================================== */

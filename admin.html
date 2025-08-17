@@ -22,6 +22,27 @@
     <pre id="kv-viewer" class="admin-viewer" style="display:none;"></pre>
     <div id="message-box"></div>
   </div>
+  <div id="diff-modal" class="modal">
+    <div class="modal-content">
+      <h3>Разлики в KV</h3>
+      <div class="diff-section">
+        <strong>Нови ключове</strong>
+        <ul id="diff-added"></ul>
+      </div>
+      <div class="diff-section">
+        <strong>Променени ключове</strong>
+        <ul id="diff-changed"></ul>
+      </div>
+      <div class="diff-section">
+        <strong>Изтрити ключове</strong>
+        <ul id="diff-deleted"></ul>
+      </div>
+      <div class="modal-actions">
+        <button id="confirm-sync" class="cta-button">Потвърди</button>
+        <button id="cancel-sync" class="cta-button" style="background:#ccc;">Отказ</button>
+      </div>
+    </div>
+  </div>
   <script type="module" src="admin.js"></script>
 </body>
 </html>

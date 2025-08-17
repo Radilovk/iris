@@ -106,6 +106,9 @@ async function handleAdmin(request, env) {
     }
 
     const url = new URL(request.url);
+    if (url.pathname === '/admin/diff' && request.method === 'POST') {
+        return adminDiff(env, request);
+    }
     if (url.pathname === '/admin/sync' && request.method === 'POST') {
         return adminSync(env, request);
     }
@@ -131,6 +134,45 @@ function verifyBasicAuth(request, env) {
     const pass = env.ADMIN_PASS || 'admin';
     const expected = 'Basic ' + toBase64(`${user}:${pass}`);
     return request.headers.get('Authorization') === expected;
+}
+
+async function adminDiff(env, request) {
+    let data;
+    try {
+        data = await request.json();
+    } catch {
+        return new Response('Невалиден JSON', { status: 400 });
+    }
+
+    const files = Object.keys(data);
+    const { keys } = await env.iris_rag_kv.list({ limit: 1000 });
+    const existingKeys = keys.map(k => k.name);
+
+    const added = [];
+    const changed = [];
+
+    for (const file of files) {
+        const value = data[file];
+        try {
+            JSON.parse(value);
+        } catch {
+            return new Response(`Невалиден JSON в ${file}`, { status: 400 });
+        }
+        if (!existingKeys.includes(file)) {
+            added.push(file);
+        } else {
+            const current = await env.iris_rag_kv.get(file);
+            if (current !== value) {
+                changed.push(file);
+            }
+        }
+    }
+
+    const deleted = existingKeys.filter(k => !files.includes(k));
+
+    return new Response(JSON.stringify({ added, changed, deleted }), {
+        headers: { 'Content-Type': 'application/json' }
+    });
 }
 
 async function adminSync(env, request) {
