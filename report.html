@@ -78,13 +78,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 const config = reportSectionsConfig[key];
                 const wrapper = config.collapsible ? document.createElement('details') : document.createElement('div');
                 wrapper.className = 'report-section';
+                if (key === 'holistic_analysis') {
+                    wrapper.classList.add('holistic');
+                }
 
                 let contentContainer = wrapper;
                 if (config.collapsible) {
                     const summary = document.createElement('summary');
                     summary.innerHTML = `<i class="fas ${config.icon}"></i> ${config.title}`;
+                    const contentId = `${key}-content`;
+                    summary.setAttribute('aria-controls', contentId);
+                    summary.setAttribute('aria-expanded', 'false');
                     wrapper.appendChild(summary);
                     contentContainer = document.createElement('div');
+                    contentContainer.id = contentId;
+                    wrapper.addEventListener('toggle', () => {
+                        summary.setAttribute('aria-expanded', wrapper.open ? 'true' : 'false');
+                    });
                     wrapper.appendChild(contentContainer);
                 } else {
                     const titleEl = document.createElement('h3');
