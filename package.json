@@ -5,7 +5,8 @@
   "main": "worker.js",
   "scripts": {
     "test": "node worker.test.js",
-    "upload-kv": "node upload-kv.js"
+    "upload-kv": "node upload-kv.js",
+    "test:kv": "node scripts/validate-kv.js"
   },
   "keywords": [],
   "author": "",
