@@ -19,8 +19,16 @@ test('fileToBase64 работи за малък файл', async () => {
 test('corsHeaders поддържа wildcard "*"', () => {
   const request = new Request('https://api.example', { headers: { Origin: 'https://myapp.example' }});
   const headers = corsHeaders(request, { allowed_origin: '*' });
-  assert.equal(headers.get('Access-Control-Allow-Origin'), '*');
-  assert.equal(headers.get('Vary'), null);
+  assert.equal(headers.get('Access-Control-Allow-Origin'), 'https://myapp.example');
+  assert.equal(headers.get('Vary'), 'Origin');
+});
+
+test('corsHeaders добавя Allow-Credentials при Authorization', () => {
+  const request = new Request('https://api.example', {
+    headers: { Origin: 'https://myapp.example', Authorization: 'Basic abc' }
+  });
+  const headers = corsHeaders(request, { allowed_origin: '*' });
+  assert.equal(headers.get('Access-Control-Allow-Credentials'), 'true');
 });
 
 test('corsHeaders позволява конкретен домейн', () => {

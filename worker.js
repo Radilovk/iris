@@ -481,27 +481,40 @@ function handleOptions(request, env) {
     return new Response(null, { headers: corsHeaders(request, env) });
 }
 
+// Връща коректни CORS заглавки. Поддържа креденшъли при нужда.
 function corsHeaders(request, env = {}, additionalHeaders = {}) {
     const requestOrigin = request.headers.get("Origin");
 
     // Cloudflare secrets са низове, затова използваме split.
     // Позволява множество разрешени адреси, разделени със запетая.
     const allowedOrigins = (env.ALLOWED_ORIGINS || env.allowed_origin || "*").split(",");
-    
+
     let origin = "null"; // По подразбиране блокираме
-    if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    if (allowedOrigins.includes("*")) {
+        // При wildcard връщаме конкретния Origin, за да позволим креденшъли
+        origin = requestOrigin || "null";
+    } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
         origin = requestOrigin;
-    } else if (allowedOrigins.includes("*")) {
-        origin = "*";
     }
-    
-    // КОРЕКЦИЯ #2: Използваме динамично определения 'origin'
+
     const headers = {
         "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         ...additionalHeaders,
     };
+
+    // Ако заявката носи креденшъли (Authorization/Cookie), ги позволяваме
+    const needsCredentials =
+        request.headers.get("Authorization") ||
+        request.headers.get("Cookie") ||
+        ((request.headers.get("Access-Control-Request-Headers") || "")
+            .split(",")
+            .map(h => h.trim().toLowerCase())
+            .includes("authorization"));
+    if (needsCredentials && origin !== "null") {
+        headers["Access-Control-Allow-Credentials"] = "true";
+    }
 
     if (origin !== "*") {
         headers["Vary"] = "Origin";
