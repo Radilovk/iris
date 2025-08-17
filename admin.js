@@ -3,6 +3,7 @@ import { WORKER_BASE_URL } from './config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const syncBtn = document.getElementById('sync-btn');
+  const uploadBtn = document.getElementById('upload-btn');
   const listEl = document.getElementById('kv-list');
   const viewer = document.getElementById('kv-viewer');
   const loadingEl = document.getElementById('loading');
@@ -106,6 +107,25 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showMessage('Грешка: ' + err.message);
       syncBtn.disabled = false;
+    } finally {
+      hideLoading();
+    }
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    showLoading();
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(KV_DATA)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showMessage('Ключовете са качени успешно', 'success');
+      await loadKeys();
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
     } finally {
       hideLoading();
     }
