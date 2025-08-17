@@ -1,3 +1,5 @@
+import { KV_DATA } from './kv-data.js';
+
 // Инлайн на ROLE_PROMPT, за да няма външни зависимости при деплой
 const ROLE_PROMPT = `
 # РОЛЯ И ЦЕЛ
@@ -31,6 +33,11 @@ function debugLog(env = {}, ...args) {
     if (env.DEBUG === "true") {
         console.log("[DEBUG]", ...args);
     }
+}
+
+function toBase64(str) {
+    if (typeof btoa !== 'undefined') return btoa(str);
+    return Buffer.from(str, 'utf8').toString('base64');
 }
 
 // --- ПРОМПТОВЕ ---
@@ -72,6 +79,9 @@ export default {
         }
 
         const url = new URL(request.url);
+        if (url.pathname.startsWith('/admin')) {
+            return handleAdmin(request, env);
+        }
         if (request.method === "POST" && url.pathname === "/analyze") {
             return handleAnalysisRequest(request, env);
         }
@@ -81,6 +91,130 @@ export default {
         });
     },
 };
+
+async function handleAdmin(request, env) {
+    if (!verifyBasicAuth(request, env)) {
+        return new Response('Unauthorized', {
+            status: 401,
+            headers: { 'WWW-Authenticate': 'Basic realm="Admin"' }
+        });
+    }
+
+    if (env.ADMIN_IPS) {
+        const ip = request.headers.get('CF-Connecting-IP');
+        const allowed = env.ADMIN_IPS.split(',').map(i => i.trim());
+        if (!ip || !allowed.includes(ip)) {
+            return new Response('Forbidden', { status: 403 });
+        }
+    }
+
+    const url = new URL(request.url);
+    if (url.pathname === '/admin/sync' && request.method === 'POST') {
+        return adminSync(env);
+    }
+    if (url.pathname === '/admin/keys' && request.method === 'GET') {
+        return adminKeys(env);
+    }
+    return new Response('Not Found', { status: 404 });
+}
+
+function verifyBasicAuth(request, env) {
+    const user = env.ADMIN_USER || 'admin';
+    const pass = env.ADMIN_PASS || 'admin';
+    const expected = 'Basic ' + toBase64(`${user}:${pass}`);
+    return request.headers.get('Authorization') === expected;
+}
+
+async function adminSync(env) {
+    const { CF_ACCOUNT_ID, CF_KV_NAMESPACE_ID, CF_API_TOKEN } = env;
+    if (!CF_ACCOUNT_ID || !CF_KV_NAMESPACE_ID || !CF_API_TOKEN) {
+        return new Response('Липсват CF_* променливи.', { status: 500 });
+    }
+
+    const verify = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+        headers: { 'Authorization': `Bearer ${CF_API_TOKEN}` }
+    });
+    if (!verify.ok) {
+        const text = await verify.text();
+        return new Response(text, { status: 500 });
+    }
+
+    const files = Object.keys(KV_DATA);
+    const existingKeys = await fetchExistingKeysCF(env);
+    const toDelete = existingKeys.filter(k => !files.includes(k));
+
+    const entries = [];
+    for (const file of files) {
+        const value = KV_DATA[file];
+        try {
+            JSON.parse(value);
+        } catch (err) {
+            return new Response(`Невалиден JSON в ${file}`, { status: 500 });
+        }
+        entries.push({ key: file, value });
+    }
+    for (const key of toDelete) {
+        entries.push({ key, delete: true });
+    }
+
+    const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NAMESPACE_ID}/bulk`;
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${CF_API_TOKEN}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(entries)
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        return new Response(text, { status: 500 });
+    }
+
+    return new Response(JSON.stringify({ updated: files, deleted: toDelete }), {
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+
+async function adminKeys(env) {
+    try {
+        const keys = await fetchExistingKeysCF(env);
+        return new Response(JSON.stringify({ keys }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}
+
+async function fetchExistingKeysCF(env) {
+    const { CF_ACCOUNT_ID, CF_KV_NAMESPACE_ID, CF_API_TOKEN } = env;
+    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NAMESPACE_ID}/keys`;
+    const keys = [];
+    let cursor;
+    do {
+        const params = new URLSearchParams({ limit: '1000' });
+        if (cursor) params.set('cursor', cursor);
+        const res = await fetch(`${baseUrl}?${params.toString()}`, {
+            headers: { 'Authorization': `Bearer ${CF_API_TOKEN}` }
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Неуспешно извличане на ключове: ${text}`);
+        }
+        const data = await res.json();
+        keys.push(...data.result.map(k => k.name));
+        cursor = data.result_info?.cursor;
+        if (data.result_info?.cursor === undefined || data.result_info?.list_complete) {
+            cursor = null;
+        }
+    } while (cursor);
+    return keys;
+}
 
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
 async function handleAnalysisRequest(request, env) {
