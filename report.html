@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', function () {
         "constitution": { title: "Конституционални Характеристики", icon: "fa-shield-halved" },
         "dispositions": { title: "Предразположения и Тенденции", icon: "fa-chart-line" },
         "signs": { title: "Конкретни Наблюдавани Знаци", icon: "fa-magnifying-glass-chart" },
-        "recommendations": { title: "Препоръки за Баланс и Профилактика", icon: "fa-seedling" }
+        "recommendations": { title: "Препоръки за Баланс и Профилактика", icon: "fa-seedling" },
+        "holistic_analysis": { title: "Холистичен Анализ", icon: "fa-brain", collapsible: true }
     };
 
     // Обвиваме логиката в setTimeout, за да позволим на анимациите да се покажат
@@ -73,14 +74,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     disclaimer = value;
                     return; // Не го рендираме като нормална секция
                 }
-                
-                const config = reportSectionsConfig[key];
-                const sectionEl = document.createElement('div');
-                sectionEl.className = 'report-section';
 
-                const titleEl = document.createElement('h3');
-                titleEl.innerHTML = `<i class="fas ${config.icon}"></i> ${config.title}`;
-                sectionEl.appendChild(titleEl);
+                const config = reportSectionsConfig[key];
+                const wrapper = config.collapsible ? document.createElement('details') : document.createElement('div');
+                wrapper.className = 'report-section';
+
+                let contentContainer = wrapper;
+                if (config.collapsible) {
+                    const summary = document.createElement('summary');
+                    summary.innerHTML = `<i class="fas ${config.icon}"></i> ${config.title}`;
+                    wrapper.appendChild(summary);
+                    contentContainer = document.createElement('div');
+                    wrapper.appendChild(contentContainer);
+                } else {
+                    const titleEl = document.createElement('h3');
+                    titleEl.innerHTML = `<i class="fas ${config.icon}"></i> ${config.title}`;
+                    wrapper.appendChild(titleEl);
+                }
 
                 // **КЛЮЧОВО ПОДОБРЕНИЕ:** Правилно обработваме масиви и низове
                 if (Array.isArray(value)) {
@@ -104,24 +114,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         listEl.appendChild(listItemEl);
                     });
-                    sectionEl.appendChild(listEl);
+                    contentContainer.appendChild(listEl);
                 } else if (typeof value === 'object') {
                     const contentEl = document.createElement('p');
                     contentEl.textContent = DOMPurify.sanitize(value.text || value.content || '');
-                    sectionEl.appendChild(contentEl);
+                    contentContainer.appendChild(contentEl);
                     if (value.source) {
                         const sourceEl = document.createElement('p');
                         sourceEl.className = 'item-source';
                         sourceEl.textContent = `Източник: ${DOMPurify.sanitize(value.source)}`;
-                        sectionEl.appendChild(sourceEl);
+                        contentContainer.appendChild(sourceEl);
                     }
                 } else if (typeof value === 'string') {
                     const contentEl = document.createElement('p');
                     contentEl.textContent = value;
-                    sectionEl.appendChild(contentEl);
+                    contentContainer.appendChild(contentEl);
                 }
-                
-                reportCard.appendChild(sectionEl);
+
+                reportCard.appendChild(wrapper);
             });
 
             // Добавяме дисклеймъра накрая в специален стил
