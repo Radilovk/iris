@@ -70,6 +70,14 @@ const base64 = await fileToBase64(largeFile); // автоматично комп
 В директорията [`KV`](KV/) се съхраняват всички ключове и стойности, които трябва да бъдат налични в пространството **`iris_rag_kv`**. За да ги качите:
 
 ```bash
+cp .env.example .env
+# попълнете стойностите в .env
+npm run sync-kv
+```
+
+Скриптът автоматично зарежда променливите от `.env` файл чрез [dotenv](https://github.com/motdotla/dotenv). Алтернативно, може да зададете променливите през shell:
+
+```bash
 export CF_ACCOUNT_ID="<your-account-id>"
 export CF_KV_NAMESPACE_ID="<namespace-id>"
 export CF_API_TOKEN="<api-token>"
