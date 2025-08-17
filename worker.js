@@ -84,7 +84,7 @@ export default {
         }
 
         return new Response("Добре дошли в Iris-Holistica AI Backend v2.3 (Active RAG)!", {
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+            headers: corsHeaders(request, env, { 'Content-Type': 'text/plain; charset=utf-8' }),
         });
     },
 };
@@ -93,7 +93,7 @@ async function handleAdmin(request, env) {
     if (!verifyBasicAuth(request, env)) {
         return new Response('Unauthorized', {
             status: 401,
-            headers: { 'WWW-Authenticate': 'Basic realm="Admin"' }
+            headers: corsHeaders(request, env, { 'WWW-Authenticate': 'Basic realm="Admin"' })
         });
     }
 
@@ -101,7 +101,7 @@ async function handleAdmin(request, env) {
         const ip = request.headers.get('CF-Connecting-IP');
         const allowed = env.ADMIN_IPS.split(',').map(i => i.trim());
         if (!ip || !allowed.includes(ip)) {
-            return new Response('Forbidden', { status: 403 });
+            return new Response('Forbidden', { status: 403, headers: corsHeaders(request, env) });
         }
     }
 
@@ -113,20 +113,20 @@ async function handleAdmin(request, env) {
         return adminSync(env, request);
     }
     if (url.pathname === '/admin/keys' && request.method === 'GET') {
-        return adminKeys(env);
+        return adminKeys(env, request);
     }
     if (url.pathname === '/admin/get' && request.method === 'GET') {
         const key = url.searchParams.get('key');
-        return adminGet(env, key);
+        return adminGet(env, request, key);
     }
     if (url.pathname === '/admin/put' && request.method === 'PUT') {
         return adminPut(env, request);
     }
     if (url.pathname === '/admin/delete' && request.method === 'DELETE') {
         const key = url.searchParams.get('key');
-        return adminDelete(env, key);
+        return adminDelete(env, request, key);
     }
-    return new Response('Not Found', { status: 404 });
+    return new Response('Not Found', { status: 404, headers: corsHeaders(request, env) });
 }
 
 function verifyBasicAuth(request, env) {
@@ -141,7 +141,7 @@ async function adminDiff(env, request) {
     try {
         data = await request.json();
     } catch {
-        return new Response('Невалиден JSON', { status: 400 });
+        return new Response('Невалиден JSON', { status: 400, headers: corsHeaders(request, env) });
     }
 
     const files = Object.keys(data);
@@ -156,7 +156,7 @@ async function adminDiff(env, request) {
         try {
             JSON.parse(value);
         } catch {
-            return new Response(`Невалиден JSON в ${file}`, { status: 400 });
+            return new Response(`Невалиден JSON в ${file}`, { status: 400, headers: corsHeaders(request, env) });
         }
         if (!existingKeys.includes(file)) {
             added.push(file);
@@ -171,7 +171,7 @@ async function adminDiff(env, request) {
     const deleted = existingKeys.filter(k => !files.includes(k));
 
     return new Response(JSON.stringify({ added, changed, deleted }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
     });
 }
 
@@ -180,7 +180,7 @@ async function adminSync(env, request) {
     try {
         data = await request.json();
     } catch {
-        return new Response('Невалиден JSON', { status: 400 });
+        return new Response('Невалиден JSON', { status: 400, headers: corsHeaders(request, env) });
     }
 
     const files = Object.keys(data);
@@ -193,7 +193,7 @@ async function adminSync(env, request) {
         try {
             JSON.parse(value);
         } catch {
-            return new Response(`Невалиден JSON в ${file}`, { status: 400 });
+            return new Response(`Невалиден JSON в ${file}`, { status: 400, headers: corsHeaders(request, env) });
         }
         await env.iris_rag_kv.put(file, value);
     }
@@ -202,40 +202,40 @@ async function adminSync(env, request) {
     }
 
     return new Response(JSON.stringify({ updated: files, deleted: toDelete }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
     });
 }
 
-async function adminKeys(env) {
+async function adminKeys(env, request) {
     try {
         const { keys } = await env.iris_rag_kv.list({ limit: 1000 });
         return new Response(JSON.stringify({ keys: keys.map(k => k.name) }), {
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     }
 }
 
-async function adminGet(env, key) {
+async function adminGet(env, request, key) {
     if (!key) {
-        return new Response('Missing key parameter', { status: 400 });
+        return new Response('Missing key parameter', { status: 400, headers: corsHeaders(request, env) });
     }
     try {
         const value = await env.iris_rag_kv.get(key);
         if (value === null) {
-            return new Response('Not Found', { status: 404 });
+            return new Response('Not Found', { status: 404, headers: corsHeaders(request, env) });
         }
         return new Response(JSON.stringify({ key, value }), {
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     }
 }
@@ -244,39 +244,39 @@ async function adminPut(env, request) {
     try {
         const { key, value } = await request.json();
         if (!key || typeof value === 'undefined') {
-            return new Response('Missing key or value', { status: 400 });
+            return new Response('Missing key or value', { status: 400, headers: corsHeaders(request, env) });
         }
         try {
             JSON.parse(value);
         } catch (err) {
-            return new Response('Невалиден JSON', { status: 400 });
+            return new Response('Невалиден JSON', { status: 400, headers: corsHeaders(request, env) });
         }
         const exists = await env.iris_rag_kv.get(key);
         await env.iris_rag_kv.put(key, value);
         return new Response(JSON.stringify({ ok: true, created: !exists }), {
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     }
 }
 
-async function adminDelete(env, key) {
+async function adminDelete(env, request, key) {
     if (!key) {
-        return new Response('Missing key parameter', { status: 400 });
+        return new Response('Missing key parameter', { status: 400, headers: corsHeaders(request, env) });
     }
     try {
         await env.iris_rag_kv.delete(key);
         return new Response(JSON.stringify({ deleted: key }), {
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     }
 }
@@ -486,7 +486,7 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
 
     // Cloudflare secrets са низове, затова използваме split.
     // Позволява множество разрешени адреси, разделени със запетая.
-    const allowedOrigins = (env.ALLOWED_ORIGINS || env.allowed_origin || "https://radilovk.github.io").split(",");
+    const allowedOrigins = (env.ALLOWED_ORIGINS || env.allowed_origin || "*").split(",");
     
     let origin = "null"; // По подразбиране блокираме
     if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
@@ -498,7 +498,7 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
     // КОРЕКЦИЯ #2: Използваме динамично определения 'origin'
     const headers = {
         "Access-Control-Allow-Origin": origin,
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         ...additionalHeaders,
     };
