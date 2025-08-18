@@ -90,6 +90,11 @@ test('getAIModel може да чете от env и KV', async () => {
   assert.equal(await getAIModel(env), 'gemini-1.5-flash');
 });
 
+test('getAIModel използва AI_MODEL_EXTENDED при липса на AI_MODEL', async () => {
+  const env = { AI_MODEL_EXTENDED: 'gpt-4o', AI_PROVIDER: 'openai' };
+  assert.equal(await getAIModel(env), 'gpt-4o');
+});
+
 test('Изборът OpenAI/gpt-4o-mini се подава към API', async () => {
   const env = { openai_api_key: 'key' };
   const originalFetch = globalThis.fetch;
@@ -110,6 +115,30 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
     return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
   };
   await callGeminiAPI('gemini-1.5-flash', 'p', {}, 'a', 'b', env, false);
+  globalThis.fetch = originalFetch;
+});
+
+test('callOpenAIAPI изпраща max_tokens', async () => {
+  const env = { openai_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.max_tokens, 77);
+    return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 });
+  };
+  await callOpenAIAPI('gpt-4o', 'p', { max_tokens: 77 }, 'a', 'b', env, false);
+  globalThis.fetch = originalFetch;
+});
+
+test('callGeminiAPI изпраща generationConfig.maxOutputTokens', async () => {
+  const env = { gemini_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.generationConfig.maxOutputTokens, 88);
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
+  };
+  await callGeminiAPI('gemini-1.5-pro', 'p', { maxOutputTokens: 88 }, 'a', 'b', env, false);
   globalThis.fetch = originalFetch;
 });
 
