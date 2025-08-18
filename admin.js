@@ -8,12 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewer = document.getElementById('kv-viewer');
   const loadingEl = document.getElementById('loading');
   const messageBox = document.getElementById('message-box');
-  const diffModal = document.getElementById('diff-modal');
-  const diffAdded = document.getElementById('diff-added');
-  const diffChanged = document.getElementById('diff-changed');
-  const diffDeleted = document.getElementById('diff-deleted');
-  const confirmBtn = document.getElementById('confirm-sync');
-  const cancelBtn = document.getElementById('cancel-sync');
   const promptEditor = document.getElementById('role-prompt');
   const savePromptBtn = document.getElementById('save-prompt');
   const providerSelect = document.getElementById('provider-select');
@@ -167,32 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderDiffList(el, items) {
-    el.innerHTML = '';
-    if (!items.length) {
-      const li = document.createElement('li');
-      li.textContent = '(няма)';
-      el.appendChild(li);
-    } else {
-      items.forEach(k => {
-        const li = document.createElement('li');
-        li.textContent = k;
-        el.appendChild(li);
-      });
-    }
-  }
-
-  function showDiffModal(diff) {
-    renderDiffList(diffAdded, diff.added);
-    renderDiffList(diffChanged, diff.changed);
-    renderDiffList(diffDeleted, diff.deleted);
-    diffModal.style.display = 'flex';
-  }
-
-  function hideDiffModal() {
-    diffModal.style.display = 'none';
-  }
-
   async function loadPrompt() {
     showLoading();
     try {
@@ -343,22 +311,41 @@ document.addEventListener('DOMContentLoaded', () => {
     syncBtn.disabled = true;
     showLoading();
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/admin/diff`, {
+      const diffRes = await fetch(`${WORKER_BASE_URL}/admin/diff`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+          Authorization: 'Basic ' + btoa('admin:admin')
         },
         body: JSON.stringify(KV_DATA)
       });
-      if (!res.ok) throw new Error(await res.text());
-      const diff = await res.json();
-      showDiffModal(diff);
+      if (!diffRes.ok) throw new Error(await diffRes.text());
+      const diff = await diffRes.json();
+      showMessage(
+        `Разлики - нови: ${diff.added.length}, промени: ${diff.changed.length}, изтрити: ${diff.deleted.length}`,
+        'warn'
+      );
+
+      const syncRes = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        },
+        body: JSON.stringify(KV_DATA)
+      });
+      if (!syncRes.ok) throw new Error(await syncRes.text());
+      const result = await syncRes.json();
+      showMessage(
+        `Синхронизирано. Обновени: ${result.updated.length}, изтрити: ${result.deleted.length}`,
+        'success'
+      );
+      await loadKeys();
     } catch (err) {
       showMessage('Грешка: ' + err.message);
-      syncBtn.disabled = false;
     } finally {
       hideLoading();
+      syncBtn.disabled = false;
     }
   });
 
@@ -383,35 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
       uploadBtn.disabled = false;
     }
-  });
-
-  confirmBtn.addEventListener('click', async () => {
-    hideDiffModal();
-    showLoading();
-    try {
-        const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
-        },
-        body: JSON.stringify(KV_DATA)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const result = await res.json();
-      showMessage(`Обновени: ${result.updated.length}, изтрити: ${result.deleted.length}`, 'success');
-      await loadKeys();
-    } catch (err) {
-      showMessage('Грешка: ' + err.message);
-    } finally {
-      hideLoading();
-      syncBtn.disabled = false;
-    }
-  });
-
-  cancelBtn.addEventListener('click', () => {
-    hideDiffModal();
-    syncBtn.disabled = false;
   });
 
   savePromptBtn.addEventListener('click', async () => {
