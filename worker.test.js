@@ -389,8 +389,8 @@ test('fetchRagData използва кеша при второ извикван�
   const store = new Map();
   globalThis.caches = {
     default: {
-      match: async req => store.get(req.url || req) || null,
-      put: async (req, res) => { store.set(req.url || req, res); }
+      match: async req => store.get(req.url) || null,
+      put: async (req, res) => { store.set(req.url, res); }
     }
   };
   let kvCalls = 0;
