@@ -317,6 +317,32 @@ test('/admin/secret/gemini връща наличност на Gemini ключ и
   assert.deepEqual(await resAuth2.json(), { exists: false });
 });
 
+test('/admin/sync връща грешка при липсваща конфигурация', async () => {
+  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
+  const req = new Request('https://example.com/admin/sync', {
+    method: 'POST',
+    headers: { Authorization: auth, 'Content-Type': 'application/json' },
+    body: '{}'
+  });
+  const env = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 500);
+  assert.match(await res.text(), /Липсват конфигурационни променливи/);
+});
+
+test('/admin/diff връща грешка при липсваща конфигурация', async () => {
+  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
+  const req = new Request('https://example.com/admin/diff', {
+    method: 'POST',
+    headers: { Authorization: auth, 'Content-Type': 'application/json' },
+    body: '{}'
+  });
+  const env = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 500);
+  assert.match(await res.text(), /Липсват конфигурационни променливи/);
+});
+
 test('/admin/sync синхронизира данни', async () => {
   const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
   const store = {};

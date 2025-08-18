@@ -282,6 +282,13 @@ function verifyBasicAuth(request, env) {
 }
 
 async function adminDiff(env, request) {
+    const required = ['CF_ACCOUNT_ID', 'CF_KV_NAMESPACE_ID', 'CF_API_TOKEN'];
+    const missing = required.filter(k => !env[k]);
+    if (missing.length) {
+        return new Response(`Липсват конфигурационни променливи: ${missing.join(', ')}`,
+            { status: 500, headers: corsHeaders(request, env) });
+    }
+
     let data;
     try {
         data = await request.json();
@@ -321,6 +328,13 @@ async function adminDiff(env, request) {
 }
 
 async function adminSync(env, request) {
+    const required = ['CF_ACCOUNT_ID', 'CF_KV_NAMESPACE_ID', 'CF_API_TOKEN'];
+    const missing = required.filter(k => !env[k]);
+    if (missing.length) {
+        return new Response(`Липсват конфигурационни променливи: ${missing.join(', ')}`,
+            { status: 500, headers: corsHeaders(request, env) });
+    }
+
     let data;
     try {
         data = await request.json();
