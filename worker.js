@@ -405,12 +405,12 @@ async function handleAnalysisRequest(request, env) {
             throw e;
         }
 
-        if (typeof localStorage !== 'undefined') {
+        if (env.iris_rag_kv) {
             try {
-                localStorage.setItem('lastAnalysis', JSON.stringify(parsedAnalysis));
-                localStorage.setItem('holistic_analysis', parsedAnalysis.holistic_analysis);
+                await env.iris_rag_kv.put('lastAnalysis', JSON.stringify(parsedAnalysis));
+                await env.iris_rag_kv.put('holistic_analysis', parsedAnalysis.holistic_analysis);
             } catch (e) {
-                log('Неуспешен запис в localStorage:', e.message);
+                log('Неуспешен запис в KV:', e.message);
             }
         }
 

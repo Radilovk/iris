@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
+test('Worker не използва браузърни API', () => {
+  assert.equal(typeof globalThis.window, 'undefined');
+  assert.equal(typeof globalThis.document, 'undefined');
+  assert.equal(typeof globalThis.localStorage, 'undefined');
+});
+
 test('resizeImage връща грешка при твърде голям файл', async () => {
   const bigBuffer = Buffer.alloc(6 * 1024 * 1024, 0); // 6MB
   const bigFile = new File([bigBuffer], 'big.jpg', { type: 'image/jpeg' });
