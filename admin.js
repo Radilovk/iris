@@ -101,6 +101,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function hasGeminiKey() {
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/secret/gemini`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        }
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data.exists) {
+        showMessage('Gemini API ключ липсва. Задайте го чрез `wrangler secret put gemini_api_key`.', 'error');
+      }
+      return !!data.exists;
+    } catch {
+      showMessage('Грешка при проверка за Gemini API ключ.', 'error');
+      return false;
+    }
+  }
+
   function showLoading() {
     loadingEl.style.display = 'flex';
   }
@@ -181,6 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(`${WORKER_BASE_URL}/admin/get?key=AI_MODEL`, { headers }),
         hasOpenAIKey()
       ]);
+
+      await hasGeminiKey();
 
       if (optionsRes.status === 404) {
         MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
