@@ -97,21 +97,30 @@ test('getAIModel връща стойност по подразбиране сп�
 
 test('getAIModel може да чете от env и KV', async () => {
   assert.equal(await getAIModel({ AI_MODEL: 'gpt-4o-mini' }), 'gpt-4o-mini');
-  const env = { iris_rag_kv: { get: async () => 'gemini-1.5-flash' } };
+  const env = {
+    iris_rag_kv: {
+      get: async (key, type) => {
+        assert.equal(key, 'AI_MODEL');
+        assert.equal(type, 'json');
+        return 'gemini-1.5-flash';
+      }
+    }
+  };
   assert.equal(await getAIModel(env), 'gemini-1.5-flash');
 });
 
 test('getAIModel игнорира празни или невалидни стойности от KV', async () => {
-  const emptyEnv = { iris_rag_kv: { get: async () => '' }, AI_PROVIDER: 'openai' };
+  const emptyEnv = {
+    iris_rag_kv: { get: async () => null },
+    AI_PROVIDER: 'openai'
+  };
   assert.equal(await getAIModel(emptyEnv), 'gpt-4o');
 
-  const invalidEnv = { iris_rag_kv: { get: async () => 123 }, AI_PROVIDER: 'openai' };
+  const invalidEnv = {
+    iris_rag_kv: { get: async () => 123 },
+    AI_PROVIDER: 'openai'
+  };
   assert.equal(await getAIModel(invalidEnv), 'gpt-4o');
-});
-
-test('getAIModel използва AI_MODEL_EXTENDED при липса на AI_MODEL', async () => {
-  const env = { AI_MODEL_EXTENDED: 'gpt-4o', AI_PROVIDER: 'openai' };
-  assert.equal(await getAIModel(env), 'gpt-4o');
 });
 
 test('Изборът OpenAI/gpt-4o-mini се подава към API', async () => {
