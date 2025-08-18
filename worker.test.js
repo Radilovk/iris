@@ -9,6 +9,11 @@ test('Worker не използва браузърни API', () => {
   assert.equal(typeof globalThis.localStorage, 'undefined');
 });
 
+test('ROLE_PROMPT съдържа инструкция за допълнителни данни', () => {
+  const prompt = JSON.parse(KV_DATA.ROLE_PROMPT).prompt;
+  assert.ok(prompt.includes('Ако липсва информация, опиши какви допълнителни данни са нужни.'));
+});
+
 test('resizeImage връща грешка при твърде голям файл', async () => {
   const bigBuffer = Buffer.alloc(6 * 1024 * 1024, 0); // 6MB
   const bigFile = new File([bigBuffer], 'big.jpg', { type: 'image/jpeg' });
