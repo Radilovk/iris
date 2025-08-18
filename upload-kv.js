@@ -7,6 +7,7 @@ const ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
 const NAMESPACE_ID = process.env.CF_KV_NAMESPACE_ID;
 const API_TOKEN = process.env.CF_API_TOKEN;
 const KV_DIR = path.resolve('KV');
+const REQUIRED_SENTENCE = 'Ако липсва информация, опиши какви допълнителни данни са нужни.';
 
 async function main() {
   if (!ACCOUNT_ID || !NAMESPACE_ID || !API_TOKEN) {
@@ -18,6 +19,10 @@ async function main() {
   const data = {};
   for (const file of files) {
     data[file] = await fs.readFile(path.join(KV_DIR, file), 'utf8');
+  }
+
+  if (data['ROLE_PROMPT'] && !data['ROLE_PROMPT'].includes(REQUIRED_SENTENCE)) {
+    console.warn('ROLE_PROMPT не съдържа новата инструкция.');
   }
 
   try {
