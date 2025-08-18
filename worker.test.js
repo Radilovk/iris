@@ -155,6 +155,27 @@ test('handleAnalysisRequest връща 400 при празен OpenAI API клю
   assert.equal(await res.text(), 'OpenAI API ключът липсва');
 });
 
+test('handleAnalysisRequest връща контролирано съобщение при невалиден AI JSON', async () => {
+  const buf = Buffer.alloc(10, 0);
+  const form = new FormData();
+  form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
+  form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ choices: [{ message: { content: 'няма json' } }] }), { status: 200 });
+
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k' };
+  const res = await worker.fetch(req, env);
+
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.ok(body.error.includes('Очакван JSON масив'));
+
+  globalThis.fetch = originalFetch;
+});
+
 test('/admin/keys изисква Basic Auth', async () => {
   const reqNoAuth = new Request('https://example.com/admin/keys');
   const resNoAuth = await worker.fetch(reqNoAuth, {});
