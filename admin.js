@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function populateProviderOptions(selected) {
     providerSelect.innerHTML = '';
+    if (!Object.keys(MODEL_OPTIONS).length) {
+      MODEL_OPTIONS = { gemini: ['gemini-1.5-pro'] };
+    }
     Object.keys(MODEL_OPTIONS).forEach(p => {
       const opt = document.createElement('option');
       opt.value = p;
@@ -401,9 +404,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   addModelBtn.addEventListener('click', async () => {
-    const provider = providerSelect.value;
+    const provider = providerSelect.value.trim();
+    if (!provider) {
+      showMessage('Моля, изберете доставчик');
+      return;
+    }
     const model = newModelInput.value.trim();
-    if (!model) return;
+    if (!model) {
+      showMessage('Въведете име на модел');
+      return;
+    }
     if (!MODEL_OPTIONS[provider]) MODEL_OPTIONS[provider] = [];
     if (MODEL_OPTIONS[provider].includes(model)) return;
     showLoading();
