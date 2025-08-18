@@ -11,6 +11,16 @@ export function validateKv(data) {
   return entries;
 }
 
+export function groupKeys(entries) {
+  const groups = {};
+  for (const { key } of entries) {
+    const category = key.split(/[:_]/)[0];
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(key);
+  }
+  return groups;
+}
+
 export async function bulkUpload(entries, { accountId, namespaceId, apiToken }) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/bulk`;
   const res = await fetch(url, {
@@ -60,5 +70,6 @@ export async function syncKv(entries, opts) {
   if (uploadEntries.length) {
     await bulkUpload(uploadEntries, { accountId, namespaceId, apiToken });
   }
-  return { updated: keys, deleted: toDelete };
+  const groups = groupKeys(entries);
+  return { updated: keys, deleted: toDelete, groups };
 }
