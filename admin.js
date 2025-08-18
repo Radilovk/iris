@@ -19,23 +19,63 @@ document.addEventListener('DOMContentLoaded', () => {
   const providerSelect = document.getElementById('provider-select');
   const modelSelect = document.getElementById('model-select');
   const saveModelBtn = document.getElementById('save-model');
+  const newModelInput = document.getElementById('new-model');
+  const addModelBtn = document.getElementById('add-model');
+  const modelListEl = document.getElementById('model-list');
 
-  const MODEL_OPTIONS = {
-    gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
-    openai: ['gpt-4o', 'gpt-4o-mini']
-  };
+  let MODEL_OPTIONS = {};
+
+  function populateProviderOptions(selected) {
+    providerSelect.innerHTML = '';
+    Object.keys(MODEL_OPTIONS).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      providerSelect.appendChild(opt);
+    });
+    providerSelect.value = selected && MODEL_OPTIONS[selected]
+      ? selected
+      : Object.keys(MODEL_OPTIONS)[0];
+  }
 
   function populateModelOptions(provider, selected) {
     modelSelect.innerHTML = '';
-    MODEL_OPTIONS[provider].forEach(m => {
+    (MODEL_OPTIONS[provider] || []).forEach(m => {
       const opt = document.createElement('option');
       opt.value = m;
       opt.textContent = m;
       modelSelect.appendChild(opt);
     });
-    modelSelect.value = selected && MODEL_OPTIONS[provider].includes(selected)
+    const first = (MODEL_OPTIONS[provider] || [])[0];
+    modelSelect.value = selected && (MODEL_OPTIONS[provider] || []).includes(selected)
       ? selected
-      : MODEL_OPTIONS[provider][0];
+      : first || '';
+  }
+
+  function renderModelList(provider) {
+    modelListEl.innerHTML = '';
+    (MODEL_OPTIONS[provider] || []).forEach(m => {
+      const li = document.createElement('li');
+      li.textContent = m + ' ';
+      const btn = document.createElement('button');
+      btn.textContent = 'Изтрий';
+      btn.className = 'delete-model';
+      btn.dataset.model = m;
+      li.appendChild(btn);
+      modelListEl.appendChild(li);
+    });
+  }
+
+  async function saveModelOptions() {
+    const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Basic ' + btoa('admin:admin')
+      },
+      body: JSON.stringify({ key: 'MODEL_OPTIONS', value: JSON.stringify(MODEL_OPTIONS) })
+    });
+    if (!res.ok) throw new Error(await res.text());
   }
 
   async function hasOpenAIKey() {
@@ -120,42 +160,49 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadModel() {
     showLoading();
     try {
-      const [providerRes, modelRes, keySet] = await Promise.all([
-        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Basic ' + btoa('admin:admin')
-          }
-        }),
-        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_MODEL`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Basic ' + btoa('admin:admin')
-          }
-        }),
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'Basic ' + btoa('admin:admin')
+      };
+      const [optionsRes, providerRes, modelRes, keySet] = await Promise.all([
+        fetch(`${WORKER_BASE_URL}/admin/get?key=MODEL_OPTIONS`, { headers }),
+        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, { headers }),
+        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_MODEL`, { headers }),
         hasOpenAIKey()
       ]);
 
+      if (!optionsRes.ok) throw new Error(await optionsRes.text());
       if (!providerRes.ok) throw new Error(await providerRes.text());
       if (!modelRes.ok) throw new Error(await modelRes.text());
+
+      const optionsData = await optionsRes.json();
+      MODEL_OPTIONS = JSON.parse(optionsData.value || '{}');
+      if (!Object.keys(MODEL_OPTIONS).length) {
+        MODEL_OPTIONS = {
+          gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
+          openai: ['gpt-4o', 'gpt-4o-mini']
+        };
+      }
+
       const providerData = await providerRes.json();
       const modelData = await modelRes.json();
-      let provider = JSON.parse(providerData.value || '"gemini"');
-      let model = JSON.parse(modelData.value || (provider === 'openai' ? '"gpt-4o"' : '"gemini-1.5-pro"'));
+      let provider = JSON.parse(providerData.value || JSON.stringify(Object.keys(MODEL_OPTIONS)[0] || 'gemini'));
+      let model = JSON.parse(modelData.value || '""');
+      populateProviderOptions(provider);
       const hasKey = keySet;
-
       if (!hasKey) {
         const opt = providerSelect.querySelector('option[value="openai"]');
         if (opt) opt.disabled = true;
         if (provider === 'openai') {
-          provider = 'gemini';
-          model = 'gemini-1.5-pro';
+          provider = Object.keys(MODEL_OPTIONS)[0];
+          model = (MODEL_OPTIONS[provider] || [])[0];
           showMessage('OpenAI API ключ липсва. Задайте го чрез `wrangler secret put openai_api_key`.', 'error');
+          providerSelect.value = provider;
         }
       }
 
-      providerSelect.value = provider;
       populateModelOptions(provider, model);
+      renderModelList(provider);
     } catch (err) {
       showMessage('Грешка при зареждане на модела: ' + err.message);
     } finally {
@@ -336,8 +383,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  addModelBtn.addEventListener('click', async () => {
+    const provider = providerSelect.value;
+    const model = newModelInput.value.trim();
+    if (!model) return;
+    if (!MODEL_OPTIONS[provider]) MODEL_OPTIONS[provider] = [];
+    if (MODEL_OPTIONS[provider].includes(model)) return;
+    showLoading();
+    try {
+      MODEL_OPTIONS[provider].push(model);
+      await saveModelOptions();
+      showMessage('Моделът е добавен', 'success');
+      populateModelOptions(provider, model);
+      renderModelList(provider);
+      newModelInput.value = '';
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+
+  modelListEl.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('delete-model')) {
+      const provider = providerSelect.value;
+      const model = e.target.dataset.model;
+      showLoading();
+      try {
+        MODEL_OPTIONS[provider] = (MODEL_OPTIONS[provider] || []).filter(m => m !== model);
+        await saveModelOptions();
+        showMessage('Моделът е изтрит', 'success');
+        populateModelOptions(provider);
+        renderModelList(provider);
+      } catch (err) {
+        showMessage('Грешка: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+    }
+  });
+
   providerSelect.addEventListener('change', () => {
     populateModelOptions(providerSelect.value);
+    renderModelList(providerSelect.value);
   });
 
   loadPrompt();
