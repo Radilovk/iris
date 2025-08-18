@@ -249,6 +249,9 @@ async function handleAdmin(request, env) {
         const key = url.searchParams.get('key');
         return adminGet(env, request, key);
     }
+    if (url.pathname === '/admin/set' && request.method === 'PUT') {
+        return adminPut(env, request);
+    }
     if (url.pathname === '/admin/put' && request.method === 'PUT') {
         return adminPut(env, request);
     }

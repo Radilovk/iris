@@ -114,6 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
     messageBox.className = type === 'error' ? 'error-box' : 'success-box';
   }
 
+  function normalizeValue(val) {
+    val = val.trim();
+    if (val.startsWith('{') || val.startsWith('[')) {
+      return JSON.stringify(JSON.parse(val));
+    }
+    return JSON.stringify(val);
+  }
+
   function renderDiffList(el, items) {
     el.innerHTML = '';
     if (!items.length) {
@@ -375,24 +383,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const provider = providerSelect.value;
     const model = modelSelect.value;
     showLoading();
+    let providerVal, modelVal;
     try {
-      const res1 = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+      providerVal = normalizeValue(provider);
+      modelVal = normalizeValue(model);
+    } catch (err) {
+      hideLoading();
+      showMessage('Невалиден JSON: ' + err.message);
+      return;
+    }
+    try {
+      const res1 = await fetch(`${WORKER_BASE_URL}/admin/set`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Basic ' + btoa('admin:admin')
         },
-        body: JSON.stringify({ key: 'AI_PROVIDER', value: JSON.stringify(provider) })
+        body: JSON.stringify({ key: 'AI_PROVIDER', value: providerVal })
       });
       if (!res1.ok) throw new Error(await res1.text());
 
-      const res2 = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+      const res2 = await fetch(`${WORKER_BASE_URL}/admin/set`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Basic ' + btoa('admin:admin')
         },
-        body: JSON.stringify({ key: 'AI_MODEL', value: JSON.stringify(model) })
+        body: JSON.stringify({ key: 'AI_MODEL', value: modelVal })
       });
       if (!res2.ok) throw new Error(await res2.text());
       showMessage('Моделът е записан успешно', 'success');
