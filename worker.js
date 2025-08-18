@@ -245,6 +245,12 @@ async function handleAdmin(request, env) {
     if (url.pathname === '/admin/keys' && request.method === 'GET') {
         return adminKeys(env, request);
     }
+    if (url.pathname === '/admin/secret' && request.method === 'GET') {
+        const exists = Boolean(env.openai_api_key || env.OPENAI_API_KEY);
+        return new Response(JSON.stringify({ exists }), {
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
+        });
+    }
     if (url.pathname === '/admin/get' && request.method === 'GET') {
         const key = url.searchParams.get('key');
         return adminGet(env, request, key);

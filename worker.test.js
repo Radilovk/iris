@@ -271,6 +271,29 @@ test('/admin/keys изисква Basic Auth', async () => {
 });
 
 
+test('/admin/secret връща наличност на OpenAI ключ и изисква Basic Auth', async () => {
+  const reqNoAuth = new Request('https://example.com/admin/secret');
+  const resNoAuth = await worker.fetch(reqNoAuth, {});
+  assert.equal(resNoAuth.status, 401);
+
+  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
+  const envWithKey = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass', openai_api_key: 'k' };
+  const reqAuth1 = new Request('https://example.com/admin/secret', {
+    headers: { Authorization: auth }
+  });
+  const resAuth1 = await worker.fetch(reqAuth1, envWithKey);
+  assert.equal(resAuth1.status, 200);
+  assert.deepEqual(await resAuth1.json(), { exists: true });
+
+  const envWithoutKey = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
+  const reqAuth2 = new Request('https://example.com/admin/secret', {
+    headers: { Authorization: auth }
+  });
+  const resAuth2 = await worker.fetch(reqAuth2, envWithoutKey);
+  assert.equal(resAuth2.status, 200);
+  assert.deepEqual(await resAuth2.json(), { exists: false });
+});
+
 test('/admin/sync синхронизира данни', async () => {
   const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
   const store = {};
