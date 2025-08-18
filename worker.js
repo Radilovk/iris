@@ -699,10 +699,10 @@ export async function fetchRagData(keys, env) {
         if (!Array.isArray(arr) || arr.length === 0) return {};
         const data = {};
         const entries = await Promise.all(arr.map(async key => {
-            const cacheKey = `rag:${key}`;
+            const cacheReq = new Request(`https://rag-cache/${key}`);
             let value;
 
-            const cached = await cache.match(cacheKey);
+            const cached = await cache.match(cacheReq);
             if (cached) {
                 try {
                     value = await cached.json();
@@ -714,9 +714,12 @@ export async function fetchRagData(keys, env) {
             if (!value) {
                 value = await iris_rag_kv.get(key, 'json');
                 if (value) {
-                    await cache.put(cacheKey, new Response(JSON.stringify(value), {
-                        headers: { 'Cache-Control': `max-age=${ttl}` }
-                    }));
+                    await cache.put(
+                        cacheReq,
+                        new Response(JSON.stringify(value), {
+                            headers: { 'Cache-Control': `max-age=${ttl}` }
+                        })
+                    );
                 } else {
                     console.warn(`Ключ '${key}' не е намерен в KV базата.`);
                 }
