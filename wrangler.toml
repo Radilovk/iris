@@ -7,3 +7,4 @@ kv_namespaces = [{ binding = "iris_rag_kv", id = "..." }]
 [vars]
 allowed_origin = "*"
 DEBUG = "false" # Set to "true" for detailed logging
+
