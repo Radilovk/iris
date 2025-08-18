@@ -12,17 +12,31 @@
 </head>
 <body>
   <div id="loading" class="loading"><i class="fas fa-spinner fa-spin"></i></div>
-  <div class="container admin-container">
-    <h1>Администрация</h1>
-    <div class="admin-actions">
-      <button id="sync-btn" class="cta-button">Синхронизирай KV</button>
-      <button id="upload-btn" class="cta-button">Качи всички KV</button>
+    <div class="container admin-container">
+      <h1>Администрация</h1>
+      <div class="admin-actions">
+        <button id="sync-btn" class="cta-button">Синхронизирай KV</button>
+        <button id="upload-btn" class="cta-button">Качи всички KV</button>
+      </div>
+      <h2>Настройки на бота</h2>
+      <div class="kv-editor">
+        <h3>Системен промпт</h3>
+        <textarea id="role-prompt"></textarea>
+        <button id="save-prompt" class="cta-button">Запази промпт</button>
+      </div>
+      <div class="kv-editor">
+        <h3>Модел за анализ</h3>
+        <select id="model-select">
+          <option value="gemini">Gemini</option>
+          <option value="openai">OpenAI</option>
+        </select>
+        <button id="save-model" class="cta-button">Запази модел</button>
+      </div>
+      <h2>Ключове в KV</h2>
+      <ul id="kv-list"></ul>
+      <pre id="kv-viewer" class="admin-viewer" style="display:none;"></pre>
+      <div id="message-box"></div>
     </div>
-    <h2>Ключове в KV</h2>
-    <ul id="kv-list"></ul>
-    <pre id="kv-viewer" class="admin-viewer" style="display:none;"></pre>
-    <div id="message-box"></div>
-  </div>
   <div id="diff-modal" class="modal">
     <div class="modal-content">
       <h3>Разлики в KV</h3>
