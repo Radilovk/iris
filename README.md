@@ -74,20 +74,16 @@ Gemini).
 AI_MODEL_EXTENDED = "gpt-4o" # примерна стойност
 ```
 
-## OpenAI API ключ
+## API ключове
 
-За да използвате моделите на OpenAI, задайте API ключа в `wrangler.toml` или като секрет:
-
-```toml
-[vars]
-openai_api_key = "YOUR_KEY"
-```
-
-или чрез командата:
+За достъп до моделите на Gemini и OpenAI задайте ключовете като секрети:
 
 ```bash
+wrangler secret put gemini_api_key
 wrangler secret put openai_api_key
 ```
+
+При изпълнение ще бъдете подканени да въведете стойността на съответния ключ.
 
 ## Допълнителни бележки
 - Логовете не съдържат чувствителни данни; отговорите от AI се съкращават.
