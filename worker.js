@@ -590,7 +590,10 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
 
     // Cloudflare secrets са низове, затова използваме split.
     // Позволява множество разрешени адреси, разделени със запетая.
-    const allowedOrigins = (env.ALLOWED_ORIGINS || env.allowed_origin || "*").split(",");
+    const allowedOrigins = (env.ALLOWED_ORIGINS || env.allowed_origin || "*")
+        .split(",")
+        .map(o => o.trim())
+        .filter(Boolean);
 
     let origin = "null"; // По подразбиране блокираме
     if (allowedOrigins.includes("*")) {
