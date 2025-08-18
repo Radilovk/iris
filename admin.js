@@ -23,12 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const addModelBtn = document.getElementById('add-model');
   const modelListEl = document.getElementById('model-list');
 
-  let MODEL_OPTIONS = {};
+  const DEFAULT_MODEL_OPTIONS = {
+    gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
+    openai: ['gpt-4o', 'gpt-4o-mini']
+  };
+  let MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
 
   function populateProviderOptions(selected) {
     providerSelect.innerHTML = '';
     if (!Object.keys(MODEL_OPTIONS).length) {
-      MODEL_OPTIONS = { gemini: ['gemini-1.5-pro'] };
+      MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
     }
     Object.keys(MODEL_OPTIONS).forEach(p => {
       const opt = document.createElement('option');
@@ -187,23 +191,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const optionsData = await optionsRes.json();
       MODEL_OPTIONS = JSON.parse(optionsData.value || '{}');
       if (!Object.keys(MODEL_OPTIONS).length) {
-        MODEL_OPTIONS = {
-          gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
-          openai: ['gpt-4o', 'gpt-4o-mini']
-        };
+        MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
       }
 
       if (!providerRes.ok) throw new Error(await providerRes.text());
       const providerData = await providerRes.json();
 
       let provider;
+      const defaultProvider = Object.keys(DEFAULT_MODEL_OPTIONS)[0];
       try {
         provider = JSON.parse(providerData.value);
       } catch (err) {
-        provider = providerData.value?.trim() || 'gemini';
+        provider = providerData.value?.trim() || defaultProvider;
         showMessage('Невалиден формат за AI_PROVIDER: ' + err.message + '. Използвам "' + provider + '".', 'error');
       }
-      if (!provider || !MODEL_OPTIONS[provider]) provider = 'gemini';
+      if (!provider || !MODEL_OPTIONS[provider]) provider = defaultProvider;
 
       let model;
       if (modelRes.status === 404) {
