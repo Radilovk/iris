@@ -183,8 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ]);
 
       if (!optionsRes.ok) throw new Error(await optionsRes.text());
-      if (!providerRes.ok) throw new Error(await providerRes.text());
-      if (!modelRes.ok) throw new Error(await modelRes.text());
 
       const optionsData = await optionsRes.json();
       MODEL_OPTIONS = JSON.parse(optionsData.value || '{}');
@@ -195,8 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
       }
 
+      if (!providerRes.ok) throw new Error(await providerRes.text());
       const providerData = await providerRes.json();
-      const modelData = await modelRes.json();
 
       let provider;
       try {
@@ -208,11 +206,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!provider || !MODEL_OPTIONS[provider]) provider = 'gemini';
 
       let model;
-      try {
-        model = JSON.parse(modelData.value);
-      } catch (err) {
-        model = modelData.value?.trim() || (MODEL_OPTIONS[provider] || [])[0];
-        showMessage('Невалиден формат за AI_MODEL: ' + err.message + '. Използвам "' + model + '".', 'error');
+      if (modelRes.status === 404) {
+        model = (MODEL_OPTIONS[provider] || [])[0];
+        showMessage('AI_MODEL не е намерен. Използвам резервен модел "' + model + '".', 'error');
+      } else {
+        if (!modelRes.ok) throw new Error(await modelRes.text());
+        const modelData = await modelRes.json();
+        try {
+          model = JSON.parse(modelData.value);
+        } catch (err) {
+          model = modelData.value?.trim() || (MODEL_OPTIONS[provider] || [])[0];
+          showMessage('Невалиден формат за AI_MODEL: ' + err.message + '. Използвам "' + model + '".', 'error');
+        }
       }
       if (!model) model = (MODEL_OPTIONS[provider] || [])[0];
 
