@@ -363,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   uploadBtn.addEventListener('click', async () => {
+    uploadBtn.disabled = true;
     showLoading();
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
@@ -380,6 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showMessage('Грешка: ' + err.message);
     } finally {
       hideLoading();
+      uploadBtn.disabled = false;
     }
   });
 
