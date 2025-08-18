@@ -563,7 +563,14 @@ async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
     const responseData = await response.json();
 
-    if (!response.ok || !responseData.candidates?.[0]?.content.parts?.[0]?.text) {
+    if (response.status === 404) {
+        throw new Error(`Моделът ${model} не е наличен`);
+    }
+    if (!response.ok) {
+        console.error("Грешка от Gemini API:", JSON.stringify(responseData, null, 2));
+        throw new Error(`HTTP ${response.status}`);
+    }
+    if (!responseData.candidates?.[0]?.content.parts?.[0]?.text) {
         console.error("Грешка от Gemini API:", JSON.stringify(responseData, null, 2));
         throw new Error("Неуспешна или невалидна заявка към Gemini API.");
     }
@@ -600,8 +607,15 @@ async function callOpenAIAPI(model, prompt, options, leftEyeBase64, rightEyeBase
 
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify(requestBody) });
     const responseData = await response.json();
-    
-    if (!response.ok || !responseData.choices?.[0]?.message?.content) {
+
+    if (response.status === 404) {
+        throw new Error(`Моделът ${model} не е наличен`);
+    }
+    if (!response.ok) {
+        console.error("Грешка от OpenAI API:", JSON.stringify(responseData, null, 2));
+        throw new Error(`HTTP ${response.status}`);
+    }
+    if (!responseData.choices?.[0]?.message?.content) {
         console.error("Грешка от OpenAI API:", JSON.stringify(responseData, null, 2));
         throw new Error("Неуспешна или невалидна заявка към OpenAI API.");
     }

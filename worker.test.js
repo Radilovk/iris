@@ -170,6 +170,50 @@ test('callGeminiAPI изпраща generationConfig.maxOutputTokens', async () =
   globalThis.fetch = originalFetch;
 });
 
+test('callOpenAIAPI връща грешка при 404', async () => {
+  const env = { openai_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({}), { status: 404 });
+  await assert.rejects(
+    () => callOpenAIAPI('gpt-4o', 'p', {}, 'a', 'b', env, false),
+    /Моделът gpt-4o не е наличен/
+  );
+  globalThis.fetch = originalFetch;
+});
+
+test('callOpenAIAPI логва JSON и хвърля HTTP статус', async () => {
+  const env = { openai_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: 'x' }), { status: 500 });
+  await assert.rejects(
+    () => callOpenAIAPI('gpt-4o', 'p', {}, 'a', 'b', env, false),
+    /HTTP 500/
+  );
+  globalThis.fetch = originalFetch;
+});
+
+test('callGeminiAPI връща грешка при 404', async () => {
+  const env = { gemini_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({}), { status: 404 });
+  await assert.rejects(
+    () => callGeminiAPI('gemini-1.5-flash', 'p', {}, 'a', 'b', env, false),
+    /Моделът gemini-1.5-flash не е наличен/
+  );
+  globalThis.fetch = originalFetch;
+});
+
+test('callGeminiAPI логва JSON и хвърля HTTP статус', async () => {
+  const env = { gemini_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: 'x' }), { status: 500 });
+  await assert.rejects(
+    () => callGeminiAPI('gemini-1.5-pro', 'p', {}, 'a', 'b', env, false),
+    /HTTP 500/
+  );
+  globalThis.fetch = originalFetch;
+});
+
 test('handleAnalysisRequest връща 400 при празен OpenAI API ключ', async () => {
   const req = new Request('https://example.com/analyze', { method: 'POST' });
   const env = { AI_PROVIDER: 'openai', openai_api_key: '' };
