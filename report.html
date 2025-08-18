@@ -108,7 +108,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (typeof item === 'object' && item.source) {
                             const sourceEl = document.createElement('p');
                             sourceEl.className = 'item-source';
-                            sourceEl.textContent = `Източник: ${DOMPurify.sanitize(item.source)}`;
+                            const src = DOMPurify.sanitize(item.source);
+                            if (/^https?:\/\//.test(src)) {
+                                const link = document.createElement('a');
+                                link.href = src;
+                                link.target = '_blank';
+                                link.rel = 'noopener';
+                                link.textContent = src;
+                                sourceEl.textContent = 'Източник: ';
+                                sourceEl.appendChild(link);
+                            } else {
+                                sourceEl.textContent = `Източник: ${src}`;
+                            }
                             listItemEl.appendChild(sourceEl);
                         }
 
@@ -122,7 +133,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (value.source) {
                         const sourceEl = document.createElement('p');
                         sourceEl.className = 'item-source';
-                        sourceEl.textContent = `Източник: ${DOMPurify.sanitize(value.source)}`;
+                        const src = DOMPurify.sanitize(value.source);
+                        if (/^https?:\/\//.test(src)) {
+                            const link = document.createElement('a');
+                            link.href = src;
+                            link.target = '_blank';
+                            link.rel = 'noopener';
+                            link.textContent = src;
+                            sourceEl.textContent = 'Източник: ';
+                            sourceEl.appendChild(link);
+                        } else {
+                            sourceEl.textContent = `Източник: ${src}`;
+                        }
                         contentContainer.appendChild(sourceEl);
                     }
                 } else if (typeof value === 'string') {

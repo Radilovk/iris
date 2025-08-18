@@ -350,6 +350,15 @@ async function handleAnalysisRequest(request, env) {
         const ragData = await fetchRagData(ragKeys, env);
         log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
 
+        log("Стъпка 2.1: Извличане на публични източници...");
+        const externalInfos = await Promise.all(ragKeys.map(key => fetchExternalInfo(key)));
+        ragKeys.forEach((key, idx) => {
+            const info = externalInfos[idx];
+            if (info) {
+                ragData[key] = { ...(ragData[key] || {}), external: info };
+            }
+        });
+
         log("Стъпка 3: Изпращане на заявка за финален синтез...");
         const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
             .replace('{{USER_DATA}}', formatUserData(userData))
@@ -460,6 +469,26 @@ async function callOpenAIAPI(prompt, options, leftEyeBase64, rightEyeBase64, env
         throw new Error("Неуспешна или невалидна заявка към OpenAI API.");
     }
     return responseData.choices[0].message.content;
+}
+
+// --- ВЪНШНИ ИЗТОЧНИЦИ ---
+async function fetchExternalInfo(query) {
+    try {
+        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        return {
+            title: data.title,
+            summary: data.extract,
+            source: data.content_urls?.desktop?.page || data.canonicalurl || url
+        };
+    } catch (e) {
+        console.warn('Неуспешно извличане на външна информация за', query, e);
+        return null;
+    }
 }
 
 // --- RAG ИЗВЛИЧАНЕ ОТ KV ---
