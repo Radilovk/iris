@@ -113,6 +113,14 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
   globalThis.fetch = originalFetch;
 });
 
+test('handleAnalysisRequest връща 400 при празен OpenAI API ключ', async () => {
+  const req = new Request('https://example.com/analyze', { method: 'POST' });
+  const env = { AI_PROVIDER: 'openai', openai_api_key: '' };
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 400);
+  assert.equal(await res.text(), 'OpenAI API ключът липсва');
+});
+
 test('/admin/keys изисква Basic Auth', async () => {
   const reqNoAuth = new Request('https://example.com/admin/keys');
   const resNoAuth = await worker.fetch(reqNoAuth, {});
