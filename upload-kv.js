@@ -15,6 +15,9 @@ async function main() {
   }
 
   const files = await fs.readdir(KV_DIR);
+  if (!files.includes('ROLE_PROMPT')) {
+    console.warn('Внимание: липсва файл ROLE_PROMPT в директорията KV.');
+  }
   const data = {};
   for (const file of files) {
     data[file] = await fs.readFile(path.join(KV_DIR, file), 'utf8');

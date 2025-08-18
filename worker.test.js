@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI } from './worker.js';
+import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, DEFAULT_ROLE_PROMPT, SYNTHESIS_PROMPT_TEMPLATE } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -64,6 +64,12 @@ test('corsHeaders включва всички методи', () => {
   const request = new Request('https://api.example', { headers: { Origin: 'https://foo.example' }});
   const headers = corsHeaders(request, { allowed_origin: '*' });
   assert.equal(headers.get('Access-Control-Allow-Methods'), 'GET, POST, PUT, DELETE, OPTIONS');
+});
+
+test('Промптовете описват нужните допълнителни данни при липсваща информация', () => {
+  const sentence = 'Ако липсва информация, опиши какви допълнителни данни са нужни.';
+  assert.ok(DEFAULT_ROLE_PROMPT.includes(sentence));
+  assert.ok(SYNTHESIS_PROMPT_TEMPLATE.includes(sentence));
 });
 
 test('getAIProvider избира "gemini" по подразбиране', async () => {
