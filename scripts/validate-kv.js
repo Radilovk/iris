@@ -6,6 +6,7 @@ const KV_DIR = path.resolve('KV');
 const FILE_SPECIFIC_REQUIRED = {
   'ANALYSIS_FLOW_AND_ELIMINATION_CHANNELS': ['analysis_steps', 'elimination_channels', 'source'],
   'ENDOCRINE_GLAND_SIGNS': ['glands', 'source'],
+  'ROLE_PROMPT': ['prompt'],
 };
 
 function ensureString(obj, field, file) {
