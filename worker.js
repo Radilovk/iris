@@ -339,6 +339,13 @@ async function adminDelete(env, request, key) {
 
 
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
+
+// Извлича първия JSON масив от низ, напр.: text -> "[\"a\",\"b\"]"
+function extractJsonArray(text = "") {
+    const match = text.match(/\[[\s\S]*\]/);
+    return match ? match[0] : null;
+}
+
 async function handleAnalysisRequest(request, env) {
     const log = (...args) => debugLog(env, ...args);
     const provider = await getAIProvider(env);
@@ -371,14 +378,20 @@ async function handleAnalysisRequest(request, env) {
         const keysResponse = await identificationApiCaller(model, IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
         
         let ragKeys;
+        const cleaned = extractJsonArray(keysResponse) || keysResponse;
         try {
-            ragKeys = JSON.parse(keysResponse);
-            if (!Array.isArray(ragKeys) || !ragKeys.every(k => typeof k === 'string')) {
-                throw new Error("AI върна невалиден формат на RAG ключовете.");
-            }
+            ragKeys = JSON.parse(cleaned);
         } catch (parseError) {
             log("Суров отговор от AI при грешка в парсването:", keysResponse);
-            throw new Error(`Невалиден JSON от AI в стъпка 1: ${parseError.message}`);
+            return new Response(JSON.stringify({
+                error: 'AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]'
+            }), { status: 400, headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' }) });
+        }
+        if (!Array.isArray(ragKeys) || !ragKeys.every(k => typeof k === 'string')) {
+            log("AI върна невалиден формат на RAG ключовете:", keysResponse);
+            return new Response(JSON.stringify({
+                error: 'AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]'
+            }), { status: 400, headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' }) });
         }
         log("Получени RAG ключове за извличане:", ragKeys);
 
