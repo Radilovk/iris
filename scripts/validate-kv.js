@@ -27,7 +27,7 @@ async function validateFile(file) {
   } catch (err) {
     throw new Error(`${file}: невалиден JSON (${err.message})`);
   }
-  const key = file.replace(/[:]/g, '_');
+  const key = file;
   if (REQUIRED_FILES.includes(key)) {
     if (typeof data !== 'string' || !data.trim()) {
       throw new Error(`${file}: трябва да е непразен низ`);
