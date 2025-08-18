@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI } from './worker.js';
+import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -181,5 +181,28 @@ test('/admin/sync синхронизира данни', async () => {
   const expectedKeys = Object.keys(KV_DATA).sort();
   assert.deepEqual(body.updated.sort(), expectedKeys);
   assert.deepEqual(Object.keys(store).sort(), expectedKeys);
+});
+
+test('fetchRagData използва кеша при второ извикване', async () => {
+  const store = new Map();
+  globalThis.caches = {
+    default: {
+      match: async key => store.get(key) || null,
+      put: async (key, res) => { store.set(key, res); }
+    }
+  };
+  let kvCalls = 0;
+  const env = {
+    iris_rag_kv: {
+      get: async () => { kvCalls++; return { v: 1 }; }
+    },
+    RAG_CACHE_TTL: '60'
+  };
+  const first = await fetchRagData(['a'], env);
+  assert.equal(kvCalls, 1);
+  const second = await fetchRagData(['a'], env);
+  assert.equal(kvCalls, 1);
+  assert.deepEqual(first, second);
+  delete globalThis.caches;
 });
 

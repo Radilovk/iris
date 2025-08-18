@@ -524,24 +524,48 @@ async function fetchExternalInfo(query) {
 }
 
 // --- RAG ИЗВЛИЧАНЕ ОТ KV ---
-async function fetchRagData(keys, env) {
+export async function fetchRagData(keys, env) {
     if (!Array.isArray(keys) || keys.length === 0) {
         return {};
     }
     const { iris_rag_kv } = env;
     if (!iris_rag_kv) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
 
-    const promises = keys.map(key => iris_rag_kv.get(key, 'json'));
-    const results = await Promise.all(promises);
-    
+    const cache = caches.default;
+    const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
     const data = {};
-    results.forEach((value, index) => {
-        if (value) {
-            data[keys[index]] = value;
-        } else {
-            console.warn(`Ключ '${keys[index]}' не е намерен в KV базата.`);
+
+    const entries = await Promise.all(keys.map(async key => {
+        const cacheKey = `rag:${key}`;
+        let value;
+
+        const cached = await cache.match(cacheKey);
+        if (cached) {
+            try {
+                value = await cached.json();
+            } catch (e) {
+                console.warn('Грешка при четене от кеша за ключ', key, e);
+            }
         }
-    });
+
+        if (!value) {
+            value = await iris_rag_kv.get(key, 'json');
+            if (value) {
+                await cache.put(cacheKey, new Response(JSON.stringify(value), {
+                    headers: { 'Cache-Control': `max-age=${ttl}` }
+                }));
+            } else {
+                console.warn(`Ключ '${key}' не е намерен в KV базата.`);
+            }
+        }
+
+        return value ? [key, value] : null;
+    }));
+
+    for (const entry of entries) {
+        if (entry) data[entry[0]] = entry[1];
+    }
+
     return data;
 }
 
