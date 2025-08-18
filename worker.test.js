@@ -71,6 +71,12 @@ test('corsHeaders включва всички методи', () => {
   assert.equal(headers.get('Access-Control-Allow-Methods'), 'GET, POST, PUT, DELETE, OPTIONS');
 });
 
+test('corsHeaders добавя Access-Control-Max-Age', () => {
+  const request = new Request('https://api.example', { headers: { Origin: 'https://foo.example' }});
+  const headers = corsHeaders(request, { allowed_origin: '*' });
+  assert.equal(headers.get('Access-Control-Max-Age'), '86400');
+});
+
 test('getAIProvider избира "gemini" по подразбиране', async () => {
   assert.equal(await getAIProvider({}), 'gemini');
 });
