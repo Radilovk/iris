@@ -1,7 +1,7 @@
 import { validateKv, syncKv } from "./kv-sync.js";
 
-// Инлайн на ROLE_PROMPT, за да няма външни зависимости при деплой
-const ROLE_PROMPT = `
+// Системен промпт по подразбиране; може да бъде заменен чрез KV ключ ROLE_PROMPT
+const DEFAULT_ROLE_PROMPT = `
 # РОЛЯ И ЦЕЛ
 Ти си експертен AI ирисолог, наречен "Iris-Holistica AI". Работиш по научен синтез от класическа, модерна и холистична иридология. Комбинирай потребителските данни и извлечените RAG знания, за да изградиш последователен анализ.
 
@@ -22,6 +22,20 @@ const ROLE_PROMPT = `
 **Винаги завършвай всеки анализ с този РАЗШИРЕН текст:**
 "Важно: Този анализ е базиран на принципите на ирисовата и склерологичната диагностика и има образователен характер. Той не представлява медицинска диагноза, лечение или препоръка. При здравословни проблеми се консултирайте с квалифициран медицински специалист."
 `;
+
+async function getRolePrompt(env = {}) {
+    if (env.iris_rag_kv) {
+        try {
+            const data = await env.iris_rag_kv.get('ROLE_PROMPT', 'json');
+            if (data && typeof data.prompt === 'string') {
+                return data.prompt;
+            }
+        } catch (e) {
+            console.warn('Неуспешно извличане на ROLE_PROMPT от KV:', e);
+        }
+    }
+    return DEFAULT_ROLE_PROMPT;
+}
 
 // --- КОНФИГУРАЦИЯ ---
 // Чете AI_PROVIDER от environment с подразбиране към "gemini"
@@ -330,7 +344,8 @@ async function handleAnalysisRequest(request, env) {
             .replace('{{RAG_DATA}}', JSON.stringify(ragData, null, 2));
 
         const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
-        const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: ROLE_PROMPT }, leftEyeBase64, rightEyeBase64, env, true);
+        const rolePrompt = await getRolePrompt(env);
+        const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: rolePrompt }, leftEyeBase64, rightEyeBase64, env, true);
         log("Финален анализ е генериран успешно.");
 
         let parsedAnalysis;
