@@ -519,21 +519,26 @@ async function fetchExternalInfo(query) {
 
 // --- RAG ИЗВЛИЧАНЕ ОТ KV ---
 async function fetchRagData(keys, env) {
-    if (!Array.isArray(keys) || keys.length === 0) {
+    if (!keys || (Array.isArray(keys) && keys.length === 0)) {
         return {};
     }
     const { iris_rag_kv } = env;
     if (!iris_rag_kv) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
 
-    const promises = keys.map(key => iris_rag_kv.get(key, 'json'));
-    const results = await Promise.all(promises);
-    
+    const keyList = Array.isArray(keys)
+        ? keys
+        : Object.entries(keys).flatMap(([cat, arr]) =>
+            arr.map(k => (k.includes(':') ? k : `${cat}:${k}`))
+        );
+
+    const results = await Promise.all(keyList.map(k => iris_rag_kv.get(k, 'json')));
     const data = {};
     results.forEach((value, index) => {
+        const key = keyList[index];
         if (value) {
-            data[keys[index]] = value;
+            data[key] = value;
         } else {
-            console.warn(`Ключ '${keys[index]}' не е намерен в KV базата.`);
+            console.warn(`Ключ '${key}' не е намерен в KV базата.`);
         }
     });
     return data;
@@ -629,4 +634,4 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
     return new Headers(headers);
 }
 
-export { resizeImage, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI };
+export { resizeImage, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchRagData };

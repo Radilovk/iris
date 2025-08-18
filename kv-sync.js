@@ -60,5 +60,12 @@ export async function syncKv(entries, opts) {
   if (uploadEntries.length) {
     await bulkUpload(uploadEntries, { accountId, namespaceId, apiToken });
   }
-  return { updated: keys, deleted: toDelete };
+  const groupByCategory = list =>
+    list.reduce((acc, key) => {
+      const category = key.includes(':') ? key.split(':')[0] : 'UNCATEGORIZED';
+      (acc[category] ||= []).push(key);
+      return acc;
+    }, {});
+
+  return { updated: groupByCategory(keys), deleted: groupByCategory(toDelete) };
 }

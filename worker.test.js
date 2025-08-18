@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI } from './worker.js';
+import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -169,9 +169,24 @@ test('/admin/sync синхронизира данни', async () => {
   globalThis.fetch = originalFetch;
   assert.equal(res.status, 200);
   const body = await res.json();
-  assert.equal(body.deleted.length, 0);
-  const expectedKeys = Object.keys(KV_DATA).sort();
-  assert.deepEqual(body.updated.sort(), expectedKeys);
-  assert.deepEqual(Object.keys(store).sort(), expectedKeys);
+  const group = ks => ks.reduce((acc, k) => {
+    const cat = k.includes(':') ? k.split(':')[0] : 'UNCATEGORIZED';
+    (acc[cat] ||= []).push(k);
+    return acc;
+  }, {});
+  const expectedKeys = Object.keys(KV_DATA);
+  assert.deepEqual(body.deleted, {});
+  assert.deepEqual(body.updated, group(expectedKeys));
+  assert.deepEqual(Object.keys(store).sort(), expectedKeys.sort());
+});
+
+test('fetchRagData връща данни само за ключ DISPOSITION:ACIDITY', async () => {
+  const env = {
+    iris_rag_kv: {
+      get: async (key) => key === 'DISPOSITION:ACIDITY' ? { text: 'acid' } : null
+    }
+  };
+  const data = await fetchRagData({ DISPOSITION: ['ACIDITY', 'UNKNOWN'] }, env);
+  assert.deepEqual(data, { 'DISPOSITION:ACIDITY': { text: 'acid' } });
 });
 
