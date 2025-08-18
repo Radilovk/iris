@@ -405,13 +405,24 @@ async function handleAnalysisRequest(request, env) {
             throw e;
         }
 
-        if (typeof localStorage !== 'undefined') {
-            try {
-                localStorage.setItem('lastAnalysis', JSON.stringify(parsedAnalysis));
-                localStorage.setItem('holistic_analysis', parsedAnalysis.holistic_analysis);
-            } catch (e) {
-                log('Неуспешен запис в localStorage:', e.message);
+        // Cloudflare Worker няма достъп до браузърно API като localStorage,
+        // затова кешираме анализа в KV или в edge cache.
+        try {
+            if (env.HOLISTIC_CACHE) {
+                await env.HOLISTIC_CACHE.put('lastAnalysis', JSON.stringify(parsedAnalysis));
+                await env.HOLISTIC_CACHE.put('holistic_analysis', parsedAnalysis.holistic_analysis);
+            } else {
+                await caches.default.put(
+                    new Request('https://analysis.local/lastAnalysis'),
+                    new Response(JSON.stringify(parsedAnalysis))
+                );
+                await caches.default.put(
+                    new Request('https://analysis.local/holistic'),
+                    new Response(parsedAnalysis.holistic_analysis)
+                );
             }
+        } catch (e) {
+            log('Неуспешен запис в кеша:', e.message);
         }
 
         return new Response(JSON.stringify(parsedAnalysis), { headers: corsHeaders(request, env, {'Content-Type': 'application/json; charset=utf-8'}) });
