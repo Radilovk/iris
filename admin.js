@@ -186,12 +186,16 @@ document.addEventListener('DOMContentLoaded', () => {
         hasOpenAIKey()
       ]);
 
-      if (!optionsRes.ok) throw new Error(await optionsRes.text());
-
-      const optionsData = await optionsRes.json();
-      MODEL_OPTIONS = JSON.parse(optionsData.value || '{}');
-      if (!Object.keys(MODEL_OPTIONS).length) {
+      if (optionsRes.status === 404) {
         MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
+        showMessage('MODEL_OPTIONS не е намерен. Използвам стойности по подразбиране.', 'error');
+      } else {
+        if (!optionsRes.ok) throw new Error(await optionsRes.text());
+        const optionsData = await optionsRes.json();
+        MODEL_OPTIONS = JSON.parse(optionsData.value || '{}');
+        if (!Object.keys(MODEL_OPTIONS).length) {
+          MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
+        }
       }
 
       if (!providerRes.ok) throw new Error(await providerRes.text());
