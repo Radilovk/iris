@@ -90,6 +90,10 @@ test('getAIModel може да чете от env и KV', async () => {
   assert.equal(await getAIModel(env), 'gemini-1.5-flash');
 });
 
+test('getAIModel използва AI_MODEL_EXTENDED като стойност по подразбиране', async () => {
+  assert.equal(await getAIModel({ AI_MODEL_EXTENDED: 'gpt-4o' }), 'gpt-4o');
+});
+
 test('Изборът OpenAI/gpt-4o-mini се подава към API', async () => {
   const env = { openai_api_key: 'key' };
   const originalFetch = globalThis.fetch;
@@ -102,6 +106,18 @@ test('Изборът OpenAI/gpt-4o-mini се подава към API', async () 
   globalThis.fetch = originalFetch;
 });
 
+test('callOpenAIAPI подава max_tokens', async () => {
+  const env = { openai_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.max_tokens, 50);
+    return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 });
+  };
+  await callOpenAIAPI('gpt-4o', 'p', { maxTokens: 50 }, 'a', 'b', env, false);
+  globalThis.fetch = originalFetch;
+});
+
 test('Изборът Gemini/gemini-1.5-flash се подава към API', async () => {
   const env = { gemini_api_key: 'key' };
   const originalFetch = globalThis.fetch;
@@ -110,6 +126,18 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
     return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
   };
   await callGeminiAPI('gemini-1.5-flash', 'p', {}, 'a', 'b', env, false);
+  globalThis.fetch = originalFetch;
+});
+
+test('callGeminiAPI подава maxOutputTokens', async () => {
+  const env = { gemini_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.generationConfig.maxOutputTokens, 60);
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
+  };
+  await callGeminiAPI('gemini-1.5-pro', 'p', { maxTokens: 60 }, 'a', 'b', env, false);
   globalThis.fetch = originalFetch;
 });
 

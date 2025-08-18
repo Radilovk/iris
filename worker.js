@@ -62,6 +62,7 @@ export async function getAIModel(env = {}) {
             console.warn('Неуспешно извличане на AI_MODEL от KV:', e);
         }
     }
+    if (env.AI_MODEL_EXTENDED) return env.AI_MODEL_EXTENDED;
     const provider = await getAIProvider(env);
     return provider === 'openai' ? 'gpt-4o' : 'gemini-1.5-pro';
 }
@@ -454,6 +455,9 @@ async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase
     if (options.systemPrompt) {
         requestBody.system_instruction = { role: "system", parts: [{ text: options.systemPrompt }] };
     }
+    if (options.maxTokens) {
+        requestBody.generationConfig.maxOutputTokens = options.maxTokens;
+    }
     if (expectJson) {
         requestBody.generationConfig.response_mime_type = "application/json";
     }
@@ -489,6 +493,9 @@ async function callOpenAIAPI(model, prompt, options, leftEyeBase64, rightEyeBase
     });
 
     const requestBody = { model, messages };
+    if (options.maxTokens) {
+        requestBody.max_tokens = options.maxTokens;
+    }
     if (expectJson) {
         requestBody.response_format = { type: "json_object" };
     }
