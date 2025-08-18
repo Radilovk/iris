@@ -169,6 +169,14 @@ test('handleAnalysisRequest връща 400 при празен OpenAI API клю
   assert.equal(await res.text(), 'OpenAI API ключът липсва');
 });
 
+test('handleAnalysisRequest връща 400 при липсващ Gemini API ключ', async () => {
+  const req = new Request('https://example.com/analyze', { method: 'POST' });
+  const env = { AI_PROVIDER: 'gemini', gemini_api_key: '' };
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 400);
+  assert.equal(await res.text(), 'Gemini API ключът липсва');
+});
+
 test('handleAnalysisRequest връща контролирано съобщение при невалиден AI JSON', async () => {
   const buf = Buffer.alloc(10, 0);
   const form = new FormData();

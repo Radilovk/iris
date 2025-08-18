@@ -426,6 +426,12 @@ async function handleAnalysisRequest(request, env) {
     const model = await getAIModel(env);
     try {
         log("Получена е нова заявка за анализ.");
+        if (provider === "gemini" && !(env.gemini_api_key || env.GEMINI_API_KEY)) {
+            return new Response("Gemini API ключът липсва", {
+                status: 400,
+                headers: corsHeaders(request, env, { 'Content-Type': 'text/plain; charset=utf-8' })
+            });
+        }
         if (provider === "openai" && !(env.openai_api_key || env.OPENAI_API_KEY)) {
             return new Response("OpenAI API ключът липсва", {
                 status: 400,
