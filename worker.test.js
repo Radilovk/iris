@@ -45,6 +45,14 @@ test('corsHeaders позволява конкретен домейн', () => {
   assert.equal(headers.get('Vary'), 'Origin');
 });
 
+test('corsHeaders обработва домейни с интервали', () => {
+  const request = new Request('https://api.example', { headers: { Origin: 'https://a.com' }});
+  const env = { allowed_origin: 'https://a.com, https://b.com' };
+  const headers = corsHeaders(request, env);
+  assert.equal(headers.get('Access-Control-Allow-Origin'), 'https://a.com');
+  assert.equal(headers.get('Vary'), 'Origin');
+});
+
 test('corsHeaders връща null за неразрешен домейн', () => {
   const request = new Request('https://api.example', { headers: { Origin: 'https://evil.example' }});
   const headers = corsHeaders(request, { allowed_origin: 'https://myapp.example' });
