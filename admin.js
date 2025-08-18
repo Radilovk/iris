@@ -131,7 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showMessage(msg, type = 'error') {
     messageBox.textContent = msg;
-    messageBox.className = type === 'error' ? 'error-box' : 'success-box';
+    messageBox.className =
+      type === 'error' ? 'error-box'
+      : type === 'success' ? 'success-box'
+      : 'warn-box';
   }
 
   function normalizeValue(val) {
@@ -140,6 +143,28 @@ document.addEventListener('DOMContentLoaded', () => {
       return JSON.stringify(JSON.parse(val));
     }
     return JSON.stringify(val);
+  }
+
+  async function checkAnalysisKeys() {
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'Basic ' + btoa('admin:admin')
+      };
+      const [lastRes, holRes] = await Promise.all([
+        fetch(`${WORKER_BASE_URL}/admin/get?key=lastAnalysis`, { headers }),
+        fetch(`${WORKER_BASE_URL}/admin/get?key=holistic_analysis`, { headers })
+      ]);
+      const lastData = lastRes.ok ? await lastRes.json() : { value: '{}' };
+      const holData = holRes.ok ? await holRes.json() : { value: '' };
+      const lastEmpty = !lastData.value || lastData.value === '{}';
+      const holEmpty = !holData.value;
+      if (lastEmpty || holEmpty) {
+        showMessage('Предупреждение: липсват запазени анализи.', 'warn');
+      }
+    } catch (err) {
+      showMessage('Грешка при проверка на анализите: ' + err.message);
+    }
   }
 
   function renderDiffList(el, items) {
@@ -504,5 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPrompt();
   loadModel();
   loadKeys();
+  checkAnalysisKeys();
 });
 

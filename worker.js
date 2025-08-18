@@ -368,11 +368,30 @@ async function adminGet(env, request, key) {
         return new Response('Missing key parameter', { status: 400, headers: corsHeaders(request, env) });
     }
     try {
-        const value = await env.iris_rag_kv.get(key);
-        if (value === null) {
-            return new Response('Not Found', { status: 404, headers: corsHeaders(request, env) });
+        let value = await env.iris_rag_kv.get(key);
+        let warning;
+
+        if (value === null || value === '') {
+            if (key === 'lastAnalysis') {
+                value = '{}';
+                warning = 'missing';
+            } else if (key === 'holistic_analysis') {
+                value = '';
+                warning = 'missing';
+            } else {
+                return new Response('Not Found', { status: 404, headers: corsHeaders(request, env) });
+            }
+        } else if (key === 'lastAnalysis') {
+            try {
+                JSON.parse(value);
+            } catch {
+                value = '{}';
+                warning = 'invalid';
+            }
         }
-        return new Response(JSON.stringify({ key, value }), {
+
+        const body = warning ? { key, value, warning } : { key, value };
+        return new Response(JSON.stringify(body), {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
