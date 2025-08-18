@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { resizeImage, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData } from './worker.js';
+import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -14,10 +14,10 @@ test('ROLE_PROMPT съдържа инструкция за допълнител�
   assert.ok(prompt.includes('Ако липсва информация, опиши какви допълнителни данни са нужни.'));
 });
 
-test('resizeImage връща грешка при твърде голям файл', async () => {
+test('validateImageSize връща грешка при твърде голям файл', async () => {
   const bigBuffer = Buffer.alloc(6 * 1024 * 1024, 0); // 6MB
   const bigFile = new File([bigBuffer], 'big.jpg', { type: 'image/jpeg' });
-  await assert.rejects(() => resizeImage(bigFile));
+  await assert.rejects(() => validateImageSize(bigFile));
 });
 
 test('fileToBase64 работи за малък файл', async () => {
