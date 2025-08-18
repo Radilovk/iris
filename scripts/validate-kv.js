@@ -4,9 +4,10 @@ import path from 'node:path';
 const KV_DIR = path.resolve('KV');
 
 const FILE_SPECIFIC_REQUIRED = {
-  'ANALYSIS_FLOW_AND_ELIMINATION_CHANNELS': ['analysis_steps', 'elimination_channels', 'source'],
-  'ENDOCRINE_GLAND_SIGNS': ['glands', 'source'],
-  'ROLE_PROMPT': ['prompt'],
+  ANALYSIS_FLOW_AND_ELIMINATION_CHANNELS: ['analysis_steps', 'elimination_channels', 'source'],
+  ENDOCRINE_GLAND_SIGNS: ['glands', 'source'],
+  ROLE_PROMPT: ['prompt'],
+  MODEL_OPTIONS: ['gemini', 'openai'],
 };
 
 function ensureString(obj, field, file) {
@@ -24,24 +25,19 @@ async function validateFile(file) {
   } catch (err) {
     throw new Error(`${file}: невалиден JSON (${err.message})`);
   }
-  const required = FILE_SPECIFIC_REQUIRED[file] || ['name', 'source'];
+  const key = file.replace(/[:]/g, '_');
+  const required = FILE_SPECIFIC_REQUIRED[key] || ['name', 'source'];
   for (const field of required) {
-    if (field === 'analysis_steps') {
-      if (!Array.isArray(data.analysis_steps)) {
-        throw new Error(`${file}: analysis_steps трябва да е масив`);
-      }
-      continue;
-    }
-    if (field === 'glands') {
-      if (!Array.isArray(data.glands)) {
-        throw new Error(`${file}: glands трябва да е масив`);
+    if (['analysis_steps', 'glands', 'elimination_channels', 'gemini', 'openai'].includes(field)) {
+      if (!Array.isArray(data[field])) {
+        throw new Error(`${file}: ${field} трябва да е масив`);
       }
       continue;
     }
     if (!(field in data)) {
       throw new Error(`${file}: липсва поле ${field}`);
     }
-    if (typeof data[field] !== 'string' && field !== 'elimination_channels') {
+    if (typeof data[field] !== 'string') {
       throw new Error(`${file}: ${field} трябва да е низ`);
     }
   }
