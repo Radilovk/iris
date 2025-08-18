@@ -426,7 +426,7 @@ async function handleAnalysisRequest(request, env) {
     const model = await getAIModel(env);
     try {
         log("Получена е нова заявка за анализ.");
-        if (provider === "openai" && !env.openai_api_key) {
+        if (provider === "openai" && !(env.openai_api_key || env.OPENAI_API_KEY)) {
             return new Response("OpenAI API ключът липсва", {
                 status: 400,
                 headers: corsHeaders(request, env, { 'Content-Type': 'text/plain; charset=utf-8' })
@@ -522,7 +522,7 @@ async function handleAnalysisRequest(request, env) {
 
 // --- AI API ИНТЕГРАЦИИ ---
 async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
-    const apiKey = env.gemini_api_key;
+    const apiKey = env.gemini_api_key || env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("API ключът за Gemini не е конфигуриран.");
     const modelName = model.endsWith('-latest') ? model : `${model}-latest`;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -564,7 +564,7 @@ async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase
 }
 
 async function callOpenAIAPI(model, prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
-    const apiKey = env.openai_api_key;
+    const apiKey = env.openai_api_key || env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("API ключът за OpenAI не е конфигуриран.");
     const url = "https://api.openai.com/v1/chat/completions";
 

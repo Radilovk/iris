@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function hasOpenAIKey() {
     try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=OPENAI_API_KEY`, {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=openai_api_key`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Basic ' + btoa('admin:admin')
