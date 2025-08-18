@@ -130,16 +130,14 @@ export async function getAIModel(env = {}) {
     if (env.AI_MODEL) return env.AI_MODEL;
     if (env.iris_rag_kv) {
         try {
-            const val = await env.iris_rag_kv.get('AI_MODEL');
-            if (typeof val === 'string') {
-                const model = val.trim();
-                if (model) return model;
+            const val = await env.iris_rag_kv.get('AI_MODEL', 'json');
+            if (typeof val === 'string' && val.trim()) {
+                return val.trim();
             }
         } catch (e) {
             console.warn('Неуспешно извличане на AI_MODEL от KV:', e);
         }
     }
-    if (env.AI_MODEL_EXTENDED) return env.AI_MODEL_EXTENDED;
     const provider = await getAIProvider(env);
     return provider === 'openai' ? 'gpt-4o' : 'gemini-1.5-pro';
 }
