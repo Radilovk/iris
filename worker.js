@@ -61,10 +61,11 @@ const IDENTIFICATION_PROMPT = `
 Твоята ЕДИНСТВЕНА задача е да идентифицираш всички значими конституционални типове, предразположения, диатези, специфични знаци,
 миазми, синдроми, емоционални връзки и общи препоръки.
 Резултатът трябва да бъде **ЕДИНСТВЕНО JSON масив от низове (string array)**, съдържащ съответните RAG ключове за всеки идентифициран знак.
+Винаги включвай поне по един ключ от групите CONSTITUTION, DISPOSITION, SIGN, RECOMMENDATION.
 Не добавяй никакви обяснения. Само JSON масив.
 
 Пример за изход:
-["CONSTITUTION:COLOR:MIXED_BILIARY", "DISPOSITION:STRUCTURE:FLEXIBLE_ADAPTIVE", "SIGN:IRIS:RING:CONTRACTION_FURROWS", "SIGN:PUPIL:GENERAL_ANALYSIS", "MIASM:PSORA", "SYNDROME:CARDIO_RENAL", "EMOTION:IRIS:LIVER", "RECOMMENDATION:PRINCIPLE:NUTRITIONAL_FOUNDATION"]
+["CONSTITUTION:...","DISPOSITION:..."]
 `;
 
 // КОРЕКЦИЯ #1: Премахната е директната референция към "ROLE_PROMPT"
