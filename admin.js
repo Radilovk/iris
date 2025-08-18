@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const diffDeleted = document.getElementById('diff-deleted');
   const confirmBtn = document.getElementById('confirm-sync');
   const cancelBtn = document.getElementById('cancel-sync');
+  const promptEditor = document.getElementById('role-prompt');
+  const savePromptBtn = document.getElementById('save-prompt');
+  const modelSelect = document.getElementById('model-select');
+  const saveModelBtn = document.getElementById('save-model');
 
   function showLoading() {
     loadingEl.style.display = 'flex';
@@ -52,6 +56,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function hideDiffModal() {
     diffModal.style.display = 'none';
+  }
+
+  async function loadPrompt() {
+    showLoading();
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=ROLE_PROMPT`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      const obj = JSON.parse(data.value || '{}');
+      promptEditor.value = obj.prompt || '';
+    } catch (err) {
+      showMessage('Грешка при зареждане на промпта: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function loadModel() {
+    showLoading();
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      const val = JSON.parse(data.value || '"gemini"');
+      modelSelect.value = val;
+    } catch (err) {
+      showMessage('Грешка при зареждане на модела: ' + err.message);
+    } finally {
+      hideLoading();
+    }
   }
 
   async function loadKeys() {
@@ -174,6 +218,50 @@ document.addEventListener('DOMContentLoaded', () => {
     syncBtn.disabled = false;
   });
 
+  savePromptBtn.addEventListener('click', async () => {
+    const prompt = promptEditor.value;
+    showLoading();
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        },
+        body: JSON.stringify({ key: 'ROLE_PROMPT', value: JSON.stringify({ prompt }) })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showMessage('Промптът е записан успешно', 'success');
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+
+  saveModelBtn.addEventListener('click', async () => {
+    const model = modelSelect.value;
+    showLoading();
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        },
+        body: JSON.stringify({ key: 'AI_PROVIDER', value: JSON.stringify(model) })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showMessage('Моделът е записан успешно', 'success');
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+
+  loadPrompt();
+  loadModel();
   loadKeys();
 });
 

@@ -52,12 +52,17 @@ test('corsHeaders включва всички методи', () => {
   assert.equal(headers.get('Access-Control-Allow-Methods'), 'GET, POST, PUT, DELETE, OPTIONS');
 });
 
-test('getAIProvider избира "gemini" по подразбиране', () => {
-  assert.equal(getAIProvider({}), 'gemini');
+test('getAIProvider избира "gemini" по подразбиране', async () => {
+  assert.equal(await getAIProvider({}), 'gemini');
 });
 
-test('getAIProvider може да избира OpenAI', () => {
-  assert.equal(getAIProvider({ AI_PROVIDER: 'openai' }), 'openai');
+test('getAIProvider може да избира OpenAI', async () => {
+  assert.equal(await getAIProvider({ AI_PROVIDER: 'openai' }), 'openai');
+});
+
+test('getAIProvider чете стойност от KV', async () => {
+  const env = { iris_rag_kv: { get: async () => 'openai' } };
+  assert.equal(await getAIProvider(env), 'openai');
 });
 
 test('/admin/keys изисква Basic Auth', async () => {

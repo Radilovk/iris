@@ -39,8 +39,17 @@ async function getRolePrompt(env = {}) {
 
 // --- КОНФИГУРАЦИЯ ---
 // Чете AI_PROVIDER от environment с подразбиране към "gemini"
-export function getAIProvider(env = {}) {
-    return env.AI_PROVIDER || "gemini";
+export async function getAIProvider(env = {}) {
+    if (env.AI_PROVIDER) return env.AI_PROVIDER;
+    if (env.iris_rag_kv) {
+        try {
+            const val = await env.iris_rag_kv.get('AI_PROVIDER', 'json');
+            if (typeof val === 'string') return val;
+        } catch (e) {
+            console.warn('Неуспешно извличане на AI_PROVIDER от KV:', e);
+        }
+    }
+    return 'gemini';
 }
 
 // --- ОТЛОГВАНЕ ---
@@ -313,7 +322,7 @@ async function adminDelete(env, request, key) {
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
 async function handleAnalysisRequest(request, env) {
     const log = (...args) => debugLog(env, ...args);
-    const provider = getAIProvider(env);
+    const provider = await getAIProvider(env);
     try {
         log("Получена е нова заявка за анализ.");
         const formData = await request.formData();

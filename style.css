@@ -63,6 +63,31 @@ body {
     font-family: monospace;
 }
 
+.kv-editor {
+    margin-top: 1rem;
+    background: var(--card-bg);
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.kv-editor textarea {
+    width: 100%;
+    min-height: 150px;
+    margin-top: 0.5rem;
+}
+
+.kv-editor select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.kv-editor button {
+    margin-top: 0.5rem;
+}
+
 .loading {
     position: fixed;
     top: 0;
