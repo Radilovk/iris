@@ -16,8 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn = document.getElementById('cancel-sync');
   const promptEditor = document.getElementById('role-prompt');
   const savePromptBtn = document.getElementById('save-prompt');
+  const providerSelect = document.getElementById('provider-select');
   const modelSelect = document.getElementById('model-select');
   const saveModelBtn = document.getElementById('save-model');
+
+  const MODEL_OPTIONS = {
+    gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
+    openai: ['gpt-4o', 'gpt-4o-mini']
+  };
+
+  function populateModelOptions(provider, selected) {
+    modelSelect.innerHTML = '';
+    MODEL_OPTIONS[provider].forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      modelSelect.appendChild(opt);
+    });
+    modelSelect.value = selected && MODEL_OPTIONS[provider].includes(selected)
+      ? selected
+      : MODEL_OPTIONS[provider][0];
+  }
 
   function showLoading() {
     loadingEl.style.display = 'flex';
@@ -81,16 +100,28 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadModel() {
     showLoading();
     try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, {
+      const providerRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Basic ' + btoa('admin:admin')
         }
       });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      const val = JSON.parse(data.value || '"gemini"');
-      modelSelect.value = val;
+      if (!providerRes.ok) throw new Error(await providerRes.text());
+      const providerData = await providerRes.json();
+      const provider = JSON.parse(providerData.value || '"gemini"');
+      providerSelect.value = provider;
+
+      const modelRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=AI_MODEL`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        }
+      });
+      if (!modelRes.ok) throw new Error(await modelRes.text());
+      const modelData = await modelRes.json();
+      const model = JSON.parse(modelData.value || (provider === 'openai' ? '"gpt-4o"' : '"gemini-1.5-pro"'));
+
+      populateModelOptions(provider, model);
     } catch (err) {
       showMessage('Грешка при зареждане на модела: ' + err.message);
     } finally {
@@ -240,24 +271,39 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   saveModelBtn.addEventListener('click', async () => {
+    const provider = providerSelect.value;
     const model = modelSelect.value;
     showLoading();
     try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+      const res1 = await fetch(`${WORKER_BASE_URL}/admin/put`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Basic ' + btoa('admin:admin')
         },
-        body: JSON.stringify({ key: 'AI_PROVIDER', value: JSON.stringify(model) })
+        body: JSON.stringify({ key: 'AI_PROVIDER', value: JSON.stringify(provider) })
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res1.ok) throw new Error(await res1.text());
+
+      const res2 = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        },
+        body: JSON.stringify({ key: 'AI_MODEL', value: JSON.stringify(model) })
+      });
+      if (!res2.ok) throw new Error(await res2.text());
       showMessage('Моделът е записан успешно', 'success');
     } catch (err) {
       showMessage('Грешка: ' + err.message);
     } finally {
       hideLoading();
     }
+  });
+
+  providerSelect.addEventListener('change', () => {
+    populateModelOptions(providerSelect.value);
   });
 
   loadPrompt();

@@ -52,6 +52,20 @@ export async function getAIProvider(env = {}) {
     return 'gemini';
 }
 
+export async function getAIModel(env = {}) {
+    if (env.AI_MODEL) return env.AI_MODEL;
+    if (env.iris_rag_kv) {
+        try {
+            const val = await env.iris_rag_kv.get('AI_MODEL', 'json');
+            if (typeof val === 'string') return val;
+        } catch (e) {
+            console.warn('Неуспешно извличане на AI_MODEL от KV:', e);
+        }
+    }
+    const provider = await getAIProvider(env);
+    return provider === 'openai' ? 'gpt-4o' : 'gemini-1.5-pro';
+}
+
 // --- ОТЛОГВАНЕ ---
 function debugLog(env = {}, ...args) {
     if (env.DEBUG === "true") {
@@ -323,6 +337,7 @@ async function adminDelete(env, request, key) {
 async function handleAnalysisRequest(request, env) {
     const log = (...args) => debugLog(env, ...args);
     const provider = await getAIProvider(env);
+    const model = await getAIModel(env);
     try {
         log("Получена е нова заявка за анализ.");
         const formData = await request.formData();
@@ -342,7 +357,7 @@ async function handleAnalysisRequest(request, env) {
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
-        const keysResponse = await identificationApiCaller(IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
+        const keysResponse = await identificationApiCaller(model, IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
         
         let ragKeys;
         try {
@@ -376,7 +391,7 @@ async function handleAnalysisRequest(request, env) {
 
         const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const rolePrompt = await getRolePrompt(env);
-        const finalAnalysis = await synthesisApiCaller(synthesisPrompt, { systemPrompt: rolePrompt }, leftEyeBase64, rightEyeBase64, env, true);
+        const finalAnalysis = await synthesisApiCaller(model, synthesisPrompt, { systemPrompt: rolePrompt }, leftEyeBase64, rightEyeBase64, env, true);
         log("Финален анализ е генериран успешно.");
 
         let parsedAnalysis;
@@ -408,10 +423,11 @@ async function handleAnalysisRequest(request, env) {
 }
 
 // --- AI API ИНТЕГРАЦИИ ---
-async function callGeminiAPI(prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
+async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
     const apiKey = env.gemini_api_key;
     if (!apiKey) throw new Error("API ключът за Gemini не е конфигуриран.");
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`;
+    const modelName = model.endsWith('-latest') ? model : `${model}-latest`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
     const requestBody = {
         contents: [
@@ -446,7 +462,7 @@ async function callGeminiAPI(prompt, options, leftEyeBase64, rightEyeBase64, env
     return responseData.candidates[0].content.parts[0].text;
 }
 
-async function callOpenAIAPI(prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
+async function callOpenAIAPI(model, prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
     const apiKey = env.openai_api_key;
     if (!apiKey) throw new Error("API ключът за OpenAI не е конфигуриран.");
     const url = "https://api.openai.com/v1/chat/completions";
@@ -466,7 +482,7 @@ async function callOpenAIAPI(prompt, options, leftEyeBase64, rightEyeBase64, env
         ]
     });
 
-    const requestBody = { model: "gpt-4o", messages };
+    const requestBody = { model, messages };
     if (expectJson) {
         requestBody.response_format = { type: "json_object" };
     }
@@ -610,4 +626,4 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
     return new Headers(headers);
 }
 
-export { resizeImage, fileToBase64, corsHeaders };
+export { resizeImage, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI };
