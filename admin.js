@@ -38,6 +38,26 @@ document.addEventListener('DOMContentLoaded', () => {
       : MODEL_OPTIONS[provider][0];
   }
 
+  async function hasOpenAIKey() {
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=OPENAI_API_KEY`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('admin:admin')
+        }
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      try {
+        return !!JSON.parse(data.value || '""');
+      } catch {
+        return !!data.value;
+      }
+    } catch {
+      return false;
+    }
+  }
+
   function showLoading() {
     loadingEl.style.display = 'flex';
   }
@@ -100,27 +120,41 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadModel() {
     showLoading();
     try {
-      const providerRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
-        }
-      });
+      const [providerRes, modelRes, keySet] = await Promise.all([
+        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Basic ' + btoa('admin:admin')
+          }
+        }),
+        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_MODEL`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Basic ' + btoa('admin:admin')
+          }
+        }),
+        hasOpenAIKey()
+      ]);
+
       if (!providerRes.ok) throw new Error(await providerRes.text());
-      const providerData = await providerRes.json();
-      const provider = JSON.parse(providerData.value || '"gemini"');
-      providerSelect.value = provider;
-
-      const modelRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=AI_MODEL`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
-        }
-      });
       if (!modelRes.ok) throw new Error(await modelRes.text());
+      const providerData = await providerRes.json();
       const modelData = await modelRes.json();
-      const model = JSON.parse(modelData.value || (provider === 'openai' ? '"gpt-4o"' : '"gemini-1.5-pro"'));
+      let provider = JSON.parse(providerData.value || '"gemini"');
+      let model = JSON.parse(modelData.value || (provider === 'openai' ? '"gpt-4o"' : '"gemini-1.5-pro"'));
+      const hasKey = keySet;
 
+      if (!hasKey) {
+        const opt = providerSelect.querySelector('option[value="openai"]');
+        if (opt) opt.disabled = true;
+        if (provider === 'openai') {
+          provider = 'gemini';
+          model = 'gemini-1.5-pro';
+          showMessage('OpenAI API ключ липсва. Задайте го чрез `wrangler secret put openai_api_key`.', 'error');
+        }
+      }
+
+      providerSelect.value = provider;
       populateModelOptions(provider, model);
     } catch (err) {
       showMessage('Грешка при зареждане на модела: ' + err.message);
