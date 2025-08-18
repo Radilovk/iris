@@ -95,6 +95,14 @@ test('getAIModel може да чете от env и KV', async () => {
   assert.equal(await getAIModel(env), 'gemini-1.5-flash');
 });
 
+test('getAIModel игнорира празни или невалидни стойности от KV', async () => {
+  const emptyEnv = { iris_rag_kv: { get: async () => '' }, AI_PROVIDER: 'openai' };
+  assert.equal(await getAIModel(emptyEnv), 'gpt-4o');
+
+  const invalidEnv = { iris_rag_kv: { get: async () => 123 }, AI_PROVIDER: 'openai' };
+  assert.equal(await getAIModel(invalidEnv), 'gpt-4o');
+});
+
 test('getAIModel използва AI_MODEL_EXTENDED при липса на AI_MODEL', async () => {
   const env = { AI_MODEL_EXTENDED: 'gpt-4o', AI_PROVIDER: 'openai' };
   assert.equal(await getAIModel(env), 'gpt-4o');

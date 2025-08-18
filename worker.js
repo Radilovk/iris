@@ -56,8 +56,11 @@ export async function getAIModel(env = {}) {
     if (env.AI_MODEL) return env.AI_MODEL;
     if (env.iris_rag_kv) {
         try {
-            const val = await env.iris_rag_kv.get('AI_MODEL', 'json');
-            if (typeof val === 'string') return val;
+            const val = await env.iris_rag_kv.get('AI_MODEL');
+            if (typeof val === 'string') {
+                const model = val.trim();
+                if (model) return model;
+            }
         } catch (e) {
             console.warn('Неуспешно извличане на AI_MODEL от KV:', e);
         }
