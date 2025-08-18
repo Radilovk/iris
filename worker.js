@@ -14,7 +14,7 @@ function validateKv(data) {
 function groupKeys(entries) {
   const groups = {};
   for (const { key } of entries) {
-    const category = key.split(/[:_]/)[0];
+    const category = key.split('_')[0];
     if (!groups[category]) groups[category] = [];
     groups[category].push(key);
   }
@@ -164,7 +164,7 @@ const IDENTIFICATION_PROMPT = `
 Не добавяй никакви обяснения. Само JSON масив.
 
 Пример за изход:
-["CONSTITUTION:...","DISPOSITION:..."]
+["CONSTITUTION_...","DISPOSITION_..."]
 `;
 
 // КОРЕКЦИЯ #1: Премахната е директната референция към "ROLE_PROMPT"

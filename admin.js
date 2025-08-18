@@ -1,5 +1,6 @@
 import { KV_DATA } from './kv-data.js';
 import { WORKER_BASE_URL } from './config.js';
+// Имената на KV ключовете вече използват '_' вместо ':'
 
 document.addEventListener('DOMContentLoaded', () => {
   const syncBtn = document.getElementById('sync-btn');

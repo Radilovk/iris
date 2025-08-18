@@ -382,7 +382,7 @@ test('fetchRagData използва кеша при второ извикван�
   delete globalThis.caches;
 });
 
-test('fetchRagData извлича само данни за DISPOSITION:ACIDITY', async () => {
+test('fetchRagData извлича само данни за DISPOSITION_ACIDITY', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const fetched = [];
   const env = {
@@ -390,9 +390,9 @@ test('fetchRagData извлича само данни за DISPOSITION:ACIDITY',
       get: async key => { fetched.push(key); return { key }; }
     }
   };
-  const data = await fetchRagData({ DISPOSITION: ['DISPOSITION:ACIDITY'] }, env);
-  assert.deepEqual(fetched, ['DISPOSITION:ACIDITY']);
-  assert.deepEqual(data, { DISPOSITION: { 'DISPOSITION:ACIDITY': { key: 'DISPOSITION:ACIDITY' } } });
+  const data = await fetchRagData({ DISPOSITION: ['DISPOSITION_ACIDITY'] }, env);
+  assert.deepEqual(fetched, ['DISPOSITION_ACIDITY']);
+  assert.deepEqual(data, { DISPOSITION: { 'DISPOSITION_ACIDITY': { key: 'DISPOSITION_ACIDITY' } } });
   delete globalThis.caches;
 });
 

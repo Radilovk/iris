@@ -25,7 +25,7 @@ async function validateFile(file) {
   } catch (err) {
     throw new Error(`${file}: невалиден JSON (${err.message})`);
   }
-  const key = file.replace(/[:]/g, '_');
+  const key = file;
   const required = FILE_SPECIFIC_REQUIRED[key] || ['name', 'source'];
   for (const field of required) {
     if (['analysis_steps', 'glands', 'elimination_channels', 'gemini', 'openai'].includes(field)) {
