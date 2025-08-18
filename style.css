@@ -467,7 +467,8 @@ body {
     width: 100%;
 }
 .error-box,
-.success-box {
+.success-box,
+.warn-box {
     padding: 1rem;
     border-radius: 8px;
     text-align: center;
@@ -484,6 +485,12 @@ body {
     color: #155724;
     background-color: #d4edda;
     border: 1px solid #c3e6cb;
+}
+
+.warn-box {
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
 }
 
 /* Fade In Animations */
