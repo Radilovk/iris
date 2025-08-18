@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function hasOpenAIKey() {
     try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=openai_api_key`, {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/secret`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Basic ' + btoa('admin:admin')
@@ -95,11 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (!res.ok) return false;
       const data = await res.json();
-      try {
-        return !!JSON.parse(data.value || '""');
-      } catch {
-        return !!data.value;
-      }
+      return !!data.exists;
     } catch {
       return false;
     }
