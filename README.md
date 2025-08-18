@@ -73,24 +73,32 @@ Gemini).
 [vars]
 AI_MODEL_EXTENDED = "gpt-4o" # примерна стойност
 ```
-## Задаване на секрети
-
-API ключовете се съхраняват като Cloudflare секрети. Задайте ги чрез:
-
-```bash
-wrangler secret put openai_api_key
-wrangler secret put gemini_api_key
-```
-
-Въведете стойностите, когато бъдете подканени.
 
 ## OpenAI API ключ
+
+За да използвате моделите на OpenAI, задайте API ключа в `wrangler.toml` или като секрет:
+
+```toml
+[vars]
+openai_api_key = "YOUR_KEY"  # или използвайте OPENAI_API_KEY
+```
+
+или чрез командата:
 
 ```bash
 wrangler secret put openai_api_key
 ```
 
 ## Gemini API ключ
+
+За Gemini задайте ключа по аналогичен начин:
+
+```toml
+[vars]
+gemini_api_key = "YOUR_KEY"  # или използвайте GEMINI_API_KEY
+```
+
+или чрез командата:
 
 ```bash
 wrangler secret put gemini_api_key
