@@ -186,8 +186,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const providerData = await providerRes.json();
       const modelData = await modelRes.json();
-      let provider = JSON.parse(providerData.value || JSON.stringify(Object.keys(MODEL_OPTIONS)[0] || 'gemini'));
-      let model = JSON.parse(modelData.value || '""');
+
+      let provider;
+      try {
+        provider = JSON.parse(providerData.value);
+      } catch (err) {
+        provider = providerData.value?.trim() || 'gemini';
+        showMessage('Невалиден формат за AI_PROVIDER: ' + err.message + '. Използвам "' + provider + '".', 'error');
+      }
+      if (!provider || !MODEL_OPTIONS[provider]) provider = 'gemini';
+
+      let model;
+      try {
+        model = JSON.parse(modelData.value);
+      } catch (err) {
+        model = modelData.value?.trim() || (MODEL_OPTIONS[provider] || [])[0];
+        showMessage('Невалиден формат за AI_MODEL: ' + err.message + '. Използвам "' + model + '".', 'error');
+      }
+      if (!model) model = (MODEL_OPTIONS[provider] || [])[0];
+
       populateProviderOptions(provider);
       const hasKey = keySet;
       if (!hasKey) {
