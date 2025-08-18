@@ -602,18 +602,13 @@ function formatUserData(data) {
     `;
 }
 
-// ПРЕПОРЪКА #3: Преименувана функция за по-голяма яснота
+// Проверява дали изображението не надвишава максималния допустим размер.
 async function validateImageSize(file, env = {}, maxBytes = 5 * 1024 * 1024) {
     const log = (...args) => debugLog(env, ...args);
     log(`Валидиране на файл: ${file.name}, размер: ${file.size} байта.`);
     if (file.size > maxBytes) {
         throw new Error(`Файлът ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) надвишава максималния размер от ${maxBytes / 1024 / 1024}MB.`);
     }
-    return file;
-}
-
-async function resizeImage(file, env = {}, maxBytes = 5 * 1024 * 1024) {
-    await validateImageSize(file, env, maxBytes);
     return file;
 }
 
@@ -677,4 +672,4 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
     return new Headers(headers);
 }
 
-export { resizeImage, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI };
+export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI };
