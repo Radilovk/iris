@@ -490,10 +490,24 @@ async function handleAnalysisRequest(request, env) {
         const rightEyeFile = formData.get("right-eye");
         if (!leftEyeFile || !rightEyeFile) throw new Error("Липсват файлове за ляво или дясно око.");
         
+        const digestion = formData.getAll("digestion") || [];
+        const digestionOther = formData.get("digestion-other");
+        if (digestionOther) digestion.push(digestionOther);
+
         const userData = {
-            name: formData.get("name"), age: formData.get("age"), mainComplaint: formData.get("main-complaint"),
-            surgeries: formData.get("surgeries"), familyHistory: formData.get("family-history"), diet: formData.get("diet"),
-            water: formData.get("water"), sleep: formData.get("sleep"), stress: formData.get("stress"),
+            name: formData.get("name"),
+            age: formData.get("age"),
+            height: formData.get("height"),
+            weight: formData.get("weight"),
+            gender: formData.get("gender"),
+            mainComplaint: formData.get("main-complaint"),
+            surgeries: formData.get("surgeries"),
+            familyHistory: formData.get("family-history"),
+            diet: formData.get("diet"),
+            water: formData.get("water"),
+            sleep: formData.get("sleep"),
+            stress: formData.get("stress"),
+            digestive: digestion,
         };
         const leftEyeBase64 = await fileToBase64(leftEyeFile, env);
         const rightEyeBase64 = await fileToBase64(rightEyeFile, env);
@@ -751,6 +765,9 @@ function formatUserData(data) {
     return `
 - Име: ${data.name || 'Не е посочено'}
 - Възраст: ${data.age || 'Не е посочена'}
+- Ръст: ${data.height || 'Не е посочен'}
+- Тегло: ${data.weight || 'Не е посочено'}
+- Пол: ${data.gender || 'Не е посочен'}
 - Основно оплакване: ${data.mainComplaint || 'Няма'}
 - Операции/Травми: ${data.surgeries || 'Няма'}
 - Фамилна анамнеза: ${data.familyHistory || 'Няма'}
@@ -758,6 +775,7 @@ function formatUserData(data) {
 - Прием на вода: ${data.water || 'Не е посочен'}
 - Сън: ${data.sleep ? data.sleep + ' часа' : 'Не е посочен'}
 - Ниво на стрес: ${data.stress ? data.stress + '/10' : 'Не е посочено'}
+- Храносмилателна система: ${data.digestive && data.digestive.length ? data.digestive.join(', ') : 'Няма'}
     `;
 }
 

@@ -54,6 +54,20 @@
                             <label for="age">Възраст:</label>
                             <input type="number" id="age" name="age" required aria-required="true" aria-label="Възраст">
                         </div>
+                        <div class="form-group">
+                            <label for="height">Ръст (см):</label>
+                            <input type="number" id="height" name="height" aria-label="Ръст">
+                        </div>
+                        <div class="form-group">
+                            <label for="weight">Килограми:</label>
+                            <input type="number" id="weight" name="weight" aria-label="Килограми">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Пол:</label>
+                            <label><input type="radio" name="gender" value="Мъж"> Мъж</label>
+                            <label><input type="radio" name="gender" value="Жена"> Жена</label>
+                            <label><input type="radio" name="gender" value="Друго"> Друго</label>
+                        </div>
                         <div class="form-group full-width">
                             <label for="main-complaint">Основна причина за консултацията / Основни оплаквания:</label>
                             <textarea id="main-complaint" name="main-complaint" rows="3" aria-label="Основни оплаквания" aria-required="true"></textarea>
@@ -67,6 +81,14 @@
                         <div class="form-group full-width">
                             <label>Фамилна анамнеза (сърдечни проблеми, диабет, рак и др.):</label>
                             <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'" aria-label="Фамилна анамнеза" aria-required="true">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Състояния при храносмилателната система:</label>
+                            <label><input type="checkbox" name="digestion" value="Запек"> Запек</label>
+                            <label><input type="checkbox" name="digestion" value="Подуване"> Подуване</label>
+                            <label><input type="checkbox" name="digestion" value="Киселини"> Киселини</label>
+                            <label><input type="checkbox" name="digestion" value="Газове"> Газове</label>
+                            <label>Друго: <input type="text" id="digestion-other" name="digestion-other" placeholder="Опишете"></label>
                         </div>
                     </div>
                     <button type="button" class="next-btn">Продължи към Стъпка 2 <i class="fas fa-arrow-right"></i></button>
