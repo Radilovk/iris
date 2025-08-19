@@ -12,6 +12,13 @@ const FILE_SPECIFIC_REQUIRED = {
   MODEL_OPTIONS: ['gemini', 'openai'],
 };
 
+const PREFIX_REQUIRED = {
+  DISPOSITION_: ['name', 'source'],
+  SIGN_: ['name', 'source'],
+  RECOMMENDATION_: ['name', 'description', 'source'],
+  CONSTITUTION_: ['name', 'source'],
+};
+
 function ensureString(obj, field, file) {
   if (typeof obj[field] !== 'string' || !obj[field].trim()) {
     throw new Error(`${file}: липсва поле ${field}`);
@@ -34,7 +41,8 @@ async function validateFile(file) {
     }
     return;
   }
-  const required = FILE_SPECIFIC_REQUIRED[key] || ['name', 'source'];
+  const prefix = Object.keys(PREFIX_REQUIRED).find(p => key.startsWith(p));
+  const required = FILE_SPECIFIC_REQUIRED[key] || (prefix && PREFIX_REQUIRED[prefix]) || ['name', 'source'];
   for (const field of required) {
     if (['analysis_steps', 'glands', 'elimination_channels', 'gemini', 'openai'].includes(field)) {
       if (!Array.isArray(data[field])) {
@@ -52,7 +60,7 @@ async function validateFile(file) {
 }
 
 async function main() {
-  const files = (await fs.readdir(KV_DIR)).filter(f => !f.startsWith('.'));
+  const files = (await fs.readdir(KV_DIR)).filter(f => /^[A-Z_]+$/.test(f));
   for (const file of files) {
     await validateFile(file);
   }
