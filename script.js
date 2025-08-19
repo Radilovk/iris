@@ -113,13 +113,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = this.querySelector('.submit-btn');
         const originalBtnText = submitBtn.innerHTML;
 
-        // Показване на индикатор за зареждане, за да знае потребителят, че се работи
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Моля, изчакайте...';
+        // Деактивираме бутона, за да предотвратим повторни изпращания
+        submitBtn.textContent = 'Анализиране...';
         submitBtn.disabled = true;
 
         if (messageBox) {
             messageBox.textContent = '';
             messageBox.className = '';
+        }
+
+        // Динамични съобщения за прогреса на анализа
+        const progressMessages = [
+            'Обработваме вашите изображения...',
+            'Идентифицираме ирисови знаци...',
+            'Анализираме вашата анамнеза...',
+            'Генерираме персонален холистичен анализ...'
+        ];
+        let messageIndex = 0;
+        let progressInterval;
+
+        if (messageBox) {
+            messageBox.className = 'info-box';
+            messageBox.textContent = progressMessages[messageIndex];
+            progressInterval = setInterval(() => {
+                messageIndex = (messageIndex + 1) % progressMessages.length;
+                messageBox.textContent = progressMessages[messageIndex];
+            }, 4000);
         }
 
         const formData = new FormData(this);
@@ -145,20 +164,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return response.json();
         })
-        .then(data => { 
+        .then(data => {
+            if (progressInterval) clearInterval(progressInterval);
             console.log("Получен успешен анализ:", data);
-            
+
             // Съхраняваме получения JSON анализ в localStorage на браузъра
             localStorage.setItem('iridologyReport', JSON.stringify(data));
-            
+
             // Пренасочваме потребителя към страницата за показване на доклада
             // (трябва да създадете файл 'report.html')
             window.location.href = 'report.html';
         })
         .catch(error => {
+            if (progressInterval) clearInterval(progressInterval);
             console.error('Критична грешка при изпращане на формуляра:', error);
             showError('Възникна грешка при анализа: ' + error.message);
-            
+
             // Връщаме бутона в нормалното му състояние, за да може потребителят да опита отново
             submitBtn.innerHTML = originalBtnText;
             submitBtn.disabled = false;
