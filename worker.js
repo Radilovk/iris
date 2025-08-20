@@ -494,12 +494,13 @@ async function handleAnalysisRequest(request, env) {
         const digestionOther = formData.get("digestion-other");
         if (digestionOther) digestion.push(digestionOther);
 
+        const gender = formData.get("gender");
         const userData = {
             name: formData.get("name"),
             age: formData.get("age"),
             height: formData.get("height"),
             weight: formData.get("weight"),
-            gender: formData.get("gender"),
+            gender,
             mainComplaint: formData.get("main-complaint"),
             surgeries: formData.get("surgeries"),
             familyHistory: formData.get("family-history"),
@@ -508,6 +509,7 @@ async function handleAnalysisRequest(request, env) {
             stress: formData.get("stress"),
             digestive: digestion,
         };
+        if (gender !== "Мъж" && gender !== "Жена") userData.gender = "";
         const leftEyeBase64 = await fileToBase64(leftEyeFile, env);
         const rightEyeBase64 = await fileToBase64(rightEyeFile, env);
         log("Данните от формуляра са обработени успешно.");
