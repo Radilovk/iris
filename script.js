@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevBtns = document.querySelectorAll('.prev-btn');
     const stepperSteps = document.querySelectorAll('.step');
     const messageBox = document.getElementById('message-box');
+    const digestionSelect = document.getElementById('digestion');
+    const digestionOther = document.getElementById('digestion-other');
 
     let currentStep = 1;
 
@@ -47,6 +49,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    if (digestionSelect && digestionOther) {
+        digestionSelect.addEventListener('change', () => {
+            const values = Array.from(digestionSelect.selectedOptions).map(opt => opt.value);
+            digestionOther.style.display = values.includes('Друго') ? 'block' : 'none';
+        });
+    }
 
     function showError(message) {
         if (!messageBox) return;
