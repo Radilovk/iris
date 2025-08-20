@@ -500,6 +500,17 @@ body {
     border: 1px solid #bee5eb;
 }
 
+.loading-spinner {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* Fade In Animations */
 .fade-in { animation: fadeInAnim 1s ease-in-out forwards; }
 .fade-in-up { opacity: 0; animation: fadeInUpAnim 0.8s ease-out forwards; }

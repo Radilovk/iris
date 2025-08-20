@@ -131,13 +131,20 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         let messageIndex = 0;
         let progressInterval;
+        let spinner;
+        let messageTextNode;
 
         if (messageBox) {
             messageBox.className = 'info-box';
-            messageBox.textContent = progressMessages[messageIndex];
+            spinner = document.createElement('i');
+            spinner.className = 'loading-spinner fas fa-spinner fa-spin';
+            messageTextNode = document.createTextNode(progressMessages[messageIndex]);
+            messageBox.textContent = '';
+            messageBox.appendChild(spinner);
+            messageBox.appendChild(messageTextNode);
             progressInterval = setInterval(() => {
                 messageIndex = (messageIndex + 1) % progressMessages.length;
-                messageBox.textContent = progressMessages[messageIndex];
+                messageTextNode.textContent = progressMessages[messageIndex];
             }, 4000);
         }
 
@@ -166,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (progressInterval) clearInterval(progressInterval);
+            if (spinner) spinner.remove();
             console.log("Получен успешен анализ:", data);
 
             // Съхраняваме получения JSON анализ в localStorage на браузъра
@@ -177,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             if (progressInterval) clearInterval(progressInterval);
+            if (spinner) spinner.remove();
             console.error('Критична грешка при изпращане на формуляра:', error);
             showError('Възникна грешка при анализа: ' + error.message);
 
