@@ -83,14 +83,16 @@
                         </div>
                         <div class="form-group full-width">
                             <label>Състояния при храносмилателната система:</label>
-                            <label><input type="checkbox" name="digestion" value="Запек"> Запек</label>
-                            <label><input type="checkbox" name="digestion" value="Подуване"> Подуване</label>
-                            <label><input type="checkbox" name="digestion" value="Киселини"> Киселини</label>
-                            <label><input type="checkbox" name="digestion" value="Газове"> Газове</label>
-                            <label>Друго: <input type="text" id="digestion-other" name="digestion-other" placeholder="Опишете"></label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Запек"> Запек</label>
+                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Подуване"> Подуване</label>
+                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Киселини"> Киселини</label>
+                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Газове"> Газове</label>
+                                <label class="checkbox-item">Друго: <input type="text" id="digestion-other" name="digestion-other" placeholder="Опишете"></label>
+                            </div>
                         </div>
                     </div>
-                    <button type="button" class="next-btn">Продължи към Стъпка 2 <i class="fas fa-arrow-right"></i></button>
+                    <button type="button" class="btn btn-primary next-btn">Продължи към Стъпка 2 <i class="fas fa-arrow-right"></i></button>
                 </div>
 
                 <!-- СТЪПКА 2: ВЪПРОСНИК - НАЧИН НА ЖИВОТ -->
@@ -115,9 +117,9 @@
                             <output>5</output>
                         </div>
                     </div>
-                     <div class="button-group">
-                        <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Предишна стъпка</button>
-                        <button type="button" class="next-btn">Продължи към Стъпка 3 <i class="fas fa-arrow-right"></i></button>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Предишна стъпка</button>
+                        <button type="button" class="btn btn-primary next-btn">Продължи към Стъпка 3 <i class="fas fa-arrow-right"></i></button>
                     </div>
                 </div>
 
@@ -159,8 +161,8 @@
                     <!-- END: Препоръчителна промяна 2 -->
 
                     <div class="button-group">
-                         <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Предишна стъпка</button>
-                        <button type="submit" class="submit-btn">Изпрати за анализ <i class="fas fa-paper-plane"></i></button>
+                         <button type="button" class="btn btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Предишна стъпка</button>
+                        <button type="submit" class="btn btn-primary submit-btn">Изпрати за анализ <i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
 
