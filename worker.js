@@ -503,7 +503,6 @@ async function handleAnalysisRequest(request, env) {
             mainComplaint: formData.get("main-complaint"),
             surgeries: formData.get("surgeries"),
             familyHistory: formData.get("family-history"),
-            diet: formData.get("diet"),
             water: formData.get("water"),
             sleep: formData.get("sleep"),
             stress: formData.get("stress"),
@@ -763,19 +762,18 @@ export async function fetchRagData(keys, env) {
 // --- ПОМОЩНИ ФУНКЦИИ ---
 function formatUserData(data) {
     return `
-- Име: ${data.name || 'Не е посочено'}
-- Възраст: ${data.age || 'Не е посочена'}
-- Ръст: ${data.height || 'Не е посочен'}
-- Тегло: ${data.weight || 'Не е посочено'}
-- Пол: ${data.gender || 'Не е посочен'}
-- Основно оплакване: ${data.mainComplaint || 'Няма'}
-- Операции/Травми: ${data.surgeries || 'Няма'}
-- Фамилна анамнеза: ${data.familyHistory || 'Няма'}
-- Диета: ${data.diet || 'Не е посочена'}
-- Прием на вода: ${data.water || 'Не е посочен'}
-- Сън: ${data.sleep ? data.sleep + ' часа' : 'Не е посочен'}
-- Ниво на стрес: ${data.stress ? data.stress + '/10' : 'Не е посочено'}
-- Храносмилателна система: ${data.digestive && data.digestive.length ? data.digestive.join(', ') : 'Няма'}
+ - Име: ${data.name || 'Не е посочено'}
+ - Възраст: ${data.age || 'Не е посочена'}
+ - Ръст: ${data.height || 'Не е посочен'}
+ - Тегло: ${data.weight || 'Не е посочено'}
+ - Пол: ${data.gender || 'Не е посочен'}
+ - Основно оплакване: ${data.mainComplaint || 'Няма'}
+ - Операции/Травми: ${data.surgeries || 'Няма'}
+ - Фамилна анамнеза: ${data.familyHistory || 'Няма'}
+ - Прием на вода: ${data.water || 'Не е посочен'}
+ - Сън: ${data.sleep ? data.sleep + ' часа' : 'Не е посочен'}
+ - Ниво на стрес: ${data.stress ? data.stress + '/10' : 'Не е посочено'}
+ - Храносмилателна система: ${data.digestive && data.digestive.length ? data.digestive.join(', ') : 'Няма'}
     `;
 }
 
