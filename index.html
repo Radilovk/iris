@@ -63,9 +63,12 @@
                             <input type="number" id="weight" name="weight" aria-label="Килограми">
                         </div>
                         <div class="form-group full-width">
-                            <label>Пол:</label>
-                            <label><input type="radio" name="gender" value="Мъж" required> Мъж</label>
-                            <label><input type="radio" name="gender" value="Жена"> Жена</label>
+                            <label for="gender">Пол:</label>
+                            <select id="gender" name="gender" required>
+                                <option value="" disabled selected>Изберете</option>
+                                <option value="Мъж">Мъж</option>
+                                <option value="Жена">Жена</option>
+                            </select>
                         </div>
                         <div class="form-group full-width">
                             <label for="main-complaint">Основна причина за консултацията / Основни оплаквания:</label>
