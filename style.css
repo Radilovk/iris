@@ -741,3 +741,30 @@ body {
         margin-right: 0.8rem;
     }
 }
+
+/* Допълнителни оптимизации за много малки екрани */
+@media (max-width: 480px) {
+    .stepper-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    .step span {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .step p {
+        font-size: 0.8rem;
+    }
+
+    .form-grid {
+        gap: 0.75rem;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+}
