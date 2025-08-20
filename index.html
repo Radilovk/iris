@@ -82,14 +82,15 @@
                             <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'" aria-label="Фамилна анамнеза" aria-required="true">
                         </div>
                         <div class="form-group full-width">
-                            <label>Състояния при храносмилателната система:</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Запек"> Запек</label>
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Подуване"> Подуване</label>
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Киселини"> Киселини</label>
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Газове"> Газове</label>
-                                <label class="checkbox-item">Друго: <input type="text" id="digestion-other" name="digestion-other" placeholder="Опишете"></label>
-                            </div>
+                            <label for="digestion">Състояния при храносмилателната система:</label>
+                            <select id="digestion" name="digestion" multiple aria-label="Състояния при храносмилателната система">
+                                <option value="Запек">Запек</option>
+                                <option value="Подуване">Подуване</option>
+                                <option value="Киселини">Киселини</option>
+                                <option value="Газове">Газове</option>
+                                <option value="Друго">Друго</option>
+                            </select>
+                            <input type="text" id="digestion-other" name="digestion-other" placeholder="Опишете" style="display: none;">
                         </div>
                     </div>
                     <button type="button" class="btn btn-primary next-btn">Продължи към Стъпка 2 <i class="fas fa-arrow-right"></i></button>
