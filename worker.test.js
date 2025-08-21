@@ -28,6 +28,14 @@ test('fileToBase64 работи за малък файл', async () => {
   assert.match(base64, /^[A-Za-z0-9+/=]+$/);
 });
 
+test('fileToBase64 обработва файл по-голям от 8KB', async () => {
+  const buffer = Buffer.alloc(20 * 1024, 123); // 20KB
+  const file = new File([buffer], 'chunk.jpg', { type: 'image/jpeg' });
+  const expected = buffer.toString('base64');
+  const result = await fileToBase64(file);
+  assert.equal(result, expected);
+});
+
 test('corsHeaders поддържа wildcard "*"', () => {
   const request = new Request('https://api.example', { headers: { Origin: 'https://myapp.example' }});
   const headers = corsHeaders(request, { allowed_origin: '*' });
