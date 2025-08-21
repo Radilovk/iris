@@ -1,4 +1,40 @@
-import { preprocessImage } from './image-utils.js';
+import { Buffer } from 'node:buffer';
+import Jimp from 'jimp';
+
+// --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
+async function resizeToStandard(image, size = 1024) {
+    return image.contain(size, size);
+}
+
+async function autoCropBlackBorders(image) {
+    return image.autocrop({
+        cropSymmetric: true,
+        tolerance: 0.0001,
+        leaveBorder: 0,
+        color: 0x000000FF,
+    });
+}
+
+async function normalizeBrightnessContrast(image) {
+    image.normalize();
+    return image;
+}
+
+async function preprocessImage(file, size = 1024) {
+    try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        let image = await Jimp.read(buffer);
+        image = await autoCropBlackBorders(image);
+        image = await resizeToStandard(image, size);
+        image = await normalizeBrightnessContrast(image);
+        const outBuffer = await image.getBufferAsync(Jimp.MIME_PNG);
+        const outArray = new Uint8Array(outBuffer);
+        return new File([outArray], file.name || 'processed.png', { type: 'image/png' });
+    } catch {
+        // Ако обработката се провали, връщаме оригиналния файл
+        return file;
+    }
+}
 
 function validateKv(data) {
   const entries = [];
@@ -719,7 +755,7 @@ export async function fetchRagData(keys, env) {
     const { iris_rag_kv } = env;
     if (!iris_rag_kv) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
 
-    const cache = caches.default;
+    const cache = /** @type {any} */ (caches).default;
     const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
 
     async function fetchArray(arr = []) {
