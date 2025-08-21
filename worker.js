@@ -805,9 +805,17 @@ async function fileToBase64(blob, env = {}) {
     await validateImageSize(blob, env);
     const arrayBuffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
+
+    // Използваме Node Buffer ако е наличен за по-ефективно кодиране
+    if (typeof Buffer !== 'undefined') {
+        return Buffer.from(bytes).toString('base64');
+    }
+
+    const chunkSize = 8192; // 8KB
     let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
     }
     return btoa(binary);
 }
