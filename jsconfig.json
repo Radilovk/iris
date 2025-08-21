@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "allowJs": true,
+    "checkJs": true,
+    "types": ["node"],
+    "lib": ["ES2022", "WebWorker"]
+  },
+  "include": ["worker.js"]
+}
