@@ -749,19 +749,21 @@ body {
 /* Допълнителни оптимизации за много малки екрани */
 @media (max-width: 480px) {
     .stepper-nav {
-        flex-direction: column;
         align-items: flex-start;
-        justify-content: flex-start;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        overflow-x: auto;
     }
 
     .step span {
         width: 30px;
         height: 30px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .step p {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .form-grid {
