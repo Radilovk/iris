@@ -248,6 +248,10 @@ body {
 .step p {
     font-size: 0.9rem;
     margin-top: 0.5rem;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .step.active span {
     background-color: var(--primary-color);
