@@ -610,6 +610,38 @@ body {
     font-style: italic;
 }
 
+/* === Холистична секция === */
+details.holistic {
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+}
+details.holistic summary {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+}
+details.holistic summary:hover {
+    color: var(--primary-color);
+}
+details.holistic summary i {
+    margin-right: 1rem;
+    width: 30px;
+    text-align: center;
+    color: var(--primary-color);
+    transition: transform 0.3s ease;
+}
+details.holistic[open] summary i {
+    transform: rotate(90deg);
+}
+details.holistic summary:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 4px;
+}
+
 .report-disclaimer {
     display: flex;
     align-items: flex-start;
