@@ -251,6 +251,16 @@ gemini_api_key = "YOUR_KEY"  # или използвайте GEMINI_API_KEY
 wrangler secret put gemini_api_key
 ```
 
+## Google Custom Search API
+
+За външни източници се използва Google Custom Search. Настройте ключ и идентификатор:
+
+```toml
+[vars]
+GOOGLE_API_KEY = "demo-key"
+GOOGLE_CX = "demo-cx"
+```
+
 ## Първоначално конфигуриране
 
 1. Отворете `admin.html` в браузър.
