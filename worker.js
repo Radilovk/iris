@@ -1,3 +1,5 @@
+import { preprocessImage } from './image-utils.js';
+
 function validateKv(data) {
   const entries = [];
   for (const [key, value] of Object.entries(data)) {
@@ -510,8 +512,10 @@ async function handleAnalysisRequest(request, env) {
             digestive: digestion,
         };
         if (gender !== "Мъж" && gender !== "Жена") userData.gender = "";
-        const leftEyeBase64 = await fileToBase64(leftEyeFile, env);
-        const rightEyeBase64 = await fileToBase64(rightEyeFile, env);
+        const leftProcessed = await preprocessImage(leftEyeFile);
+        const rightProcessed = await preprocessImage(rightEyeFile);
+        const leftEyeBase64 = await fileToBase64(leftProcessed, env);
+        const rightEyeBase64 = await fileToBase64(rightProcessed, env);
         log("Данните от формуляра са обработени успешно.");
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
@@ -789,9 +793,9 @@ async function validateImageSize(file, env = {}, maxBytes = 5 * 1024 * 1024) {
     return file;
 }
 
-async function fileToBase64(file, env = {}) {
-    await validateImageSize(file, env);
-    const arrayBuffer = await file.arrayBuffer();
+async function fileToBase64(blob, env = {}) {
+    await validateImageSize(blob, env);
+    const arrayBuffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     let binary = '';
     for (let i = 0; i < bytes.length; i++) {
