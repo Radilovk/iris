@@ -541,7 +541,7 @@ async function handleAnalysisRequest(request, env) {
         log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
 
         log("Стъпка 2.1: Извличане на публични източници...");
-        const externalInfos = await Promise.all(ragKeys.map(key => fetchExternalInfo(key)));
+        const externalInfos = await Promise.all(ragKeys.map(key => fetchExternalInfo(key, env)));
         ragKeys.forEach((key, idx) => {
             const info = externalInfos[idx];
             if (info) {
@@ -683,18 +683,26 @@ async function callOpenAIAPI(model, prompt, options, leftEyeBase64, rightEyeBase
 }
 
 // --- ВЪНШНИ ИЗТОЧНИЦИ ---
-async function fetchExternalInfo(query) {
+async function fetchExternalInfo(query, env) {
     try {
-        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+        const apiKey = env?.GOOGLE_API_KEY;
+        const cx = env?.GOOGLE_CX;
+        if (!apiKey || !cx) {
+            console.warn('Google API не е конфигуриран.');
+            return null;
+        }
+        const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&key=${apiKey}&cx=${cx}`;
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
         if (!res.ok) {
             throw new Error(`HTTP ${res.status}`);
         }
         const data = await res.json();
+        const item = data.items?.[0];
+        if (!item) return null;
         return {
-            title: data.title,
-            summary: data.extract,
-            source: data.content_urls?.desktop?.page || data.canonicalurl || url
+            title: item.title,
+            summary: item.snippet,
+            source: item.link
         };
     } catch (e) {
         console.warn('Неуспешно извличане на външна информация за', query, e);
