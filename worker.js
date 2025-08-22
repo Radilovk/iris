@@ -569,7 +569,13 @@ async function handleAnalysisRequest(request, env) {
         log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
 
         log("Стъпка 2.1: Извличане на публични източници...");
-        const externalInfos = await Promise.all(ragKeys.map(key => fetchExternalInfo(key, env)));
+        let externalInfos = [];
+        if (env.GOOGLE_API_KEY && env.GOOGLE_CX) {
+            externalInfos = await Promise.all(ragKeys.map(key => fetchExternalInfo(key, env)));
+        } else {
+            log('Пропуснато извличане на публични източници');
+            console.info('Пропуснато извличане на публични източници');
+        }
         ragKeys.forEach((key, idx) => {
             const info = externalInfos[idx];
             if (info) {
@@ -717,12 +723,11 @@ async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, exp
 }
 
 // --- ВЪНШНИ ИЗТОЧНИЦИ ---
-async function fetchExternalInfo(query, env) {
+export async function fetchExternalInfo(query, env) {
     try {
         const apiKey = env?.GOOGLE_API_KEY;
         const cx = env?.GOOGLE_CX;
         if (!apiKey || !cx) {
-            console.warn('Google API не е конфигуриран.');
             return null;
         }
         const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&key=${apiKey}&cx=${cx}`;

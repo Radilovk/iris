@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData } from './worker.js';
+import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -410,5 +410,15 @@ test('fetchRagData извлича само данни за DISPOSITION_ACIDITY',
   assert.deepEqual(fetched, ['DISPOSITION_ACIDITY']);
   assert.deepEqual(data, { DISPOSITION: { 'DISPOSITION_ACIDITY': { key: 'DISPOSITION_ACIDITY' } } });
   delete globalThis.caches;
+});
+
+test('fetchExternalInfo връща null без предупреждения при липсващи ключове', async () => {
+  let warned = false;
+  const origWarn = console.warn;
+  console.warn = () => { warned = true; };
+  const result = await fetchExternalInfo('test', {});
+  assert.equal(result, null);
+  assert.equal(warned, false);
+  console.warn = origWarn;
 });
 
