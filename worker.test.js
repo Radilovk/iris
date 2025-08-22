@@ -16,7 +16,7 @@ test('ROLE_PROMPT съдържа ключ missing_data', () => {
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {
-  const bigBuffer = Buffer.alloc(6 * 1024 * 1024, 0); // 6MB
+  const bigBuffer = Buffer.alloc(11 * 1024 * 1024, 0); // 11MB
   const bigFile = new File([bigBuffer], 'big.jpg', { type: 'image/jpeg' });
   await assert.rejects(() => validateImageSize(bigFile));
 });

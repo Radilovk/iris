@@ -797,7 +797,7 @@ function formatUserData(data) {
 }
 
 // Проверява дали изображението не надвишава максималния допустим размер.
-async function validateImageSize(file, env = {}, maxBytes = 5 * 1024 * 1024) {
+async function validateImageSize(file, env = {}, maxBytes = 10 * 1024 * 1024) {
     const log = (...args) => debugLog(env, ...args);
     log(`Валидиране на файл: ${file.name}, размер: ${file.size} байта.`);
     if (file.size > maxBytes) {
