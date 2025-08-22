@@ -6,7 +6,7 @@
     "allowJs": true,
     "checkJs": true,
     "types": ["node"],
-    "lib": ["ES2022", "WebWorker"]
+    "lib": ["ES2022", "DOM", "WebWorker"]
   },
   "include": ["worker.js"]
 }
