@@ -275,102 +275,68 @@ test('handleAnalysisRequest връща контролирано съобщени
   globalThis.fetch = originalFetch;
 });
 
-test('/admin/keys изисква Basic Auth', async () => {
-  const reqNoAuth = new Request('https://example.com/admin/keys');
-  const resNoAuth = await worker.fetch(reqNoAuth, {});
-  assert.equal(resNoAuth.status, 401);
-
-  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
+test('/admin/keys връща списък с ключове', async () => {
+  const req = new Request('https://example.com/admin/keys');
   const env = {
-    ADMIN_USER: 'admin',
-    ADMIN_PASS: 'pass',
     iris_rag_kv: { list: async () => ({ keys: [] }) }
   };
-  const reqAuth = new Request('https://example.com/admin/keys', {
-    headers: { Authorization: auth }
-  });
-  const resAuth = await worker.fetch(reqAuth, env);
-  assert.equal(resAuth.status, 200);
-  assert.deepEqual(await resAuth.json(), { keys: [] });
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { keys: [] });
 });
 
 
-test('/admin/secret връща наличност на OpenAI ключ и изисква Basic Auth', async () => {
-  const reqNoAuth = new Request('https://example.com/admin/secret');
-  const resNoAuth = await worker.fetch(reqNoAuth, {});
-  assert.equal(resNoAuth.status, 401);
+test('/admin/secret връща наличност на OpenAI ключ', async () => {
+  const req1 = new Request('https://example.com/admin/secret');
+  const envWithKey = { openai_api_key: 'k' };
+  const res1 = await worker.fetch(req1, envWithKey);
+  assert.equal(res1.status, 200);
+  assert.deepEqual(await res1.json(), { exists: true });
 
-  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
-  const envWithKey = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass', openai_api_key: 'k' };
-  const reqAuth1 = new Request('https://example.com/admin/secret', {
-    headers: { Authorization: auth }
-  });
-  const resAuth1 = await worker.fetch(reqAuth1, envWithKey);
-  assert.equal(resAuth1.status, 200);
-  assert.deepEqual(await resAuth1.json(), { exists: true });
-
-  const envWithoutKey = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
-  const reqAuth2 = new Request('https://example.com/admin/secret', {
-    headers: { Authorization: auth }
-  });
-  const resAuth2 = await worker.fetch(reqAuth2, envWithoutKey);
-  assert.equal(resAuth2.status, 200);
-  assert.deepEqual(await resAuth2.json(), { exists: false });
+  const req2 = new Request('https://example.com/admin/secret');
+  const res2 = await worker.fetch(req2, {});
+  assert.equal(res2.status, 200);
+  assert.deepEqual(await res2.json(), { exists: false });
 });
 
-test('/admin/secret/gemini връща наличност на Gemini ключ и изисква Basic Auth', async () => {
-  const reqNoAuth = new Request('https://example.com/admin/secret/gemini');
-  const resNoAuth = await worker.fetch(reqNoAuth, {});
-  assert.equal(resNoAuth.status, 401);
+test('/admin/secret/gemini връща наличност на Gemini ключ', async () => {
+  const req1 = new Request('https://example.com/admin/secret/gemini');
+  const envWithKey = { gemini_api_key: 'k' };
+  const res1 = await worker.fetch(req1, envWithKey);
+  assert.equal(res1.status, 200);
+  assert.deepEqual(await res1.json(), { exists: true });
 
-  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
-  const envWithKey = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass', gemini_api_key: 'k' };
-  const reqAuth1 = new Request('https://example.com/admin/secret/gemini', {
-    headers: { Authorization: auth }
-  });
-  const resAuth1 = await worker.fetch(reqAuth1, envWithKey);
-  assert.equal(resAuth1.status, 200);
-  assert.deepEqual(await resAuth1.json(), { exists: true });
-
-  const envWithoutKey = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
-  const reqAuth2 = new Request('https://example.com/admin/secret/gemini', {
-    headers: { Authorization: auth }
-  });
-  const resAuth2 = await worker.fetch(reqAuth2, envWithoutKey);
-  assert.equal(resAuth2.status, 200);
-  assert.deepEqual(await resAuth2.json(), { exists: false });
+  const req2 = new Request('https://example.com/admin/secret/gemini');
+  const res2 = await worker.fetch(req2, {});
+  assert.equal(res2.status, 200);
+  assert.deepEqual(await res2.json(), { exists: false });
 });
 
 test('/admin/sync връща грешка при липсваща конфигурация', async () => {
-  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
   const req = new Request('https://example.com/admin/sync', {
     method: 'POST',
-    headers: { Authorization: auth, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: '{}'
   });
-  const env = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
-  const res = await worker.fetch(req, env);
+  const res = await worker.fetch(req, {});
   assert.equal(res.status, 500);
   const body = await res.json();
   assert.match(body.error, /Липсват конфигурационни променливи/);
 });
 
 test('/admin/diff връща грешка при липсваща конфигурация', async () => {
-  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
   const req = new Request('https://example.com/admin/diff', {
     method: 'POST',
-    headers: { Authorization: auth, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: '{}'
   });
-  const env = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
-  const res = await worker.fetch(req, env);
+  const res = await worker.fetch(req, {});
   assert.equal(res.status, 500);
   const body = await res.json();
   assert.match(body.error, /Липсват конфигурационни променливи/);
 });
 
 test('/admin/sync синхронизира данни', async () => {
-  const auth = 'Basic ' + Buffer.from('admin:pass').toString('base64');
   const store = {};
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options = {}) => {
@@ -390,15 +356,13 @@ test('/admin/sync синхронизира данни', async () => {
   };
 
   const env = {
-    ADMIN_USER: 'admin',
-    ADMIN_PASS: 'pass',
     CF_ACCOUNT_ID: 'acc',
     CF_KV_NAMESPACE_ID: 'ns',
     CF_API_TOKEN: 'token'
   };
   const req = new Request('https://example.com/admin/sync', {
     method: 'POST',
-    headers: { Authorization: auth, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(KV_DATA)
   });
   const res = await worker.fetch(req, env);
