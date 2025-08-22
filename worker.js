@@ -1,16 +1,19 @@
+/// <reference lib="dom" />
+/// <reference lib="webworker" />
 /* global createImageBitmap, OffscreenCanvas */
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
 // Използва Web API за мащабиране без външни зависимости.
 // Връща JPEG Blob с максимална страна `size` и качество 0.85.
 async function preprocessImage(file, size = 1024) {
-    if (typeof createImageBitmap !== 'function' || typeof OffscreenCanvas === 'undefined') {
+    const g = globalThis;
+    if (typeof g.createImageBitmap !== 'function' || typeof g.OffscreenCanvas === 'undefined') {
         return file;
     }
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await g.createImageBitmap(file);
     const scale = Math.min(size / bitmap.width, size / bitmap.height, 1);
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
-    const canvas = new OffscreenCanvas(width, height);
+    const canvas = new g.OffscreenCanvas(width, height);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
@@ -170,7 +173,12 @@ function debugLog(env = {}, ...args) {
 }
 
 function toBase64(str) {
-    return btoa(str);
+    const bytes = new TextEncoder().encode(str);
+    let binary = "";
+    for (const b of bytes) {
+        binary += String.fromCharCode(b);
+    }
+    return btoa(binary);
 }
 
 // --- ПРОМПТОВЕ ---
@@ -482,8 +490,25 @@ async function adminDelete(env, request, key) {
 
 // Извлича първия JSON масив от низ, напр.: text -> "[\"a\",\"b\"]"
 function extractJsonArray(text = "") {
-    const match = text.match(/\[[\s\S]*\]/);
-    return match ? match[0] : null;
+    let depth = 0;
+    let start = -1;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === "[") {
+            if (depth === 0) start = i;
+            depth++;
+        } else if (ch === "]") {
+            depth--;
+            if (depth === 0 && start !== -1) {
+                const candidate = text.slice(start, i + 1);
+                try {
+                    JSON.parse(candidate);
+                    return candidate;
+                } catch {}
+            }
+        }
+    }
+    return null;
 }
 
 async function handleAnalysisRequest(request, env) {
@@ -508,7 +533,20 @@ async function handleAnalysisRequest(request, env) {
 
         const leftEyeFile = formData.get("left-eye");
         const rightEyeFile = formData.get("right-eye");
-        if (!leftEyeFile || !rightEyeFile) throw new Error("Липсват файлове за ляво или дясно око.");
+        if (!leftEyeFile && !rightEyeFile) throw new Error("Не е подадено изображение.");
+
+        if (leftEyeFile && !leftEyeFile.type.startsWith('image/')) {
+            return new Response(JSON.stringify({ error: 'Левият файл не е изображение.' }), {
+                status: 400,
+                headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
+            });
+        }
+        if (rightEyeFile && !rightEyeFile.type.startsWith('image/')) {
+            return new Response(JSON.stringify({ error: 'Десният файл не е изображение.' }), {
+                status: 400,
+                headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
+            });
+        }
         
         const digestion = formData.getAll("digestion") || [];
         const digestionOther = formData.get("digestion-other");
@@ -530,10 +568,10 @@ async function handleAnalysisRequest(request, env) {
             digestive: digestion,
         };
         if (gender !== "Мъж" && gender !== "Жена") userData.gender = "";
-        const leftProcessed = await preprocessImage(leftEyeFile);
-        const rightProcessed = await preprocessImage(rightEyeFile);
-        const leftEyeImage = await fileToBase64(leftProcessed, env);
-        const rightEyeImage = await fileToBase64(rightProcessed, env);
+        const leftProcessed = leftEyeFile ? await preprocessImage(leftEyeFile) : null;
+        const rightProcessed = rightEyeFile ? await preprocessImage(rightEyeFile) : null;
+        const leftEyeImage = leftProcessed ? await fileToBase64(leftProcessed, env) : null;
+        const rightEyeImage = rightProcessed ? await fileToBase64(rightProcessed, env) : null;
         log("Данните от формуляра са обработени успешно.");
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
@@ -616,17 +654,21 @@ async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, exp
     const modelName = model.endsWith('-latest') ? model : `${model}-latest`;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
+    const parts = [{ text: prompt }];
+    if (leftEye) {
+        parts.push({ inline_data: { mime_type: leftEye.type, data: `data:${leftEye.type};base64,${leftEye.data}` }});
+        parts.push({ text: "\n(Снимка на ЛЯВО око)" });
+    }
+    if (rightEye) {
+        parts.push({ inline_data: { mime_type: rightEye.type, data: `data:${rightEye.type};base64,${rightEye.data}` }});
+        parts.push({ text: "\n(Снимка на ДЯСНО око)" });
+    }
+
     const requestBody = {
         contents: [
             {
                 role: "user",
-                parts: [
-                    { text: prompt },
-                    { inline_data: { mime_type: leftEye.type, data: `data:${leftEye.type};base64,${leftEye.data}` }},
-                    { text: "\n(Снимка на ЛЯВО око)" },
-                    { inline_data: { mime_type: rightEye.type, data: `data:${rightEye.type};base64,${rightEye.data}` }},
-                    { text: "\n(Снимка на ДЯСНО око)" }
-                ]
+                parts,
             }
         ],
         generationConfig: {}
@@ -668,16 +710,16 @@ async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, exp
     if (options.systemPrompt) {
         messages.push({ role: "system", content: options.systemPrompt });
     }
-    messages.push({
-        role: "user",
-        content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:${leftEye.type};base64,${leftEye.data}` }},
-            { type: "text", text: "\n(Снимка на ЛЯВО око)" },
-            { type: "image_url", image_url: { url: `data:${rightEye.type};base64,${rightEye.data}` }},
-            { type: "text", text: "\n(Снимка на ДЯСНО око)" }
-        ]
-    });
+    const content = [{ type: "text", text: prompt }];
+    if (leftEye) {
+        content.push({ type: "image_url", image_url: { url: `data:${leftEye.type};base64,${leftEye.data}` }});
+        content.push({ type: "text", text: "\n(Снимка на ЛЯВО око)" });
+    }
+    if (rightEye) {
+        content.push({ type: "image_url", image_url: { url: `data:${rightEye.type};base64,${rightEye.data}` }});
+        content.push({ type: "text", text: "\n(Снимка на ДЯСНО око)" });
+    }
+    messages.push({ role: "user", content });
 
     const requestBody = { model, messages };
     if (expectJson) {

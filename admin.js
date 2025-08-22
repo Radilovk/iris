@@ -16,6 +16,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const newModelInput = document.getElementById('new-model');
   const addModelBtn = document.getElementById('add-model');
   const modelListEl = document.getElementById('model-list');
+  const userInput = document.getElementById('admin-user');
+  const passInput = document.getElementById('admin-pass');
+  userInput.value = sessionStorage.getItem('adminUser') || '';
+  passInput.value = sessionStorage.getItem('adminPass') || '';
+
+  function toBase64(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+  }
+  function authHeader() {
+    sessionStorage.setItem('adminUser', userInput.value);
+    sessionStorage.setItem('adminPass', passInput.value);
+    return { Authorization: 'Basic ' + toBase64(`${userInput.value}:${passInput.value}`) };
+  }
 
   const DEFAULT_MODEL_OPTIONS = {
     gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
@@ -72,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Basic ' + btoa('admin:admin')
+        ...authHeader()
       },
       body: JSON.stringify({ key: 'MODEL_OPTIONS', value: JSON.stringify(MODEL_OPTIONS) })
     });
@@ -84,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${WORKER_BASE_URL}/admin/secret`, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         }
       });
       if (!res.ok) return false;
@@ -100,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${WORKER_BASE_URL}/admin/secret/gemini`, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         }
       });
       if (!res.ok) return false;
@@ -143,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const headers = {
         'Content-Type': 'application/json',
-        Authorization: 'Basic ' + btoa('admin:admin')
+        ...authHeader()
       };
       const [lastRes, holRes] = await Promise.all([
         fetch(`${WORKER_BASE_URL}/admin/get?key=lastAnalysis`, { headers }),
@@ -167,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=ROLE_PROMPT`, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         }
       });
       if (!res.ok) throw new Error(await res.text());
@@ -186,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const headers = {
         'Content-Type': 'application/json',
-        Authorization: 'Basic ' + btoa('admin:admin')
+        ...authHeader()
       };
       const [optionsRes, providerRes, modelRes, keySet] = await Promise.all([
         fetch(`${WORKER_BASE_URL}/admin/get?key=MODEL_OPTIONS`, { headers }),
@@ -267,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+        ...authHeader() // замени със свои креденшъли
       }
     });
       if (!res.ok) throw new Error(await res.text());
@@ -291,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(key)}`, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+        ...authHeader() // замени със свои креденшъли
       }
     });
       if (!res.ok) throw new Error(await res.text());
@@ -315,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         },
         body: JSON.stringify(KV_DATA)
       });
@@ -330,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         },
         body: JSON.stringify(KV_DATA)
       });
@@ -357,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin') // замени със свои креденшъли
+          ...authHeader() // замени със свои креденшъли
         },
         body: JSON.stringify(KV_DATA)
       });
@@ -380,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         },
         body: JSON.stringify({ key: 'ROLE_PROMPT', value: JSON.stringify({ prompt }) })
       });
@@ -411,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         },
         body: JSON.stringify({ key: 'AI_PROVIDER', value: providerVal })
       });
@@ -421,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('admin:admin')
+          ...authHeader()
         },
         body: JSON.stringify({ key: 'AI_MODEL', value: modelVal })
       });
