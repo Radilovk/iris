@@ -710,6 +710,7 @@ async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, exp
     if (options.systemPrompt) {
         messages.push({ role: "system", content: options.systemPrompt });
     }
+    /** @type {Array<{type:string, text?:string, image_url?:{url:string}}>} */
     const content = [{ type: "text", text: prompt }];
     if (leftEye) {
         content.push({ type: "image_url", image_url: { url: `data:${leftEye.type};base64,${leftEye.data}` }});
