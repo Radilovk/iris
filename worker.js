@@ -823,19 +823,13 @@ async function fileToBase64(blob, env = {}) {
     const arrayBuffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
-    // Използваме Node Buffer ако е наличен за по-ефективно кодиране
-    let base64;
-    if (typeof Buffer !== 'undefined') {
-        base64 = Buffer.from(bytes).toString('base64');
-    } else {
-        const chunkSize = 8192; // 8KB
-        let binary = '';
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-            const chunk = bytes.subarray(i, i + chunkSize);
-            binary += String.fromCharCode.apply(null, chunk);
-        }
-        base64 = btoa(binary);
-    }
+    let binary = "";
+    bytes.forEach(b => (binary += String.fromCharCode(b)));
+
+    // За текст с Unicode може да се използва:
+    // btoa(unescape(encodeURIComponent(binary)))
+    const base64 = btoa(binary);
+
     return { data: base64, type: blob.type };
 }
 
