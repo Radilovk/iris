@@ -1,16 +1,19 @@
+/// <reference lib="dom" />
+/// <reference lib="webworker" />
 /* global createImageBitmap, OffscreenCanvas */
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
 // Използва Web API за мащабиране без външни зависимости.
 // Връща JPEG Blob с максимална страна `size` и качество 0.85.
 async function preprocessImage(file, size = 1024) {
-    if (typeof createImageBitmap !== 'function' || typeof OffscreenCanvas === 'undefined') {
+    const g = globalThis;
+    if (typeof g.createImageBitmap !== 'function' || typeof g.OffscreenCanvas === 'undefined') {
         return file;
     }
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await g.createImageBitmap(file);
     const scale = Math.min(size / bitmap.width, size / bitmap.height, 1);
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
-    const canvas = new OffscreenCanvas(width, height);
+    const canvas = new g.OffscreenCanvas(width, height);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
