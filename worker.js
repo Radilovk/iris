@@ -751,6 +751,7 @@ export async function fetchRagData(keys, env) {
 
     const cache = /** @type {any} */ (caches).default;
     const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
+    const missingKeys = [];
 
     async function fetchArray(arr = []) {
         if (!Array.isArray(arr) || arr.length === 0) return {};
@@ -778,7 +779,7 @@ export async function fetchRagData(keys, env) {
                         })
                     );
                 } else {
-                    console.warn(`Ключ '${key}' не е намерен в KV базата.`);
+                    missingKeys.push(key);
                 }
             }
 
@@ -792,13 +793,23 @@ export async function fetchRagData(keys, env) {
     }
 
     if (Array.isArray(keys)) {
-        return fetchArray(keys);
+        const result = await fetchArray(keys);
+        if (missingKeys.length) {
+            console.warn(`Липсващи RAG ключове: ${missingKeys.join(', ')}`);
+        }
+        return result;
     } else if (keys && typeof keys === 'object') {
         const result = {};
         for (const [cat, arr] of Object.entries(keys)) {
             result[cat] = await fetchArray(arr);
         }
+        if (missingKeys.length) {
+            console.warn(`Липсващи RAG ключове: ${missingKeys.join(', ')}`);
+        }
         return result;
+    }
+    if (missingKeys.length) {
+        console.warn(`Липсващи RAG ключове: ${missingKeys.join(', ')}`);
     }
     return {};
 }

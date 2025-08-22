@@ -412,3 +412,17 @@ test('fetchRagData извлича само данни за DISPOSITION_ACIDITY',
   delete globalThis.caches;
 });
 
+test('fetchRagData логва едно предупреждение за липсващи ключове', async () => {
+  globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+  const env = { iris_rag_kv: { get: async () => null } };
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = msg => warnings.push(msg);
+
+  await fetchRagData(['a', 'b'], env);
+
+  console.warn = originalWarn;
+  assert.deepEqual(warnings, ['Липсващи RAG ключове: a, b']);
+  delete globalThis.caches;
+});
+
