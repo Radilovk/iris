@@ -154,7 +154,7 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
     assert.ok(url.includes('gemini-1.5-flash-latest'));
     const body = JSON.parse(options.body);
     assert.equal(body.contents[0].parts[1].inline_data.mime_type, 'image/png');
-    assert.equal(body.contents[0].parts[1].inline_data.data, 'data:image/png;base64,a');
+    assert.equal(body.contents[0].parts[1].inline_data.data, 'a');
     return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
   };
   await callGeminiAPI('gemini-1.5-flash', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false);
