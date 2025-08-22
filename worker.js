@@ -654,13 +654,14 @@ async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, exp
     const modelName = model.endsWith('-latest') ? model : `${model}-latest`;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
+    /** @type {Array<{text?:string, inline_data?:{mime_type:string, data:string}}>} */
     const parts = [{ text: prompt }];
     if (leftEye) {
-        parts.push({ inline_data: { mime_type: leftEye.type, data: `data:${leftEye.type};base64,${leftEye.data}` }});
+        parts.push({ inline_data: { mime_type: leftEye.type, data: leftEye.data } });
         parts.push({ text: "\n(Снимка на ЛЯВО око)" });
     }
     if (rightEye) {
-        parts.push({ inline_data: { mime_type: rightEye.type, data: `data:${rightEye.type};base64,${rightEye.data}` }});
+        parts.push({ inline_data: { mime_type: rightEye.type, data: rightEye.data } });
         parts.push({ text: "\n(Снимка на ДЯСНО око)" });
     }
 
