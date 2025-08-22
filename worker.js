@@ -550,6 +550,12 @@ async function handleAnalysisRequest(request, env) {
         const cleaned = extractJsonArray(keysResponse) || keysResponse;
         try {
             ragKeys = JSON.parse(cleaned);
+            if (ragKeys && typeof ragKeys === 'object' && Object.hasOwn(ragKeys, 'error')) {
+                const msg = ragKeys.error;
+                log('AI върна грешка:', msg);
+                console.info('AI върна грешка:', msg);
+                return jsonError(msg, 400, request, env);
+            }
         } catch (parseError) {
             const logMsg = "Суров отговор от AI при грешка в парсването:";
             log(logMsg, keysResponse);
