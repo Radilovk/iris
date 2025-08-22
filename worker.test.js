@@ -245,6 +245,15 @@ test('handleAnalysisRequest връща 400 при липсващ Gemini API кл
   assert.equal(await res.text(), 'Gemini API ключът липсва');
 });
 
+test('handleAnalysisRequest връща 400 при липсващи изображения', async () => {
+  const form = new FormData();
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+  const env = { AI_PROVIDER: 'gemini', gemini_api_key: 'k' };
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 400);
+  assert.deepEqual(await res.json(), { error: 'Не е подадено изображение.' });
+});
+
 test('handleAnalysisRequest връща контролирано съобщение при невалиден AI JSON', async () => {
   const buf = Buffer.alloc(10, 0);
   const form = new FormData();
