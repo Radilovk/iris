@@ -575,13 +575,17 @@ async function handleAnalysisRequest(request, env) {
         log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
 
         log("Стъпка 2.1: Извличане на публични източници...");
-        const externalInfos = await Promise.all(ragKeys.map(key => fetchExternalInfo(key, env)));
-        ragKeys.forEach((key, idx) => {
-            const info = externalInfos[idx];
-            if (info) {
-                ragData[key] = { ...(ragData[key] || {}), external: info };
-            }
-        });
+        if (env.GOOGLE_API_KEY && env.GOOGLE_CX) {
+            const externalInfos = await Promise.all(ragKeys.map(key => fetchExternalInfo(key, env)));
+            ragKeys.forEach((key, idx) => {
+                const info = externalInfos[idx];
+                if (info) {
+                    ragData[key] = { ...(ragData[key] || {}), external: info };
+                }
+            });
+        } else {
+            log("Пропуснато извличане на публични източници");
+        }
 
         log("Стъпка 3: Изпращане на заявка за финален синтез...");
         const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
@@ -728,7 +732,6 @@ async function fetchExternalInfo(query, env) {
         const apiKey = env?.GOOGLE_API_KEY;
         const cx = env?.GOOGLE_CX;
         if (!apiKey || !cx) {
-            console.warn('Google API не е конфигуриран.');
             return null;
         }
         const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&key=${apiKey}&cx=${cx}`;
@@ -923,4 +926,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI };
+export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo };
