@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData } from './worker.js';
+import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -447,5 +447,44 @@ test('fetchRagData логва едно предупреждение за лип�
   console.warn = originalWarn;
   assert.deepEqual(warnings, ['Липсващи RAG ключове: a, b']);
   delete globalThis.caches;
+});
+
+test('fetchExternalInfo връща null без предупреждение при липсващи ключове', async () => {
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = msg => warnings.push(msg);
+
+  const result = await fetchExternalInfo('test', {});
+
+  console.warn = originalWarn;
+  assert.equal(result, null);
+  assert.deepEqual(warnings, []);
+});
+
+test('handleAnalysisRequest пропуска извличането на публични източници при липса на Google ключове', async () => {
+  const buf = Buffer.alloc(10, 0);
+  const form = new FormData();
+  form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
+  form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+
+  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k', iris_rag_kv: { get: async () => null, put: async () => {} } };
+  globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+
+  const responses = [
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify(['нервна система']) } }] }),
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify({ holistic_analysis: 'ok' }) } }] })
+  ];
+  let idx = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(responses[idx++], { status: 200 });
+
+  const res = await worker.fetch(req, env);
+
+  globalThis.fetch = originalFetch;
+  delete globalThis.caches;
+
+  assert.equal(res.status, 200);
+  assert.equal(idx, 2);
 });
 
