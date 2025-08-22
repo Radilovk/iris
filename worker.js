@@ -1,8 +1,20 @@
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
-// Премахнати са зависимости към Node и Jimp, за да се поддържа Cloudflare средата.
-// За момента функцията връща оригиналния файл без допълнителна обработка.
+// Използва Web API за мащабиране без външни зависимости.
+// Връща JPEG Blob с максимална страна `size` и качество 0.85.
 async function preprocessImage(file, size = 1024) {
-    return file;
+    if (typeof createImageBitmap !== 'function' || typeof OffscreenCanvas === 'undefined') {
+        return file;
+    }
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(size / bitmap.width, size / bitmap.height, 1);
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
+    return new File([blob], file.name, { type: 'image/jpeg' });
 }
 
 function validateKv(data) {
