@@ -249,17 +249,14 @@ export default {
 
 async function handleAdmin(request, env) {
     if (!verifyBasicAuth(request, env)) {
-        return new Response('Unauthorized', {
-            status: 401,
-            headers: corsHeaders(request, env, { 'WWW-Authenticate': 'Basic realm="Admin"' })
-        });
+        return jsonError('Unauthorized', 401, request, env, { 'WWW-Authenticate': 'Basic realm="Admin"' });
     }
 
     if (env.ADMIN_IPS) {
         const ip = request.headers.get('CF-Connecting-IP');
         const allowed = env.ADMIN_IPS.split(',').map(i => i.trim());
         if (!ip || !allowed.includes(ip)) {
-            return new Response('Forbidden', { status: 403, headers: corsHeaders(request, env) });
+            return jsonError('Forbidden', 403, request, env);
         }
     }
 
@@ -299,7 +296,7 @@ async function handleAdmin(request, env) {
         const key = url.searchParams.get('key');
         return adminDelete(env, request, key);
     }
-    return new Response('Not Found', { status: 404, headers: corsHeaders(request, env) });
+    return jsonError('Not Found', 404, request, env);
 }
 
 function verifyBasicAuth(request, env) {
@@ -313,15 +310,14 @@ async function adminDiff(env, request) {
     const required = ['CF_ACCOUNT_ID', 'CF_KV_NAMESPACE_ID', 'CF_API_TOKEN'];
     const missing = required.filter(k => !env[k]);
     if (missing.length) {
-        return new Response(`Липсват конфигурационни променливи: ${missing.join(', ')}`,
-            { status: 500, headers: corsHeaders(request, env) });
+        return jsonError(`Липсват конфигурационни променливи: ${missing.join(', ')}`, 500, request, env);
     }
 
     let data;
     try {
         data = await request.json();
     } catch {
-        return new Response('Невалиден JSON', { status: 400, headers: corsHeaders(request, env) });
+        return jsonError('Невалиден JSON', 400, request, env);
     }
 
     const files = Object.keys(data);
@@ -336,7 +332,7 @@ async function adminDiff(env, request) {
         try {
             JSON.parse(value);
         } catch {
-            return new Response(`Невалиден JSON в ${file}`, { status: 400, headers: corsHeaders(request, env) });
+            return jsonError(`Невалиден JSON в ${file}`, 400, request, env);
         }
         if (!existingKeys.includes(file)) {
             added.push(file);
@@ -359,22 +355,21 @@ async function adminSync(env, request) {
     const required = ['CF_ACCOUNT_ID', 'CF_KV_NAMESPACE_ID', 'CF_API_TOKEN'];
     const missing = required.filter(k => !env[k]);
     if (missing.length) {
-        return new Response(`Липсват конфигурационни променливи: ${missing.join(', ')}`,
-            { status: 500, headers: corsHeaders(request, env) });
+        return jsonError(`Липсват конфигурационни променливи: ${missing.join(', ')}`, 500, request, env);
     }
 
     let data;
     try {
         data = await request.json();
     } catch {
-        return new Response("Невалиден JSON", { status: 400, headers: corsHeaders(request, env) });
+        return jsonError("Невалиден JSON", 400, request, env);
     }
 
     let entries;
     try {
         entries = validateKv(data);
     } catch (err) {
-        return new Response(err.message, { status: 400, headers: corsHeaders(request, env) });
+        return jsonError(err.message, 400, request, env);
     }
 
     try {
@@ -387,7 +382,7 @@ async function adminSync(env, request) {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
-        return new Response(err.message, { status: 500, headers: corsHeaders(request, env) });
+        return jsonError(err.message, 500, request, env);
     }
 }
 
@@ -398,16 +393,13 @@ async function adminKeys(env, request) {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
-        return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
-        });
+        return jsonError(err.message, 500, request, env);
     }
 }
 
 async function adminGet(env, request, key) {
     if (!key) {
-        return new Response('Missing key parameter', { status: 400, headers: corsHeaders(request, env) });
+        return jsonError('Missing key parameter', 400, request, env);
     }
     try {
         let value = await env.iris_rag_kv.get(key);
@@ -421,7 +413,7 @@ async function adminGet(env, request, key) {
                 value = '';
                 warning = 'missing';
             } else {
-                return new Response('Not Found', { status: 404, headers: corsHeaders(request, env) });
+                return jsonError('Not Found', 404, request, env);
             }
         } else if (key === 'lastAnalysis') {
             try {
@@ -437,10 +429,7 @@ async function adminGet(env, request, key) {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
-        return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
-        });
+        return jsonError(err.message, 500, request, env);
     }
 }
 
@@ -448,12 +437,12 @@ async function adminPut(env, request) {
     try {
         const { key, value } = await request.json();
         if (!key || typeof value === 'undefined') {
-            return new Response('Missing key or value', { status: 400, headers: corsHeaders(request, env) });
+            return jsonError('Missing key or value', 400, request, env);
         }
         try {
             JSON.parse(value);
         } catch (err) {
-            return new Response('Невалиден JSON', { status: 400, headers: corsHeaders(request, env) });
+            return jsonError('Невалиден JSON', 400, request, env);
         }
         const exists = await env.iris_rag_kv.get(key);
         await env.iris_rag_kv.put(key, value);
@@ -461,16 +450,13 @@ async function adminPut(env, request) {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
-        return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
-        });
+        return jsonError(err.message, 500, request, env);
     }
 }
 
 async function adminDelete(env, request, key) {
     if (!key) {
-        return new Response('Missing key parameter', { status: 400, headers: corsHeaders(request, env) });
+        return jsonError('Missing key parameter', 400, request, env);
     }
     try {
         await env.iris_rag_kv.delete(key);
@@ -478,10 +464,7 @@ async function adminDelete(env, request, key) {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {
-        return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
-        });
+        return jsonError(err.message, 500, request, env);
     }
 }
 
@@ -519,17 +502,11 @@ async function handleAnalysisRequest(request, env) {
         log("Получена е нова заявка за анализ.");
         if (provider === "gemini" && !(env.gemini_api_key || env.GEMINI_API_KEY)) {
             log('Липсва Gemini API ключ.');
-            return new Response("Gemini API ключът липсва", {
-                status: 400,
-                headers: corsHeaders(request, env, { 'Content-Type': 'text/plain; charset=utf-8' })
-            });
+            return jsonError('Gemini API ключът липсва', 400, request, env);
         }
         if (provider === "openai" && !(env.openai_api_key || env.OPENAI_API_KEY)) {
             log('Липсва OpenAI API ключ.');
-            return new Response("OpenAI API ключът липсва", {
-                status: 400,
-                headers: corsHeaders(request, env, { 'Content-Type': 'text/plain; charset=utf-8' })
-            });
+            return jsonError('OpenAI API ключът липсва', 400, request, env);
         }
         const formData = await request.formData();
 
@@ -537,23 +514,14 @@ async function handleAnalysisRequest(request, env) {
         const rightEyeFile = formData.get("right-eye");
         if (!leftEyeFile && !rightEyeFile) {
             log('Не е подадено изображение.');
-            return new Response(JSON.stringify({ error: 'Не е подадено изображение.' }), {
-                status: 400,
-                headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
-            });
+            return jsonError('Не е подадено изображение.', 400, request, env);
         }
 
         if (leftEyeFile && !leftEyeFile.type.startsWith('image/')) {
-            return new Response(JSON.stringify({ error: 'Левият файл не е изображение.' }), {
-                status: 400,
-                headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
-            });
+            return jsonError('Левият файл не е изображение.', 400, request, env);
         }
         if (rightEyeFile && !rightEyeFile.type.startsWith('image/')) {
-            return new Response(JSON.stringify({ error: 'Десният файл не е изображение.' }), {
-                status: 400,
-                headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
-            });
+            return jsonError('Десният файл не е изображение.', 400, request, env);
         }
         
         const digestion = formData.getAll("digestion") || [];
@@ -592,15 +560,11 @@ async function handleAnalysisRequest(request, env) {
             ragKeys = JSON.parse(cleaned);
         } catch (parseError) {
             log("Суров отговор от AI при грешка в парсването:", keysResponse);
-            return new Response(JSON.stringify({
-                error: 'AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]'
-            }), { status: 400, headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' }) });
+            return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
         if (!Array.isArray(ragKeys) || !ragKeys.every(k => typeof k === 'string')) {
             log("AI върна невалиден формат на RAG ключовете:", keysResponse);
-            return new Response(JSON.stringify({
-                error: 'AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]'
-            }), { status: 400, headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' }) });
+            return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
         log("Получени RAG ключове за извличане:", ragKeys);
 
@@ -651,7 +615,7 @@ async function handleAnalysisRequest(request, env) {
 
     } catch (error) {
         console.error("Критична грешка в handleAnalysisRequest:", error.stack);
-        return new Response(JSON.stringify({ error: "Вътрешна грешка на сървъра: " + error.message }), { status: 500, headers: corsHeaders(request, env) });
+        return jsonError("Вътрешна грешка на сървъра: " + error.message, 500, request, env);
     }
 }
 
@@ -934,6 +898,16 @@ function corsHeaders(request, env = {}, additionalHeaders = {}) {
     }
 
     return new Headers(headers);
+}
+
+function jsonError(message, status = 400, request, env, extraHeaders = {}) {
+    return new Response(JSON.stringify({ error: message }), {
+        status,
+        headers: corsHeaders(request, env, {
+            'Content-Type': 'application/json; charset=utf-8',
+            ...extraHeaders,
+        }),
+    });
 }
 
 export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI };

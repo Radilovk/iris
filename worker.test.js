@@ -234,7 +234,7 @@ test('handleAnalysisRequest връща 400 при празен OpenAI API клю
   const env = { AI_PROVIDER: 'openai', openai_api_key: '' };
   const res = await worker.fetch(req, env);
   assert.equal(res.status, 400);
-  assert.equal(await res.text(), 'OpenAI API ключът липсва');
+  assert.deepEqual(await res.json(), { error: 'OpenAI API ключът липсва' });
 });
 
 test('handleAnalysisRequest връща 400 при липсващ Gemini API ключ', async () => {
@@ -242,7 +242,7 @@ test('handleAnalysisRequest връща 400 при липсващ Gemini API кл
   const env = { AI_PROVIDER: 'gemini', gemini_api_key: '' };
   const res = await worker.fetch(req, env);
   assert.equal(res.status, 400);
-  assert.equal(await res.text(), 'Gemini API ключът липсва');
+  assert.deepEqual(await res.json(), { error: 'Gemini API ключът липсва' });
 });
 
 test('handleAnalysisRequest връща 400 при липсващи изображения', async () => {
@@ -351,7 +351,8 @@ test('/admin/sync връща грешка при липсваща конфигу
   const env = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
   const res = await worker.fetch(req, env);
   assert.equal(res.status, 500);
-  assert.match(await res.text(), /Липсват конфигурационни променливи/);
+  const body = await res.json();
+  assert.match(body.error, /Липсват конфигурационни променливи/);
 });
 
 test('/admin/diff връща грешка при липсваща конфигурация', async () => {
@@ -364,7 +365,8 @@ test('/admin/diff връща грешка при липсваща конфигу
   const env = { ADMIN_USER: 'admin', ADMIN_PASS: 'pass' };
   const res = await worker.fetch(req, env);
   assert.equal(res.status, 500);
-  assert.match(await res.text(), /Липсват конфигурационни променливи/);
+  const body = await res.json();
+  assert.match(body.error, /Липсват конфигурационни променливи/);
 });
 
 test('/admin/sync синхронизира данни', async () => {
