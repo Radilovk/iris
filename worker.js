@@ -172,15 +172,6 @@ function debugLog(env = {}, ...args) {
     }
 }
 
-function toBase64(str) {
-    const bytes = new TextEncoder().encode(str);
-    let binary = "";
-    for (const b of bytes) {
-        binary += String.fromCharCode(b);
-    }
-    return btoa(binary);
-}
-
 // --- ПРОМПТОВЕ ---
 const IDENTIFICATION_PROMPT = `
 # ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
@@ -248,10 +239,6 @@ export default {
 };
 
 async function handleAdmin(request, env) {
-    if (!verifyBasicAuth(request, env)) {
-        return jsonError('Unauthorized', 401, request, env, { 'WWW-Authenticate': 'Basic realm="Admin"' });
-    }
-
     if (env.ADMIN_IPS) {
         const ip = request.headers.get('CF-Connecting-IP');
         const allowed = env.ADMIN_IPS.split(',').map(i => i.trim());
@@ -297,13 +284,6 @@ async function handleAdmin(request, env) {
         return adminDelete(env, request, key);
     }
     return jsonError('Not Found', 404, request, env);
-}
-
-function verifyBasicAuth(request, env) {
-    const user = env.ADMIN_USER || 'admin';
-    const pass = env.ADMIN_PASS || 'admin';
-    const expected = 'Basic ' + toBase64(`${user}:${pass}`);
-    return request.headers.get('Authorization') === expected;
 }
 
 async function adminDiff(env, request) {

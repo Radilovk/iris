@@ -16,22 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const newModelInput = document.getElementById('new-model');
   const addModelBtn = document.getElementById('add-model');
   const modelListEl = document.getElementById('model-list');
-  const userInput = document.getElementById('admin-user');
-  const passInput = document.getElementById('admin-pass');
-  userInput.value = sessionStorage.getItem('adminUser') || '';
-  passInput.value = sessionStorage.getItem('adminPass') || '';
-
-  function toBase64(str) {
-    const bytes = new TextEncoder().encode(str);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    return btoa(binary);
-  }
-  function authHeader() {
-    sessionStorage.setItem('adminUser', userInput.value);
-    sessionStorage.setItem('adminPass', passInput.value);
-    return { Authorization: 'Basic ' + toBase64(`${userInput.value}:${passInput.value}`) };
-  }
 
   const DEFAULT_MODEL_OPTIONS = {
     gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
@@ -87,8 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        ...authHeader()
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ key: 'MODEL_OPTIONS', value: JSON.stringify(MODEL_OPTIONS) })
     });
@@ -99,8 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/secret`, {
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         }
       });
       if (!res.ok) return false;
@@ -115,8 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/secret/gemini`, {
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         }
       });
       if (!res.ok) return false;
@@ -158,8 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function checkAnalysisKeys() {
     try {
       const headers = {
-        'Content-Type': 'application/json',
-        ...authHeader()
+        'Content-Type': 'application/json'
       };
       const [lastRes, holRes] = await Promise.all([
         fetch(`${WORKER_BASE_URL}/admin/get?key=lastAnalysis`, { headers }),
@@ -182,8 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=ROLE_PROMPT`, {
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         }
       });
       if (!res.ok) throw new Error(await res.text());
@@ -201,8 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoading();
     try {
       const headers = {
-        'Content-Type': 'application/json',
-        ...authHeader()
+        'Content-Type': 'application/json'
       };
       const [optionsRes, providerRes, modelRes, keySet] = await Promise.all([
         fetch(`${WORKER_BASE_URL}/admin/get?key=MODEL_OPTIONS`, { headers }),
@@ -282,8 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, {
       headers: {
-        'Content-Type': 'application/json',
-        ...authHeader() // замени със свои креденшъли
+        'Content-Type': 'application/json'
       }
     });
       if (!res.ok) throw new Error(await res.text());
@@ -306,8 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(key)}`, {
       headers: {
-        'Content-Type': 'application/json',
-        ...authHeader() // замени със свои креденшъли
+        'Content-Type': 'application/json'
       }
     });
       if (!res.ok) throw new Error(await res.text());
@@ -330,8 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const diffRes = await fetch(`${WORKER_BASE_URL}/admin/diff`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(KV_DATA)
       });
@@ -345,8 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const syncRes = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(KV_DATA)
       });
@@ -372,8 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader() // замени със свои креденшъли
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(KV_DATA)
       });
@@ -395,8 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ key: 'ROLE_PROMPT', value: JSON.stringify({ prompt }) })
       });
@@ -426,8 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res1 = await fetch(`${WORKER_BASE_URL}/admin/set`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ key: 'AI_PROVIDER', value: providerVal })
       });
@@ -436,8 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res2 = await fetch(`${WORKER_BASE_URL}/admin/set`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          ...authHeader()
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ key: 'AI_MODEL', value: modelVal })
       });
