@@ -519,6 +519,7 @@ async function handleAnalysisRequest(request, env) {
         log("Получена е нова заявка за анализ.");
         if (provider === "gemini" && !(env.gemini_api_key || env.GEMINI_API_KEY)) {
             log('Липсва Gemini API ключ.');
+            console.info('Липсва Gemini API ключ.');
             return new Response("Gemini API ключът липсва", {
                 status: 400,
                 headers: corsHeaders(request, env, { 'Content-Type': 'text/plain; charset=utf-8' })
@@ -526,6 +527,7 @@ async function handleAnalysisRequest(request, env) {
         }
         if (provider === "openai" && !(env.openai_api_key || env.OPENAI_API_KEY)) {
             log('Липсва OpenAI API ключ.');
+            console.info('Липсва OpenAI API ключ.');
             return new Response("OpenAI API ключът липсва", {
                 status: 400,
                 headers: corsHeaders(request, env, { 'Content-Type': 'text/plain; charset=utf-8' })
@@ -537,6 +539,7 @@ async function handleAnalysisRequest(request, env) {
         const rightEyeFile = formData.get("right-eye");
         if (!leftEyeFile && !rightEyeFile) {
             log('Не е подадено изображение.');
+            console.info('Не е подадено изображение.');
             return new Response(JSON.stringify({ error: 'Не е подадено изображение.' }), {
                 status: 400,
                 headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
@@ -544,12 +547,16 @@ async function handleAnalysisRequest(request, env) {
         }
 
         if (leftEyeFile && !leftEyeFile.type.startsWith('image/')) {
+            log('Левият файл не е изображение.');
+            console.info('Левият файл не е изображение.');
             return new Response(JSON.stringify({ error: 'Левият файл не е изображение.' }), {
                 status: 400,
                 headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
             });
         }
         if (rightEyeFile && !rightEyeFile.type.startsWith('image/')) {
+            log('Десният файл не е изображение.');
+            console.info('Десният файл не е изображение.');
             return new Response(JSON.stringify({ error: 'Десният файл не е изображение.' }), {
                 status: 400,
                 headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' })
@@ -592,12 +599,14 @@ async function handleAnalysisRequest(request, env) {
             ragKeys = JSON.parse(cleaned);
         } catch (parseError) {
             log("Суров отговор от AI при грешка в парсването:", keysResponse);
+            console.info("Суров отговор от AI при грешка в парсването:", keysResponse);
             return new Response(JSON.stringify({
                 error: 'AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]'
             }), { status: 400, headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' }) });
         }
         if (!Array.isArray(ragKeys) || !ragKeys.every(k => typeof k === 'string')) {
             log("AI върна невалиден формат на RAG ключовете:", keysResponse);
+            console.info("AI върна невалиден формат на RAG ключовете:", keysResponse);
             return new Response(JSON.stringify({
                 error: 'AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]'
             }), { status: 400, headers: corsHeaders(request, env, { 'Content-Type': 'application/json; charset=utf-8' }) });
