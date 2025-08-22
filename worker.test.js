@@ -24,8 +24,9 @@ test('validateImageSize връща грешка при твърде голям �
 test('fileToBase64 работи за малък файл', async () => {
   const smallBuffer = Buffer.alloc(1024 * 1024, 0); // 1MB
   const smallFile = new File([smallBuffer], 'small.jpg', { type: 'image/jpeg' });
-  const base64 = await fileToBase64(smallFile);
-  assert.match(base64, /^[A-Za-z0-9+/=]+$/);
+  const result = await fileToBase64(smallFile);
+  assert.match(result.data, /^[A-Za-z0-9+/=]+$/);
+  assert.equal(result.type, 'image/jpeg');
 });
 
 test('fileToBase64 обработва файл по-голям от 8KB', async () => {
@@ -33,7 +34,8 @@ test('fileToBase64 обработва файл по-голям от 8KB', async 
   const file = new File([buffer], 'chunk.jpg', { type: 'image/jpeg' });
   const expected = buffer.toString('base64');
   const result = await fileToBase64(file);
-  assert.equal(result, expected);
+  assert.equal(result.data, expected);
+  assert.equal(result.type, 'image/jpeg');
 });
 
 test('corsHeaders поддържа wildcard "*"', () => {
@@ -138,9 +140,10 @@ test('Изборът OpenAI/gpt-4o-mini се подава към API', async () 
   globalThis.fetch = async (url, options) => {
     const body = JSON.parse(options.body);
     assert.equal(body.model, 'gpt-4o-mini');
+    assert.equal(body.messages[0].content[1].image_url.url, 'data:image/png;base64,a');
     return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 });
   };
-  await callOpenAIAPI('gpt-4o-mini', 'p', {}, 'a', 'b', env, false);
+  await callOpenAIAPI('gpt-4o-mini', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false);
   globalThis.fetch = originalFetch;
 });
 
@@ -149,9 +152,12 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
     assert.ok(url.includes('gemini-1.5-flash-latest'));
+    const body = JSON.parse(options.body);
+    assert.equal(body.contents[0].parts[1].inline_data.mime_type, 'image/png');
+    assert.equal(body.contents[0].parts[1].inline_data.data, 'data:image/png;base64,a');
     return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
   };
-  await callGeminiAPI('gemini-1.5-flash', 'p', {}, 'a', 'b', env, false);
+  await callGeminiAPI('gemini-1.5-flash', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false);
   globalThis.fetch = originalFetch;
 });
 
@@ -163,7 +169,7 @@ test('callOpenAIAPI изпраща max_tokens', async () => {
     assert.equal(body.max_tokens, 77);
     return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 });
   };
-  await callOpenAIAPI('gpt-4o', 'p', { max_tokens: 77 }, 'a', 'b', env, false);
+  await callOpenAIAPI('gpt-4o', 'p', { max_tokens: 77 }, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false);
   globalThis.fetch = originalFetch;
 });
 
@@ -175,7 +181,7 @@ test('callGeminiAPI изпраща generationConfig.maxOutputTokens', async () =
     assert.equal(body.generationConfig.maxOutputTokens, 88);
     return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
   };
-  await callGeminiAPI('gemini-1.5-pro', 'p', { maxOutputTokens: 88 }, 'a', 'b', env, false);
+  await callGeminiAPI('gemini-1.5-pro', 'p', { maxOutputTokens: 88 }, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false);
   globalThis.fetch = originalFetch;
 });
 
@@ -184,7 +190,7 @@ test('callOpenAIAPI връща грешка при 404', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response(JSON.stringify({}), { status: 404 });
   await assert.rejects(
-    () => callOpenAIAPI('gpt-4o', 'p', {}, 'a', 'b', env, false),
+    () => callOpenAIAPI('gpt-4o', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false),
     /Моделът gpt-4o не е наличен/
   );
   globalThis.fetch = originalFetch;
@@ -195,7 +201,7 @@ test('callOpenAIAPI логва JSON и хвърля HTTP статус', async ()
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response(JSON.stringify({ error: 'x' }), { status: 500 });
   await assert.rejects(
-    () => callOpenAIAPI('gpt-4o', 'p', {}, 'a', 'b', env, false),
+    () => callOpenAIAPI('gpt-4o', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false),
     /HTTP 500/
   );
   globalThis.fetch = originalFetch;
@@ -206,7 +212,7 @@ test('callGeminiAPI връща грешка при 404', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response(JSON.stringify({}), { status: 404 });
   await assert.rejects(
-    () => callGeminiAPI('gemini-1.5-flash', 'p', {}, 'a', 'b', env, false),
+    () => callGeminiAPI('gemini-1.5-flash', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false),
     /Моделът gemini-1.5-flash не е наличен/
   );
   globalThis.fetch = originalFetch;
@@ -217,7 +223,7 @@ test('callGeminiAPI логва JSON и хвърля HTTP статус', async ()
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response(JSON.stringify({ error: 'x' }), { status: 500 });
   await assert.rejects(
-    () => callGeminiAPI('gemini-1.5-pro', 'p', {}, 'a', 'b', env, false),
+    () => callGeminiAPI('gemini-1.5-pro', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false),
     /HTTP 500/
   );
   globalThis.fetch = originalFetch;

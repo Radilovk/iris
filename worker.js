@@ -531,13 +531,13 @@ async function handleAnalysisRequest(request, env) {
         if (gender !== "Мъж" && gender !== "Жена") userData.gender = "";
         const leftProcessed = await preprocessImage(leftEyeFile);
         const rightProcessed = await preprocessImage(rightEyeFile);
-        const leftEyeBase64 = await fileToBase64(leftProcessed, env);
-        const rightEyeBase64 = await fileToBase64(rightProcessed, env);
+        const leftEyeImage = await fileToBase64(leftProcessed, env);
+        const rightEyeImage = await fileToBase64(rightProcessed, env);
         log("Данните от формуляра са обработени успешно.");
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
-        const keysResponse = await identificationApiCaller(model, IDENTIFICATION_PROMPT, {}, leftEyeBase64, rightEyeBase64, env, true);
+        const keysResponse = await identificationApiCaller(model, IDENTIFICATION_PROMPT, {}, leftEyeImage, rightEyeImage, env, true);
         
         let ragKeys;
         const cleaned = extractJsonArray(keysResponse) || keysResponse;
@@ -577,7 +577,7 @@ async function handleAnalysisRequest(request, env) {
 
         const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const rolePrompt = await getRolePrompt(env);
-        const finalAnalysis = await synthesisApiCaller(model, synthesisPrompt, { systemPrompt: rolePrompt }, leftEyeBase64, rightEyeBase64, env, true);
+        const finalAnalysis = await synthesisApiCaller(model, synthesisPrompt, { systemPrompt: rolePrompt }, leftEyeImage, rightEyeImage, env, true);
         log("Финален анализ е генериран успешно.");
 
         let parsedAnalysis;
@@ -609,7 +609,7 @@ async function handleAnalysisRequest(request, env) {
 }
 
 // --- AI API ИНТЕГРАЦИИ ---
-async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
+async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, expectJson = true) {
     const apiKey = env.gemini_api_key || env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("API ключът за Gemini не е конфигуриран.");
     const modelName = model.endsWith('-latest') ? model : `${model}-latest`;
@@ -621,9 +621,9 @@ async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase
                 role: "user",
                 parts: [
                     { text: prompt },
-                    { inline_data: { mime_type: "image/jpeg", data: leftEyeBase64 }},
+                    { inline_data: { mime_type: leftEye.type, data: `data:${leftEye.type};base64,${leftEye.data}` }},
                     { text: "\n(Снимка на ЛЯВО око)" },
-                    { inline_data: { mime_type: "image/jpeg", data: rightEyeBase64 }},
+                    { inline_data: { mime_type: rightEye.type, data: `data:${rightEye.type};base64,${rightEye.data}` }},
                     { text: "\n(Снимка на ДЯСНО око)" }
                 ]
             }
@@ -658,7 +658,7 @@ async function callGeminiAPI(model, prompt, options, leftEyeBase64, rightEyeBase
     return responseData.candidates[0].content.parts[0].text;
 }
 
-async function callOpenAIAPI(model, prompt, options, leftEyeBase64, rightEyeBase64, env, expectJson = true) {
+async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, expectJson = true) {
     const apiKey = env.openai_api_key || env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("API ключът за OpenAI не е конфигуриран.");
     const url = "https://api.openai.com/v1/chat/completions";
@@ -671,9 +671,9 @@ async function callOpenAIAPI(model, prompt, options, leftEyeBase64, rightEyeBase
         role: "user",
         content: [
             { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${leftEyeBase64}` }},
+            { type: "image_url", image_url: { url: `data:${leftEye.type};base64,${leftEye.data}` }},
             { type: "text", text: "\n(Снимка на ЛЯВО око)" },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${rightEyeBase64}` }},
+            { type: "image_url", image_url: { url: `data:${rightEye.type};base64,${rightEye.data}` }},
             { type: "text", text: "\n(Снимка на ДЯСНО око)" }
         ]
     });
@@ -824,17 +824,19 @@ async function fileToBase64(blob, env = {}) {
     const bytes = new Uint8Array(arrayBuffer);
 
     // Използваме Node Buffer ако е наличен за по-ефективно кодиране
+    let base64;
     if (typeof Buffer !== 'undefined') {
-        return Buffer.from(bytes).toString('base64');
+        base64 = Buffer.from(bytes).toString('base64');
+    } else {
+        const chunkSize = 8192; // 8KB
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+        base64 = btoa(binary);
     }
-
-    const chunkSize = 8192; // 8KB
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, chunk);
-    }
-    return btoa(binary);
+    return { data: base64, type: blob.type };
 }
 
 function handleOptions(request, env) {

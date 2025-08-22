@@ -277,7 +277,7 @@ GOOGLE_CX = "demo-cx"
 Файлове над 5MB се компресират автоматично с минимална загуба на качество преди да бъдат преобразувани в Base64.
 
 ```js
-const base64 = await fileToBase64(largeFile); // автоматично компресира и връща Base64
+const { data, type } = await fileToBase64(largeFile); // автоматично компресира и връща Base64 + MIME тип
 ```
 
 ## Синхронизация с Cloudflare KV
