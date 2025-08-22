@@ -501,27 +501,39 @@ async function handleAnalysisRequest(request, env) {
     try {
         log("Получена е нова заявка за анализ.");
         if (provider === "gemini" && !(env.gemini_api_key || env.GEMINI_API_KEY)) {
-            log('Липсва Gemini API ключ.');
-            return jsonError('Gemini API ключът липсва', 400, request, env);
+            const msg = 'Gemini API ключът липсва';
+            log(msg);
+            console.info(msg);
+            return jsonError(msg, 400, request, env);
         }
         if (provider === "openai" && !(env.openai_api_key || env.OPENAI_API_KEY)) {
-            log('Липсва OpenAI API ключ.');
-            return jsonError('OpenAI API ключът липсва', 400, request, env);
+            const msg = 'OpenAI API ключът липсва';
+            log(msg);
+            console.info(msg);
+            return jsonError(msg, 400, request, env);
         }
         const formData = await request.formData();
 
         const leftEyeFile = formData.get("left-eye");
         const rightEyeFile = formData.get("right-eye");
         if (!leftEyeFile && !rightEyeFile) {
-            log('Не е подадено изображение.');
-            return jsonError('Не е подадено изображение.', 400, request, env);
+            const msg = 'Не е подадено изображение.';
+            log(msg);
+            console.info(msg);
+            return jsonError(msg, 400, request, env);
         }
 
         if (leftEyeFile && !leftEyeFile.type.startsWith('image/')) {
-            return jsonError('Левият файл не е изображение.', 400, request, env);
+            const msg = 'Левият файл не е изображение.';
+            log(msg);
+            console.info(msg);
+            return jsonError(msg, 400, request, env);
         }
         if (rightEyeFile && !rightEyeFile.type.startsWith('image/')) {
-            return jsonError('Десният файл не е изображение.', 400, request, env);
+            const msg = 'Десният файл не е изображение.';
+            log(msg);
+            console.info(msg);
+            return jsonError(msg, 400, request, env);
         }
         
         const digestion = formData.getAll("digestion") || [];
@@ -559,11 +571,15 @@ async function handleAnalysisRequest(request, env) {
         try {
             ragKeys = JSON.parse(cleaned);
         } catch (parseError) {
-            log("Суров отговор от AI при грешка в парсването:", keysResponse);
+            const logMsg = "Суров отговор от AI при грешка в парсването:";
+            log(logMsg, keysResponse);
+            console.info(logMsg, keysResponse);
             return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
         if (!Array.isArray(ragKeys) || !ragKeys.every(k => typeof k === 'string')) {
-            log("AI върна невалиден формат на RAG ключовете:", keysResponse);
+            const logMsg = "AI върна невалиден формат на RAG ключовете:";
+            log(logMsg, keysResponse);
+            console.info(logMsg, keysResponse);
             return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
         log("Получени RAG ключове за извличане:", ragKeys);
