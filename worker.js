@@ -172,6 +172,15 @@ function debugLog(env = {}, ...args) {
     }
 }
 
+// --- RAG АЛИАСИ ---
+const RAG_KEY_ALIASES = {
+    SIGN_RADIAL_FURROW: 'SIGN_IRIS_RADII_SOLARIS',
+    CONSTITUTION_HEMOGLOBIN: 'CONSTITUTION_COLOR_HAEMATOGENIC',
+    CONSTITUTION_LYMPHATIC: 'CONSTITUTION_COLOR_LYMPHATIC',
+    CONSTITUTION_MIXED_BILIARY: 'CONSTITUTION_COLOR_MIXED_BILIARY',
+    CONSTITUTION_CONNECTIVE_TISSUE: 'CONSTITUTION_STRUCTURE_CONNECTIVE_TISSUE',
+};
+
 // --- ПРОМПТОВЕ ---
 const IDENTIFICATION_PROMPT = `
 # ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
@@ -568,6 +577,7 @@ async function handleAnalysisRequest(request, env) {
             console.info(logMsg, keysResponse);
             return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
+        ragKeys = [...new Set(ragKeys.map(k => RAG_KEY_ALIASES[k] || k))];
         log("Получени RAG ключове за извличане:", ragKeys);
 
         log("Стъпка 2: Извличане на данни от KV базата...");
