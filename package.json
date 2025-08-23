@@ -9,7 +9,8 @@
     "test:kv": "node scripts/validate-kv.js",
     "build:kv": "node scripts/generate-kv-data.js",
     "sync:kv": "node scripts/sync-kv.js",
-    "watch:kv": "node scripts/sync-kv.js"
+    "watch:kv": "node scripts/sync-kv.js",
+    "books:sync": "node scripts/books-to-kv.js && node upload-kv.js"
   },
   "keywords": [],
   "author": "",
