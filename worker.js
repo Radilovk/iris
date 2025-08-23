@@ -833,6 +833,27 @@ export async function fetchRagData(keys, env) {
     return {};
 }
 
+// --- СИНТЕЗ НА АНАЛИЗА ---
+export async function generateSummary(signs, ragRecords, env = {}, rolePrompt) {
+    const provider = await getAIProvider(env);
+    const model = await getAIModel(env);
+
+    const prompt = SYNTHESIS_PROMPT_TEMPLATE
+        .replace('{{USER_DATA}}', JSON.stringify({ signs }, null, 2))
+        .replace('{{RAG_DATA}}', JSON.stringify(ragRecords, null, 2));
+
+    const systemPrompt = rolePrompt || await getRolePrompt(env);
+    const apiCaller = provider === 'gemini' ? callGeminiAPI : callOpenAIAPI;
+    const aiResponse = await apiCaller(model, prompt, { systemPrompt }, null, null, env, true);
+    const parsed = JSON.parse(aiResponse);
+
+    const actions = ragRecords && ragRecords.support
+        ? Array.isArray(ragRecords.support) ? ragRecords.support : [ragRecords.support]
+        : [];
+
+    return { ...parsed, actions };
+}
+
 // --- ПОМОЩНИ ФУНКЦИИ ---
 function formatUserData(data) {
     return `
