@@ -435,6 +435,28 @@ test('fetchRagData извлича само данни за DISPOSITION_ACIDITY',
   delete globalThis.caches;
 });
 
+test('fetchRagData извлича новите ключове', async () => {
+  globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+  const env = {
+    iris_rag_kv: {
+      get: async key => {
+        if (key === 'RECOMMENDATION_HYDRATION') return { water: true };
+        if (key === 'DISPOSITION_LYMPHATIC') return { lymph: true };
+        return null;
+      }
+    }
+  };
+  const data = await fetchRagData({
+    RECOMMENDATION: ['RECOMMENDATION_HYDRATION'],
+    DISPOSITION: ['DISPOSITION_LYMPHATIC']
+  }, env);
+  assert.deepEqual(data, {
+    RECOMMENDATION: { RECOMMENDATION_HYDRATION: { water: true } },
+    DISPOSITION: { DISPOSITION_LYMPHATIC: { lymph: true } }
+  });
+  delete globalThis.caches;
+});
+
 test('fetchRagData логва едно предупреждение за липсващи ключове', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = { iris_rag_kv: { get: async () => null } };
