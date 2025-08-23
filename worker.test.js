@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo } from './worker.js';
+import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -521,6 +521,18 @@ test('fetchExternalInfo връща null без предупреждение пр
   console.warn = originalWarn;
   assert.equal(result, null);
   assert.deepEqual(warnings, []);
+});
+
+test('generateSummary добавя actions от ragRecords.support', async () => {
+  const env = { AI_PROVIDER: 'openai', AI_MODEL: 'gpt-4o-mini', openai_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify({ summary: 's', holistic_analysis: 'h' }) } }] }),
+    { status: 200 }
+  );
+  const res = await generateSummary(['SIGN_A'], { support: ['Drink water'] }, env);
+  globalThis.fetch = originalFetch;
+  assert.deepEqual(res.actions, ['Drink water']);
 });
 
 test('handleAnalysisRequest пропуска извличането на публични източници при липса на Google ключове', async () => {
