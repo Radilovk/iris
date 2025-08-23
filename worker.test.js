@@ -449,6 +449,46 @@ test('fetchRagData логва едно предупреждение за лип�
   delete globalThis.caches;
 });
 
+test('handleAnalysisRequest преобразува алиасите към канонични ключове', async () => {
+  const buf = Buffer.alloc(10, 0);
+  const form = new FormData();
+  form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
+  form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+
+  const fetched = [];
+  const env = {
+    AI_PROVIDER: 'openai',
+    openai_api_key: 'k',
+    iris_rag_kv: {
+      get: async key => {
+        if (key === 'AI_MODEL') return 'gpt-4o';
+        if (key === 'ROLE_PROMPT') return { prompt: '' };
+        fetched.push(key);
+        return { ok: true };
+      },
+      put: async () => {}
+    }
+  };
+  globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+
+  const responses = [
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify(['SIGN_RADIAL_FURROW']) } }] }),
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify({ holistic_analysis: 'ok' }) } }] })
+  ];
+  let idx = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(responses[idx++], { status: 200 });
+
+  const res = await worker.fetch(req, env);
+
+  globalThis.fetch = originalFetch;
+  delete globalThis.caches;
+
+  assert.equal(res.status, 200);
+  assert.deepEqual(fetched, ['SIGN_IRIS_RADII_SOLARIS']);
+});
+
 test('fetchExternalInfo връща null без предупреждение при липсващи ключове', async () => {
   const warnings = [];
   const originalWarn = console.warn;
