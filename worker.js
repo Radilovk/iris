@@ -713,18 +713,7 @@ async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, exp
 
     const requestBody = { model, messages };
     if (expectJson) {
-        requestBody.response_format = {
-            type: "json_schema",
-            json_schema: {
-                name: "rag_keys",
-                schema: {
-                    type: "array",
-                    items: { type: "string" },
-                    minItems: 1,
-                    additionalItems: false
-                }
-            }
-        };
+        requestBody.response_format = { type: "json_object" };
     }
     if (options.max_tokens) {
         requestBody.max_tokens = options.max_tokens;
