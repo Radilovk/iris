@@ -559,7 +559,7 @@ async function handleAnalysisRequest(request, env) {
         const cleaned = extractJsonArray(keysResponse) || keysResponse;
         try {
             ragKeys = JSON.parse(cleaned);
-            if (ragKeys && typeof ragKeys === 'object' && Object.hasOwn(ragKeys, 'error')) {
+            if (ragKeys && typeof ragKeys === 'object' && 'error' in ragKeys) {
                 const msg = ragKeys.error;
                 log('AI върна грешка:', msg);
                 console.info('AI върна грешка:', msg);
