@@ -161,6 +161,41 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
   globalThis.fetch = originalFetch;
 });
 
+test('callOpenAIAPI изпраща json_schema и връща масив при expectJson=true', async () => {
+  const env = { openai_api_key: 'key' };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    assert.deepEqual(body.response_format, {
+      type: 'json_schema',
+      json_schema: {
+        name: 'rag_keys',
+        schema: {
+          type: 'array',
+          items: { type: 'string' },
+          minItems: 1,
+          additionalItems: false
+        }
+      }
+    });
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: '["x","y"]' } }] }),
+      { status: 200 }
+    );
+  };
+  const result = await callOpenAIAPI(
+    'gpt-4o',
+    'p',
+    {},
+    { data: 'a', type: 'image/png' },
+    { data: 'b', type: 'image/png' },
+    env,
+    true
+  );
+  assert.deepEqual(JSON.parse(result), ['x', 'y']);
+  globalThis.fetch = originalFetch;
+});
+
 test('callOpenAIAPI изпраща max_tokens', async () => {
   const env = { openai_api_key: 'key' };
   const originalFetch = globalThis.fetch;
