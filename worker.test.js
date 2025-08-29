@@ -161,7 +161,7 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
   globalThis.fetch = originalFetch;
 });
 
-test('callOpenAIAPI изпраща json_schema и връща масив при expectJson=true', async () => {
+test('callOpenAIAPI изпраща json_schema и връща масив от rag_keys при expectJson=true', async () => {
   const env = { openai_api_key: 'key' };
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
@@ -171,15 +171,22 @@ test('callOpenAIAPI изпраща json_schema и връща масив при e
       json_schema: {
         name: 'rag_keys',
         schema: {
-          type: 'array',
-          items: { type: 'string' },
-          minItems: 1,
-          additionalItems: false
+          type: 'object',
+          properties: {
+            rag_keys: {
+              type: 'array',
+              items: { type: 'string' },
+              minItems: 1,
+              additionalItems: false
+            }
+          },
+          required: ['rag_keys'],
+          additionalProperties: false
         }
       }
     });
     return new Response(
-      JSON.stringify({ choices: [{ message: { content: '["x","y"]' } }] }),
+      JSON.stringify({ choices: [{ message: { content: '{"rag_keys":["x","y"]}' } }] }),
       { status: 200 }
     );
   };
@@ -192,7 +199,7 @@ test('callOpenAIAPI изпраща json_schema и връща масив при e
     env,
     true
   );
-  assert.deepEqual(JSON.parse(result), ['x', 'y']);
+  assert.deepEqual(JSON.parse(result).rag_keys, ['x', 'y']);
   globalThis.fetch = originalFetch;
 });
 
