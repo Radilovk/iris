@@ -333,6 +333,39 @@ test('handleAnalysisRequest връща грешка при отговор { erro
   globalThis.fetch = originalFetch;
 });
 
+test('handleAnalysisRequest улавя грешка чрез наследено поле', async () => {
+  const buf = Buffer.alloc(10, 0);
+  const form = new FormData();
+  form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
+  form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify({ error: 'AI грешка' }) } }] }),
+      { status: 200 }
+    );
+
+  const originalParse = JSON.parse;
+  JSON.parse = (str) => {
+    if (str === JSON.stringify({ error: 'AI грешка' })) {
+      return Object.create({ error: 'AI грешка' });
+    }
+    return originalParse(str);
+  };
+
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k' };
+  const res = await worker.fetch(req, env);
+
+  JSON.parse = originalParse;
+
+  assert.equal(res.status, 400);
+  assert.deepEqual(await res.json(), { error: 'AI грешка' });
+
+  globalThis.fetch = originalFetch;
+});
+
 test('/admin/keys връща списък с ключове', async () => {
   const req = new Request('https://example.com/admin/keys');
   const env = {
