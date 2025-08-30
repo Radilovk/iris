@@ -165,6 +165,43 @@ export async function getAIModel(env = {}) {
     return provider === 'openai' ? 'gpt-4o' : 'gemini-1.5-pro';
 }
 
+// Гарантира присъствието на поле "holistic_analysis" в схемата
+function ensureHolisticSchema(schema = {}) {
+    if (!schema.properties) schema.properties = {};
+    if (!schema.properties.holistic_analysis) {
+        schema.properties.holistic_analysis = { type: 'string' };
+    }
+    if (!Array.isArray(schema.required)) schema.required = [];
+    if (!schema.required.includes('holistic_analysis')) {
+        schema.required.push('holistic_analysis');
+    }
+    return schema;
+}
+
+// Извлича динамична схема за финален анализ от ENV или KV
+async function getAnalysisJsonSchema(env = {}) {
+    let schema;
+    if (env.ANALYSIS_JSON_SCHEMA) {
+        try {
+            schema = typeof env.ANALYSIS_JSON_SCHEMA === 'string'
+                ? JSON.parse(env.ANALYSIS_JSON_SCHEMA)
+                : env.ANALYSIS_JSON_SCHEMA;
+        } catch (e) {
+            console.warn('Невалидна ANALYSIS_JSON_SCHEMA в ENV:', e);
+        }
+    } else if (env.iris_rag_kv) {
+        try {
+            schema = await env.iris_rag_kv.get('ANALYSIS_JSON_SCHEMA', 'json');
+        } catch (e) {
+            console.warn('Неуспешно извличане на ANALYSIS_JSON_SCHEMA от KV:', e);
+        }
+    }
+    if (!schema || typeof schema !== 'object') {
+        return ANALYSIS_JSON_SCHEMA;
+    }
+    return { name: 'analysis', schema: ensureHolisticSchema(schema) };
+}
+
 // --- ОТЛОГВАНЕ ---
 function debugLog(env = {}, ...args) {
     if (env.DEBUG === "true") {
@@ -650,10 +687,11 @@ async function handleAnalysisRequest(request, env) {
 
         const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const rolePrompt = await getRolePrompt(env);
+        const analysisSchema = await getAnalysisJsonSchema(env);
         const finalAnalysis = await synthesisApiCaller(
             model,
             synthesisPrompt,
-            { systemPrompt: rolePrompt, jsonSchema: ANALYSIS_JSON_SCHEMA },
+            { systemPrompt: rolePrompt, jsonSchema: analysisSchema },
             leftEyeImage,
             rightEyeImage,
             env,
@@ -894,7 +932,7 @@ export async function fetchRagData(keys, env) {
 }
 
 // --- СИНТЕЗ НА АНАЛИЗА ---
-export async function generateSummary(signs, ragRecords, env = {}, rolePrompt) {
+export async function generateSummary(signs, ragRecords, env = {}, rolePrompt, analysisSchema) {
     const provider = await getAIProvider(env);
     const model = await getAIModel(env);
 
@@ -903,11 +941,14 @@ export async function generateSummary(signs, ragRecords, env = {}, rolePrompt) {
         .replace('{{RAG_DATA}}', JSON.stringify(ragRecords, null, 2));
 
     const systemPrompt = rolePrompt || await getRolePrompt(env);
+    const schemaWrapper = analysisSchema
+        ? { name: analysisSchema.name || 'analysis', schema: ensureHolisticSchema(analysisSchema.schema || {}) }
+        : await getAnalysisJsonSchema(env);
     const apiCaller = provider === 'gemini' ? callGeminiAPI : callOpenAIAPI;
     const aiResponse = await apiCaller(
         model,
         prompt,
-        { systemPrompt, jsonSchema: ANALYSIS_JSON_SCHEMA },
+        { systemPrompt, jsonSchema: schemaWrapper },
         null,
         null,
         env,
@@ -1025,4 +1066,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA };
+export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema };
