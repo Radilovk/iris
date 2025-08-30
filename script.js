@@ -116,7 +116,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form submission - НАПЪЛНО ОБНОВЕНА СЕКЦИЯ
     const form = document.getElementById('iridology-form');
-    form.addEventListener('submit', function(e) {
+    function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const submitBtn = this.querySelector('.submit-btn');
@@ -158,13 +167,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const formData = new FormData(this);
-        
+        const storedForm = {};
+        for (const [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                storedForm[key] = await readFileAsDataURL(value);
+            } else {
+                storedForm[key] = value;
+            }
+        }
+        localStorage.setItem('iridologyFormData', JSON.stringify(storedForm));
+
         // Взимаме URL на Worker-а от конфигурацията
         const workerUrl = WORKER_URL;
 
-        fetch(workerUrl, { 
-            method: 'POST', 
-            body: formData 
+        fetch(workerUrl, {
+            method: 'POST',
+            body: formData
         })
         .then(response => {
             // Проверка дали отговорът от сървъра е успешен (статус 2xx)

@@ -27,15 +27,19 @@
             <div id="message-box"></div>
             
     <div class="button-group" style="margin-top: 2rem; text-align: center;">
+        <button id="re-analyze-btn" class="cta-button fade-in-up delay-3" style="margin-right:1rem;">Повтори анализа</button>
         <a href="index.html" class="cta-button fade-in-up delay-3">Връщане към началната страница</a>
     </div>
 </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
-<script>
+<script type="module">
+import { WORKER_URL } from './config.js';
+
 document.addEventListener('DOMContentLoaded', function () {
     const reportCard = document.getElementById('report-card');
     const messageBox = document.getElementById('message-box');
+    const reAnalyzeBtn = document.getElementById('re-analyze-btn');
 
     // Показване на съобщение за зареждане, докато се обработват данните
     reportCard.innerHTML = `<div class="loading-box"><i class="fas fa-spinner fa-spin"></i> Генериране на доклада...</div>`;
@@ -175,6 +179,85 @@ document.addEventListener('DOMContentLoaded', function () {
             messageBox.className = 'error-box';
         }
     }, 500); // 0.5 секунди закъснение
+
+    if (reAnalyzeBtn) {
+        reAnalyzeBtn.addEventListener('click', async () => {
+            reAnalyzeBtn.disabled = true;
+            if (messageBox) {
+                messageBox.textContent = '';
+                messageBox.className = '';
+            }
+
+            const stored = localStorage.getItem('iridologyFormData');
+            if (!stored) {
+                messageBox.textContent = 'Липсват данни за повторен анализ.';
+                messageBox.className = 'error-box';
+                reAnalyzeBtn.disabled = false;
+                return;
+            }
+
+            const formData = new FormData();
+            const obj = JSON.parse(stored);
+            for (const [key, value] of Object.entries(obj)) {
+                if (typeof value === 'string' && value.startsWith('data:')) {
+                    const [header, data] = value.split(',');
+                    const mime = header.match(/:(.*?);/)[1];
+                    const binary = atob(data);
+                    const array = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                        array[i] = binary.charCodeAt(i);
+                    }
+                    formData.append(key, new Blob([array], { type: mime }), `${key}.png`);
+                } else {
+                    formData.append(key, value);
+                }
+            }
+
+            const progressMessages = [
+                'Обработваме вашите изображения...',
+                'Идентифицираме ирисови знаци...',
+                'Анализираме вашата анамнеза...',
+                'Генерираме персонален холистичен анализ...'
+            ];
+            let msgIndex = 0;
+            let interval;
+            let spinner;
+            let textNode;
+
+            if (messageBox) {
+                messageBox.className = 'info-box';
+                spinner = document.createElement('i');
+                spinner.className = 'loading-spinner fas fa-spinner fa-spin';
+                textNode = document.createTextNode(progressMessages[msgIndex]);
+                messageBox.textContent = '';
+                messageBox.appendChild(spinner);
+                messageBox.appendChild(textNode);
+                interval = setInterval(() => {
+                    msgIndex = (msgIndex + 1) % progressMessages.length;
+                    textNode.textContent = progressMessages[msgIndex];
+                }, 4000);
+            }
+
+            try {
+                const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
+                if (!response.ok) {
+                    throw new Error(`Грешка от сървъра: ${response.status}`);
+                }
+                const data = await response.json();
+                if (interval) clearInterval(interval);
+                if (spinner) spinner.remove();
+                localStorage.setItem('iridologyReport', JSON.stringify(data));
+                reAnalyzeBtn.disabled = false;
+                location.reload();
+            } catch (err) {
+                if (interval) clearInterval(interval);
+                if (spinner) spinner.remove();
+                messageBox.textContent = 'Грешка: ' + err.message;
+                messageBox.className = 'error-box';
+                reAnalyzeBtn.disabled = false;
+            }
+        });
+    }
 });
 </script>
 </body>
