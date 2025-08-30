@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 /// <reference lib="webworker" />
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
 // Обработката на изображения вече се извършва клиентски.
@@ -1025,6 +1024,7 @@ function prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
 }
 
 function buildGeminiParts(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
+    /** @type {Array<{text:string}|{file_uri:string}|{inline_data:{mime_type:string,data:string}}>} */
     const parts = [{ text: prompt }];
     for (const img of prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl)) {
         const meta = { eye: img.eye };
