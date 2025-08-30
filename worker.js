@@ -718,17 +718,10 @@ async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, exp
             json_schema: {
                 name: "rag_keys",
                 schema: {
-                    type: "object",
-                    properties: {
-                        rag_keys: {
-                            type: "array",
-                            items: { type: "string" },
-                            minItems: 1,
-                            additionalItems: false
-                        }
-                    },
-                    required: ["rag_keys"],
-                    additionalProperties: false
+                    type: "array",
+                    items: { type: "string" },
+                    minItems: 1,
+                    additionalItems: false
                 }
             }
         };
