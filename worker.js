@@ -4,12 +4,13 @@
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
 // Използва Web API за ориентиране, мащабиране и конвертиране без външни зависимости.
 // Позволява избор на формат и прескача мащабирането за файлове под 2 MB.
-async function preprocessImage(file, { maxSize = 1024, format = 'image/jpeg' } = {}) {
+async function preprocessImage(file, { maxSize = 1024, format = 'jpeg', quality = 0.85 } = {}) {
     const g = globalThis;
     if (typeof g.createImageBitmap !== 'function' || typeof g.OffscreenCanvas === 'undefined') {
         return file;
     }
-    if (file.size < 2 * 1024 * 1024 && file.type === format) {
+    const mime = `image/${format}`;
+    if (file.size < 2 * 1024 * 1024 && file.type === mime) {
         return file;
     }
     const bitmap = await g.createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -20,8 +21,8 @@ async function preprocessImage(file, { maxSize = 1024, format = 'image/jpeg' } =
     const ctx = canvas.getContext('2d');
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await canvas.convertToBlob({ type: format, quality: 0.85 });
-    return new File([blob], file.name, { type: format });
+    const blob = await canvas.convertToBlob({ type: mime, quality });
+    return new File([blob], file.name, { type: mime });
 }
 
 function validateKv(data) {
@@ -1023,9 +1024,10 @@ async function validateImageSize(file, env = {}, maxBytes = 10 * 1024 * 1024) {
     return file;
 }
 
-async function fileToBase64(blob, env = {}) {
-    await validateImageSize(blob, env);
-    const arrayBuffer = await blob.arrayBuffer();
+async function fileToBase64(blob, env = {}, opts) {
+    const processed = opts ? await preprocessImage(blob, opts) : blob;
+    await validateImageSize(processed, env);
+    const arrayBuffer = await processed.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
     let binary = "";
@@ -1035,7 +1037,7 @@ async function fileToBase64(blob, env = {}) {
     // btoa(unescape(encodeURIComponent(binary)))
     const base64 = btoa(binary);
 
-    return { data: base64, type: blob.type };
+    return { data: base64, type: processed.type };
 }
 
 // Качва изображение в R2/S3 и връща временен URL или null при липса на bucket.

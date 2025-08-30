@@ -38,6 +38,24 @@ test('fileToBase64 обработва файл по-голям от 8KB', async 
   assert.equal(result.type, 'image/jpeg');
 });
 
+test('fileToBase64 запазва MIME за PNG', async () => {
+  const buffer = Buffer.alloc(10, 0);
+  const file = new File([buffer], 'img.png', { type: 'image/png' });
+  const expected = buffer.toString('base64');
+  const result = await fileToBase64(file);
+  assert.equal(result.data, expected);
+  assert.equal(result.type, 'image/png');
+});
+
+test('fileToBase64 запазва MIME за WebP', async () => {
+  const buffer = Buffer.alloc(10, 0);
+  const file = new File([buffer], 'img.webp', { type: 'image/webp' });
+  const expected = buffer.toString('base64');
+  const result = await fileToBase64(file);
+  assert.equal(result.data, expected);
+  assert.equal(result.type, 'image/webp');
+});
+
 test('uploadImageAndGetUrl връща null при липсващо bucket', async () => {
   const buffer = Buffer.alloc(10, 0);
   const file = new File([buffer], 'tmp.jpg', { type: 'image/jpeg' });
