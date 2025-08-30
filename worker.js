@@ -96,7 +96,7 @@ const DEFAULT_ROLE_PROMPT = `
 3. Използвай единствено информацията от входните данни и RAG.
 4. Ако липсва информация, заяви го изрично и не прави предположения. Ако липсва информация, опиши какви допълнителни данни са нужни.
 5. Не поставяй медицински диагнози и не предписвай лечение; формулирай анализите като образователни насоки.
-6. Всяко входно изображение е последвано от текстов JSON с поле "eye" ("left" или "right"), което указва кое око показва.
+6. Всяко входно изображение е последвано от текстов JSON с метаданни (например поле "eye" със стойности "left" или "right").
 
 # ВАЖЕН ДИСКЛЕЙМЪР
 **Винаги завършвай всеки анализ с този РАЗШИРЕН текст:**
@@ -1015,12 +1015,13 @@ function prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
 function buildGeminiParts(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
     const parts = [{ text: prompt }];
     for (const img of prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl)) {
+        const meta = { eye: img.eye };
         if (img.url) {
             parts.push({ file_uri: img.url });
         } else if (img.data) {
             parts.push({ inline_data: { mime_type: img.type, data: img.data } });
         }
-        parts.push({ text: `{"eye":"${img.eye}"}` });
+        parts.push({ text: JSON.stringify(meta) });
     }
     return parts;
 }
@@ -1029,12 +1030,13 @@ function buildOpenAIContent(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl) 
     /** @type {Array<{type:string,text?:string,image_url?:{url:string}}>} */
     const content = [{ type: 'text', text: prompt }];
     for (const img of prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl)) {
+        const meta = { eye: img.eye };
         if (img.url) {
             content.push({ type: 'image_url', image_url: { url: img.url } });
         } else if (img.data) {
             content.push({ type: 'image_url', image_url: { url: `data:${img.type};base64,${img.data}` } });
         }
-        content.push({ type: 'text', text: `{"eye":"${img.eye}"}` });
+        content.push({ type: 'text', text: JSON.stringify(meta) });
     }
     return content;
 }
