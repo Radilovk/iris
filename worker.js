@@ -1024,14 +1024,19 @@ function prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
     return images;
 }
 
+/**
+ * @typedef {{text:string}|{file_uri:string}|{inline_data:{mime_type:string,data:string}}} GeminiPart
+ */
+
 function buildGeminiParts(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
+    /** @type {GeminiPart[]} */
     const parts = [{ text: prompt }];
     for (const img of prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl)) {
         const meta = { eye: img.eye };
         if (img.url) {
             parts.push({ file_uri: img.url });
         } else if (img.data) {
-            parts.push({ inline_data: { mime_type: img.type, data: img.data } });
+            parts.push({ inline_data: { mime_type: img.type || 'application/octet-stream', data: img.data } });
         }
         parts.push({ text: JSON.stringify(meta) });
     }
