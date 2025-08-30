@@ -181,6 +181,40 @@ const RAG_KEY_ALIASES = {
     CONSTITUTION_CONNECTIVE_TISSUE: 'CONSTITUTION_STRUCTURE_CONNECTIVE_TISSUE',
 };
 
+const RAG_KEYS_SCHEMA = {
+    name: 'rag_keys',
+    schema: {
+        type: 'object',
+        properties: {
+            rag_keys: {
+                type: 'array',
+                items: { type: 'string' },
+                minItems: 1,
+                additionalItems: false,
+            }
+        },
+        required: ['rag_keys'],
+        additionalProperties: false
+    }
+};
+
+const FINAL_ANALYSIS_SCHEMA = {
+    name: 'final_analysis',
+    schema: {
+        type: 'object',
+        properties: {
+            summary: { type: 'string' },
+            constitution: { type: 'string' },
+            dispositions: { type: 'string' },
+            signs: { type: 'string' },
+            recommendations: { type: 'string' },
+            holistic_analysis: { type: 'string' }
+        },
+        required: ['summary','constitution','dispositions','signs','recommendations','holistic_analysis'],
+        additionalProperties: false
+    }
+};
+
 // --- ПРОМПТОВЕ ---
 const IDENTIFICATION_PROMPT = `
 # ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
@@ -604,7 +638,15 @@ async function handleAnalysisRequest(request, env) {
 
         const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const rolePrompt = await getRolePrompt(env);
-        const finalAnalysis = await synthesisApiCaller(model, synthesisPrompt, { systemPrompt: rolePrompt }, leftEyeImage, rightEyeImage, env, true);
+        const finalAnalysis = await synthesisApiCaller(
+            model,
+            synthesisPrompt,
+            { systemPrompt: rolePrompt, jsonSchema: FINAL_ANALYSIS_SCHEMA },
+            leftEyeImage,
+            rightEyeImage,
+            env,
+            true
+        );
         log("Финален анализ е генериран успешно.");
 
         let parsedAnalysis;
@@ -713,17 +755,10 @@ async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, exp
 
     const requestBody = { model, messages };
     if (expectJson) {
+        const schema = options.jsonSchema || RAG_KEYS_SCHEMA;
         requestBody.response_format = {
             type: "json_schema",
-            json_schema: {
-                name: "rag_keys",
-                schema: {
-                    type: "array",
-                    items: { type: "string" },
-                    minItems: 1,
-                    additionalItems: false
-                }
-            }
+            json_schema: schema
         };
     }
     if (options.max_tokens) {
@@ -855,7 +890,15 @@ export async function generateSummary(signs, ragRecords, env = {}, rolePrompt) {
 
     const systemPrompt = rolePrompt || await getRolePrompt(env);
     const apiCaller = provider === 'gemini' ? callGeminiAPI : callOpenAIAPI;
-    const aiResponse = await apiCaller(model, prompt, { systemPrompt }, null, null, env, true);
+    const aiResponse = await apiCaller(
+        model,
+        prompt,
+        { systemPrompt, jsonSchema: FINAL_ANALYSIS_SCHEMA },
+        null,
+        null,
+        env,
+        true
+    );
     const parsed = JSON.parse(aiResponse);
 
     const actions = ragRecords && ragRecords.support

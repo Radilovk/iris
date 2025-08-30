@@ -161,7 +161,7 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
   globalThis.fetch = originalFetch;
 });
 
-test('callOpenAIAPI изпраща json_schema и връща масив при expectJson=true', async () => {
+test('callOpenAIAPI изпраща json_schema и връща обект при expectJson=true', async () => {
   const env = { openai_api_key: 'key' };
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
@@ -171,15 +171,22 @@ test('callOpenAIAPI изпраща json_schema и връща масив при e
       json_schema: {
         name: 'rag_keys',
         schema: {
-          type: 'array',
-          items: { type: 'string' },
-          minItems: 1,
-          additionalItems: false
+          type: 'object',
+          properties: {
+            rag_keys: {
+              type: 'array',
+              items: { type: 'string' },
+              minItems: 1,
+              additionalItems: false
+            }
+          },
+          required: ['rag_keys'],
+          additionalProperties: false
         }
       }
     });
     return new Response(
-      JSON.stringify({ choices: [{ message: { content: '["x","y"]' } }] }),
+      JSON.stringify({ choices: [{ message: { content: '{"rag_keys":["x","y"]}' } }] }),
       { status: 200 }
     );
   };
@@ -192,7 +199,40 @@ test('callOpenAIAPI изпраща json_schema и връща масив при e
     env,
     true
   );
-  assert.deepEqual(JSON.parse(result), ['x', 'y']);
+  assert.deepEqual(JSON.parse(result), { rag_keys: ['x', 'y'] });
+  globalThis.fetch = originalFetch;
+});
+
+test('callOpenAIAPI използва подаден jsonSchema', async () => {
+  const env = { openai_api_key: 'key' };
+  const customSchema = {
+    name: 'analysis',
+    schema: {
+      type: 'object',
+      properties: { holistic_analysis: { type: 'string' } },
+      required: ['holistic_analysis'],
+      additionalProperties: false
+    }
+  };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    assert.deepEqual(body.response_format, { type: 'json_schema', json_schema: customSchema });
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: '{"holistic_analysis":"ok"}' } }] }),
+      { status: 200 }
+    );
+  };
+  const result = await callOpenAIAPI(
+    'gpt-4o',
+    'p',
+    { jsonSchema: customSchema },
+    { data: 'a', type: 'image/png' },
+    { data: 'b', type: 'image/png' },
+    env,
+    true
+  );
+  assert.deepEqual(JSON.parse(result), { holistic_analysis: 'ok' });
   globalThis.fetch = originalFetch;
 });
 
@@ -594,10 +634,14 @@ test('fetchExternalInfo връща null без предупреждение пр
 test('generateSummary добавя actions от ragRecords.support', async () => {
   const env = { AI_PROVIDER: 'openai', AI_MODEL: 'gpt-4o-mini', openai_api_key: 'key' };
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(
-    JSON.stringify({ choices: [{ message: { content: JSON.stringify({ summary: 's', holistic_analysis: 'h' }) } }] }),
-    { status: 200 }
-  );
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    assert.ok(body.response_format.json_schema.schema.required.includes('holistic_analysis'));
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify({ summary: 's', constitution: 'c', dispositions: 'd', signs: 'si', recommendations: 'r', holistic_analysis: 'h' }) } }] }),
+      { status: 200 }
+    );
+  };
   const res = await generateSummary(['SIGN_A'], { support: ['Drink water'] }, env);
   globalThis.fetch = originalFetch;
   assert.deepEqual(res.actions, ['Drink water']);
