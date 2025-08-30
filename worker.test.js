@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary } from './worker.js';
+import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -168,22 +168,7 @@ test('callOpenAIAPI изпраща json_schema и връща масив от rag
     const body = JSON.parse(options.body);
     assert.deepEqual(body.response_format, {
       type: 'json_schema',
-      json_schema: {
-        name: 'rag_keys',
-        schema: {
-          type: 'object',
-          properties: {
-            rag_keys: {
-              type: 'array',
-              items: { type: 'string' },
-              minItems: 1,
-              additionalItems: false
-            }
-          },
-          required: ['rag_keys'],
-          additionalProperties: false
-        }
-      }
+      json_schema: RAG_KEYS_JSON_SCHEMA
     });
     return new Response(
       JSON.stringify({ choices: [{ message: { content: '{"rag_keys":["x","y"]}' } }] }),
@@ -193,7 +178,7 @@ test('callOpenAIAPI изпраща json_schema и връща масив от rag
   const result = await callOpenAIAPI(
     'gpt-4o',
     'p',
-    {},
+    { jsonSchema: RAG_KEYS_JSON_SCHEMA },
     { data: 'a', type: 'image/png' },
     { data: 'b', type: 'image/png' },
     env,
@@ -574,8 +559,12 @@ test('handleAnalysisRequest преобразува алиасите към ка�
     JSON.stringify({ choices: [{ message: { content: JSON.stringify({ holistic_analysis: 'ok' }) } }] })
   ];
   let idx = 0;
+  const bodies = [];
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(responses[idx++], { status: 200 });
+  globalThis.fetch = async (_url, init) => {
+    bodies.push(JSON.parse(init.body));
+    return new Response(responses[idx++], { status: 200 });
+  };
 
   const res = await worker.fetch(req, env);
 
@@ -584,6 +573,8 @@ test('handleAnalysisRequest преобразува алиасите към ка�
 
   assert.equal(res.status, 200);
   assert.deepEqual(fetched, ['SIGN_IRIS_RADII_SOLARIS']);
+  assert.equal(bodies[0].response_format.json_schema.name, 'rag_keys');
+  assert.equal(bodies[1].response_format.json_schema.name, 'analysis');
 });
 
 test('fetchExternalInfo връща null без предупреждение при липсващи ключове', async () => {
@@ -600,14 +591,19 @@ test('fetchExternalInfo връща null без предупреждение пр
 
 test('generateSummary добавя actions от ragRecords.support', async () => {
   const env = { AI_PROVIDER: 'openai', AI_MODEL: 'gpt-4o-mini', openai_api_key: 'key' };
+  const bodies = [];
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(
-    JSON.stringify({ choices: [{ message: { content: JSON.stringify({ summary: 's', holistic_analysis: 'h' }) } }] }),
-    { status: 200 }
-  );
+  globalThis.fetch = async (_url, init) => {
+    bodies.push(JSON.parse(init.body));
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify({ summary: 's', holistic_analysis: 'h' }) } }] }),
+      { status: 200 }
+    );
+  };
   const res = await generateSummary(['SIGN_A'], { support: ['Drink water'] }, env);
   globalThis.fetch = originalFetch;
   assert.deepEqual(res.actions, ['Drink water']);
+  assert.equal(bodies[0].response_format.json_schema.name, 'analysis');
 });
 
 test('handleAnalysisRequest пропуска извличането на публични източници при липса на Google ключове', async () => {
