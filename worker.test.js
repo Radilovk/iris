@@ -572,7 +572,7 @@ test('handleAnalysisRequest преобразува алиасите към ка�
   delete globalThis.caches;
 
   assert.equal(res.status, 200);
-  assert.deepEqual(fetched, ['SIGN_IRIS_RADII_SOLARIS']);
+  assert.deepEqual(fetched, ['SIGN_IRIS_RADII_SOLARIS', 'ANALYSIS_JSON_SCHEMA']);
   assert.equal(bodies[0].response_format.json_schema.name, 'rag_keys');
   assert.equal(bodies[1].response_format.json_schema.name, 'analysis');
 });
@@ -604,6 +604,28 @@ test('generateSummary добавя actions от ragRecords.support', async () =>
   globalThis.fetch = originalFetch;
   assert.deepEqual(res.actions, ['Drink water']);
   assert.equal(bodies[0].response_format.json_schema.name, 'analysis');
+});
+
+test('generateSummary приема custom json_schema', async () => {
+  const env = { AI_PROVIDER: 'openai', AI_MODEL: 'gpt-4o-mini', openai_api_key: 'key' };
+  const bodies = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    bodies.push(JSON.parse(init.body));
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify({ holistic_analysis: 'h', extra: 'e' }) } }] }),
+      { status: 200 }
+    );
+  };
+  const customSchema = {
+    name: 'custom',
+    schema: { type: 'object', properties: { extra: { type: 'string' } }, required: ['extra'] }
+  };
+  await generateSummary(['SIGN_A'], {}, env, undefined, customSchema);
+  globalThis.fetch = originalFetch;
+  const sent = bodies[0].response_format.json_schema;
+  assert.equal(sent.name, 'custom');
+  assert.deepEqual(sent.schema.required.sort(), ['extra', 'holistic_analysis']);
 });
 
 test('handleAnalysisRequest пропуска извличането на публични източници при липса на Google ключове', async () => {
