@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA } from './worker.js';
+import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -132,6 +132,24 @@ test('getAIModel игнорира празни или невалидни сто�
     AI_PROVIDER: 'openai'
   };
   assert.equal(await getAIModel(invalidEnv), 'gpt-4o');
+});
+
+test('getAnalysisJsonSchema кешира резултата от KV', async () => {
+  let calls = 0;
+  const env = {
+    iris_rag_kv: {
+      get: async (key, type) => {
+        calls++;
+        assert.equal(key, 'ANALYSIS_JSON_SCHEMA');
+        assert.equal(type, 'json');
+        return { type: 'object', properties: {} };
+      }
+    }
+  };
+  const first = await getAnalysisJsonSchema(env);
+  const second = await getAnalysisJsonSchema(env);
+  assert.equal(calls, 1);
+  assert.deepEqual(first, second);
 });
 
 test('Изборът OpenAI/gpt-4o-mini се подава към API', async () => {
@@ -572,7 +590,7 @@ test('handleAnalysisRequest преобразува алиасите към ка�
   delete globalThis.caches;
 
   assert.equal(res.status, 200);
-  assert.deepEqual(fetched, ['SIGN_IRIS_RADII_SOLARIS', 'ANALYSIS_JSON_SCHEMA']);
+  assert.deepEqual(fetched, ['SIGN_IRIS_RADII_SOLARIS']);
   assert.equal(bodies[0].response_format.json_schema.name, 'rag_keys');
   assert.equal(bodies[1].response_format.json_schema.name, 'analysis');
 });

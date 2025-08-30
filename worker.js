@@ -179,27 +179,35 @@ function ensureHolisticSchema(schema = {}) {
 }
 
 // Извлича динамична схема за финален анализ от ENV или KV
+let analysisJsonSchemaCache;
+
 async function getAnalysisJsonSchema(env = {}) {
-    let schema;
-    if (env.ANALYSIS_JSON_SCHEMA) {
-        try {
-            schema = typeof env.ANALYSIS_JSON_SCHEMA === 'string'
-                ? JSON.parse(env.ANALYSIS_JSON_SCHEMA)
-                : env.ANALYSIS_JSON_SCHEMA;
-        } catch (e) {
-            console.warn('Невалидна ANALYSIS_JSON_SCHEMA в ENV:', e);
+    if (analysisJsonSchemaCache) return analysisJsonSchemaCache;
+
+    analysisJsonSchemaCache = (async () => {
+        let schema;
+        if (env.ANALYSIS_JSON_SCHEMA) {
+            try {
+                schema = typeof env.ANALYSIS_JSON_SCHEMA === 'string'
+                    ? JSON.parse(env.ANALYSIS_JSON_SCHEMA)
+                    : env.ANALYSIS_JSON_SCHEMA;
+            } catch (e) {
+                console.warn('Невалидна ANALYSIS_JSON_SCHEMA в ENV:', e);
+            }
+        } else if (env.iris_rag_kv) {
+            try {
+                schema = await env.iris_rag_kv.get('ANALYSIS_JSON_SCHEMA', 'json');
+            } catch (e) {
+                console.warn('Неуспешно извличане на ANALYSIS_JSON_SCHEMA от KV:', e);
+            }
         }
-    } else if (env.iris_rag_kv) {
-        try {
-            schema = await env.iris_rag_kv.get('ANALYSIS_JSON_SCHEMA', 'json');
-        } catch (e) {
-            console.warn('Неуспешно извличане на ANALYSIS_JSON_SCHEMA от KV:', e);
+        if (!schema || typeof schema !== 'object') {
+            return ANALYSIS_JSON_SCHEMA;
         }
-    }
-    if (!schema || typeof schema !== 'object') {
-        return ANALYSIS_JSON_SCHEMA;
-    }
-    return { name: 'analysis', schema: ensureHolisticSchema(schema) };
+        return { name: 'analysis', schema: ensureHolisticSchema(schema) };
+    })();
+
+    return analysisJsonSchemaCache;
 }
 
 // --- ОТЛОГВАНЕ ---
