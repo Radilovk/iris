@@ -148,15 +148,19 @@ export async function getAIModel(env = {}) {
     return provider === 'openai' ? 'gpt-4o' : 'gemini-1.5-pro';
 }
 
-// Гарантира присъствието на поле "holistic_analysis" в схемата
-function ensureHolisticSchema(schema = {}) {
+// Гарантира присъствието на задължителните полета в схемата
+function ensureAnalysisSchema(schema = {}) {
     if (!schema.properties) schema.properties = {};
-    if (!schema.properties.holistic_analysis) {
-        schema.properties.holistic_analysis = { type: 'string' };
+    for (const key of ['summary', 'recommendations', 'holistic_analysis']) {
+        if (!schema.properties[key]) {
+            schema.properties[key] = { type: 'string' };
+        }
     }
     if (!Array.isArray(schema.required)) schema.required = [];
-    if (!schema.required.includes('holistic_analysis')) {
-        schema.required.push('holistic_analysis');
+    for (const key of ['summary', 'recommendations', 'holistic_analysis']) {
+        if (!schema.required.includes(key)) {
+            schema.required.push(key);
+        }
     }
     return schema;
 }
@@ -168,10 +172,10 @@ async function getAnalysisJsonSchema(env = {}) {
     if (analysisJsonSchemaCache) return analysisJsonSchemaCache;
 
     analysisJsonSchemaCache = (async () => {
-        let schema;
+        let schemaObj;
         if (env.ANALYSIS_JSON_SCHEMA) {
             try {
-                schema = typeof env.ANALYSIS_JSON_SCHEMA === 'string'
+                schemaObj = typeof env.ANALYSIS_JSON_SCHEMA === 'string'
                     ? JSON.parse(env.ANALYSIS_JSON_SCHEMA)
                     : env.ANALYSIS_JSON_SCHEMA;
             } catch (e) {
@@ -179,18 +183,24 @@ async function getAnalysisJsonSchema(env = {}) {
             }
         } else if (env.iris_rag_kv) {
             try {
-                schema = await env.iris_rag_kv.get('ANALYSIS_JSON_SCHEMA', 'json');
+                schemaObj = await env.iris_rag_kv.get('ANALYSIS_JSON_SCHEMA', 'json');
             } catch (e) {
                 console.warn('Неуспешно извличане на ANALYSIS_JSON_SCHEMA от KV:', e);
             }
         }
-        if (!schema || typeof schema !== 'object') {
+        if (!schemaObj || typeof schemaObj !== 'object') {
             return ANALYSIS_JSON_SCHEMA;
         }
-        return { name: 'analysis', schema: ensureHolisticSchema(schema) };
+        const name = schemaObj.name || 'analysis';
+        const inner = schemaObj.schema || schemaObj;
+        return { name, schema: ensureAnalysisSchema(inner) };
     })();
 
     return analysisJsonSchemaCache;
+}
+
+function resetAnalysisJsonSchemaCache() {
+    analysisJsonSchemaCache = undefined;
 }
 
 // --- ОТЛОГВАНЕ ---
@@ -519,9 +529,11 @@ const ANALYSIS_JSON_SCHEMA = {
     schema: {
         type: 'object',
         properties: {
+            summary: { type: 'string' },
+            recommendations: { type: 'string' },
             holistic_analysis: { type: 'string' }
         },
-        required: ['holistic_analysis'],
+        required: ['summary', 'recommendations', 'holistic_analysis'],
         additionalProperties: true
     }
 };
@@ -919,7 +931,7 @@ export async function generateSummary(signs, ragRecords, env = {}, rolePrompt, a
 
     const systemPrompt = rolePrompt || await getRolePrompt(env);
     const schemaWrapper = analysisSchema
-        ? { name: analysisSchema.name || 'analysis', schema: ensureHolisticSchema(analysisSchema.schema || {}) }
+        ? { name: analysisSchema.name || 'analysis', schema: ensureAnalysisSchema(analysisSchema.schema || {}) }
         : await getAnalysisJsonSchema(env);
     const apiCaller = provider === 'gemini' ? callGeminiAPI : callOpenAIAPI;
     const aiResponse = await apiCaller(
@@ -1101,4 +1113,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema };
+export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache };
