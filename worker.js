@@ -117,6 +117,7 @@ const DEFAULT_ROLE_PROMPT = `
 3. Използвай единствено информацията от входните данни и RAG.
 4. Ако липсва информация, заяви го изрично и не прави предположения. Ако липсва информация, опиши какви допълнителни данни са нужни.
 5. Не поставяй медицински диагнози и не предписвай лечение; формулирай анализите като образователни насоки.
+6. Всяко входно изображение е последвано от текстов JSON с поле "eye" ("left" или "right"), което указва кое око показва.
 
 # ВАЖЕН ДИСКЛЕЙМЪР
 **Винаги завършвай всеки анализ с този РАЗШИРЕН текст:**
@@ -755,17 +756,17 @@ async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, exp
     const parts = [{ text: prompt }];
     if (leftEyeUrl) {
         parts.push({ file_uri: leftEyeUrl });
-        parts.push({ text: "\n(Снимка на ЛЯВО око)" });
+        parts.push({ text: '{"eye":"left"}' });
     } else if (leftEye) {
         parts.push({ inline_data: { mime_type: leftEye.type, data: leftEye.data } });
-        parts.push({ text: "\n(Снимка на ЛЯВО око)" });
+        parts.push({ text: '{"eye":"left"}' });
     }
     if (rightEyeUrl) {
         parts.push({ file_uri: rightEyeUrl });
-        parts.push({ text: "\n(Снимка на ДЯСНО око)" });
+        parts.push({ text: '{"eye":"right"}' });
     } else if (rightEye) {
         parts.push({ inline_data: { mime_type: rightEye.type, data: rightEye.data } });
-        parts.push({ text: "\n(Снимка на ДЯСНО око)" });
+        parts.push({ text: '{"eye":"right"}' });
     }
 
     const requestBody = {
@@ -818,17 +819,17 @@ async function callOpenAIAPI(model, prompt, options = {}, leftEye, rightEye, env
     const content = [{ type: "text", text: prompt }];
     if (leftEyeUrl) {
         content.push({ type: "image_url", image_url: { url: leftEyeUrl } });
-        content.push({ type: "text", text: "\n(Снимка на ЛЯВО око)" });
+        content.push({ type: 'text', text: '{"eye":"left"}' });
     } else if (leftEye) {
         content.push({ type: "image_url", image_url: { url: `data:${leftEye.type};base64,${leftEye.data}` }});
-        content.push({ type: "text", text: "\n(Снимка на ЛЯВО око)" });
+        content.push({ type: 'text', text: '{"eye":"left"}' });
     }
     if (rightEyeUrl) {
         content.push({ type: "image_url", image_url: { url: rightEyeUrl } });
-        content.push({ type: "text", text: "\n(Снимка на ДЯСНО око)" });
+        content.push({ type: 'text', text: '{"eye":"right"}' });
     } else if (rightEye) {
         content.push({ type: "image_url", image_url: { url: `data:${rightEye.type};base64,${rightEye.data}` }});
-        content.push({ type: "text", text: "\n(Снимка на ДЯСНО око)" });
+        content.push({ type: 'text', text: '{"eye":"right"}' });
     }
     messages.push({ role: "user", content });
 

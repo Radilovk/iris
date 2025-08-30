@@ -166,6 +166,9 @@ test('Изборът OpenAI/gpt-4o-mini се подава към API', async () 
     const body = JSON.parse(options.body);
     assert.equal(body.model, 'gpt-4o-mini');
     assert.equal(body.messages[0].content[1].image_url.url, 'data:image/png;base64,a');
+    assert.equal(body.messages[0].content[2].text, '{"eye":"left"}');
+    assert.equal(body.messages[0].content[3].image_url.url, 'data:image/png;base64,b');
+    assert.equal(body.messages[0].content[4].text, '{"eye":"right"}');
     return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 });
   };
   await callOpenAIAPI('gpt-4o-mini', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false);
@@ -180,6 +183,9 @@ test('Изборът Gemini/gemini-1.5-flash се подава към API', asyn
     const body = JSON.parse(options.body);
     assert.equal(body.contents[0].parts[1].inline_data.mime_type, 'image/png');
     assert.equal(body.contents[0].parts[1].inline_data.data, 'a');
+    assert.equal(body.contents[0].parts[2].text, '{"eye":"left"}');
+    assert.equal(body.contents[0].parts[3].inline_data.data, 'b');
+    assert.equal(body.contents[0].parts[4].text, '{"eye":"right"}');
     return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }), { status: 200 });
   };
   await callGeminiAPI('gemini-1.5-flash', 'p', {}, { data: 'a', type: 'image/png' }, { data: 'b', type: 'image/png' }, env, false);
