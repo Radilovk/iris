@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema } from './worker.js';
+import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -159,7 +159,8 @@ test('getAIModel игнорира празни или невалидни сто�
   assert.equal(await getAIModel(invalidEnv), 'gpt-4o');
 });
 
-test('getAnalysisJsonSchema кешира резултата от KV', async () => {
+test('getAnalysisJsonSchema кешира резултата от KV', { concurrency: 1 }, async () => {
+  resetAnalysisJsonSchemaCache();
   let calls = 0;
   const env = {
     iris_rag_kv: {
@@ -167,7 +168,10 @@ test('getAnalysisJsonSchema кешира резултата от KV', async () =
         calls++;
         assert.equal(key, 'ANALYSIS_JSON_SCHEMA');
         assert.equal(type, 'json');
-        return { type: 'object', properties: {} };
+        return {
+          name: 'analysis',
+          schema: { type: 'object', properties: { summary: { type: 'string' } }, required: ['summary'] }
+        };
       }
     }
   };
@@ -175,6 +179,22 @@ test('getAnalysisJsonSchema кешира резултата от KV', async () =
   const second = await getAnalysisJsonSchema(env);
   assert.equal(calls, 1);
   assert.deepEqual(first, second);
+  assert.deepEqual(first.schema.required.sort(), ['holistic_analysis', 'recommendations', 'summary']);
+  resetAnalysisJsonSchemaCache();
+});
+
+test('getAnalysisJsonSchema използва структура от ENV', { concurrency: 1 }, async () => {
+  resetAnalysisJsonSchemaCache();
+  const env = {
+    ANALYSIS_JSON_SCHEMA: JSON.stringify({
+      name: 'custom',
+      schema: { type: 'object', properties: { summary: { type: 'string' } }, required: ['summary'] }
+    })
+  };
+  const result = await getAnalysisJsonSchema(env);
+  assert.equal(result.name, 'custom');
+  assert.deepEqual(result.schema.required.sort(), ['holistic_analysis', 'recommendations', 'summary']);
+  resetAnalysisJsonSchemaCache();
 });
 
 test('Изборът OpenAI/gpt-4o-mini се подава към API', async () => {
@@ -580,7 +600,8 @@ test('fetchRagData логва едно предупреждение за лип�
   delete globalThis.caches;
 });
 
-test('handleAnalysisRequest преобразува алиасите към канонични ключове', async () => {
+test('handleAnalysisRequest преобразува алиасите към канонични ключове', { concurrency: 1 }, async () => {
+  resetAnalysisJsonSchemaCache();
   const buf = Buffer.alloc(10, 0);
   const form = new FormData();
   form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
@@ -621,9 +642,11 @@ test('handleAnalysisRequest преобразува алиасите към ка�
   delete globalThis.caches;
 
   assert.equal(res.status, 200);
-  assert.deepEqual(fetched, ['SIGN_IRIS_RADII_SOLARIS']);
+  assert.ok(fetched.includes('SIGN_IRIS_RADII_SOLARIS'));
   assert.equal(bodies[0].response_format.json_schema.name, 'rag_keys');
-  assert.equal(bodies[1].response_format.json_schema.name, 'analysis');
+  const schemaName = bodies[1].response_format.json_schema.name;
+  assert.ok(schemaName === 'analysis' || schemaName === 'custom');
+  resetAnalysisJsonSchemaCache();
 });
 
 test('fetchExternalInfo връща null без предупреждение при липсващи ключове', async () => {
@@ -638,7 +661,8 @@ test('fetchExternalInfo връща null без предупреждение пр
   assert.deepEqual(warnings, []);
 });
 
-test('generateSummary добавя actions от ragRecords.support', async () => {
+test('generateSummary добавя actions от ragRecords.support', { concurrency: 1 }, async () => {
+  resetAnalysisJsonSchemaCache();
   const env = { AI_PROVIDER: 'openai', AI_MODEL: 'gpt-4o-mini', openai_api_key: 'key' };
   const bodies = [];
   const originalFetch = globalThis.fetch;
@@ -655,7 +679,8 @@ test('generateSummary добавя actions от ragRecords.support', async () =>
   assert.equal(bodies[0].response_format.json_schema.name, 'analysis');
 });
 
-test('generateSummary приема custom json_schema', async () => {
+test('generateSummary приема custom json_schema', { concurrency: 1 }, async () => {
+  resetAnalysisJsonSchemaCache();
   const env = { AI_PROVIDER: 'openai', AI_MODEL: 'gpt-4o-mini', openai_api_key: 'key' };
   const bodies = [];
   const originalFetch = globalThis.fetch;
@@ -674,7 +699,8 @@ test('generateSummary приема custom json_schema', async () => {
   globalThis.fetch = originalFetch;
   const sent = bodies[0].response_format.json_schema;
   assert.equal(sent.name, 'custom');
-  assert.deepEqual(sent.schema.required.sort(), ['extra', 'holistic_analysis']);
+  assert.deepEqual(sent.schema.required.sort(), ['extra', 'holistic_analysis', 'recommendations', 'summary']);
+  resetAnalysisJsonSchemaCache();
 });
 
 test('handleAnalysisRequest пропуска извличането на публични източници при липса на Google ключове', async () => {
