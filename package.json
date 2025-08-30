@@ -7,6 +7,7 @@
     "test": "node worker.test.js",
     "upload-kv": "node upload-kv.js",
     "test:kv": "node scripts/validate-kv.js",
+    "validate-kv": "node scripts/validate-kv-summary.js",
     "build:kv": "node scripts/generate-kv-data.js",
     "sync:kv": "node scripts/sync-kv.js",
     "watch:kv": "node scripts/sync-kv.js",
