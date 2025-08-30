@@ -1,6 +1,10 @@
 export function validateKv(data) {
+  const keyRegex = /^[A-Z0-9_]+$/;
   const entries = [];
   for (const [key, value] of Object.entries(data)) {
+    if (!keyRegex.test(key)) {
+      throw new Error(`Невалиден ключ: ${key}`);
+    }
     try {
       JSON.parse(value);
     } catch (err) {
