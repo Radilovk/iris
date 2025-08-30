@@ -729,22 +729,7 @@ async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, exp
     const modelName = model.endsWith('-latest') ? model : `${model}-latest`;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    /** @type {Array<{text?:string, inline_data?:{mime_type:string, data:string}, file_uri?:string}>} */
-    const parts = [{ text: prompt }];
-    if (leftEyeUrl) {
-        parts.push({ file_uri: leftEyeUrl });
-        parts.push({ text: '{"eye":"left"}' });
-    } else if (leftEye) {
-        parts.push({ inline_data: { mime_type: leftEye.type, data: leftEye.data } });
-        parts.push({ text: '{"eye":"left"}' });
-    }
-    if (rightEyeUrl) {
-        parts.push({ file_uri: rightEyeUrl });
-        parts.push({ text: '{"eye":"right"}' });
-    } else if (rightEye) {
-        parts.push({ inline_data: { mime_type: rightEye.type, data: rightEye.data } });
-        parts.push({ text: '{"eye":"right"}' });
-    }
+    const parts = buildGeminiParts(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl);
 
     const requestBody = {
         contents: [
@@ -792,22 +777,7 @@ async function callOpenAIAPI(model, prompt, options = {}, leftEye, rightEye, env
     if (options.systemPrompt) {
         messages.push({ role: "system", content: options.systemPrompt });
     }
-    /** @type {Array<{type:string, text?:string, image_url?:{url:string}}>} */
-    const content = [{ type: "text", text: prompt }];
-    if (leftEyeUrl) {
-        content.push({ type: "image_url", image_url: { url: leftEyeUrl } });
-        content.push({ type: 'text', text: '{"eye":"left"}' });
-    } else if (leftEye) {
-        content.push({ type: "image_url", image_url: { url: `data:${leftEye.type};base64,${leftEye.data}` }});
-        content.push({ type: 'text', text: '{"eye":"left"}' });
-    }
-    if (rightEyeUrl) {
-        content.push({ type: "image_url", image_url: { url: rightEyeUrl } });
-        content.push({ type: 'text', text: '{"eye":"right"}' });
-    } else if (rightEye) {
-        content.push({ type: "image_url", image_url: { url: `data:${rightEye.type};base64,${rightEye.data}` }});
-        content.push({ type: 'text', text: '{"eye":"right"}' });
-    }
+    const content = buildOpenAIContent(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl);
     messages.push({ role: "user", content });
 
     const requestBody = { model, messages };
@@ -1028,6 +998,45 @@ async function uploadImageAndGetUrl(file, env = {}, { prefix = 'eye', expiresIn 
         return url || null;
     }
     return null;
+}
+
+// Подготвя данните за изображенията за употреба в различни AI провайдъри
+function prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
+    const images = [];
+    if (leftEyeUrl || leftEye) {
+        images.push({ eye: 'left', url: leftEyeUrl, type: leftEye?.type, data: leftEye?.data });
+    }
+    if (rightEyeUrl || rightEye) {
+        images.push({ eye: 'right', url: rightEyeUrl, type: rightEye?.type, data: rightEye?.data });
+    }
+    return images;
+}
+
+function buildGeminiParts(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
+    const parts = [{ text: prompt }];
+    for (const img of prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl)) {
+        if (img.url) {
+            parts.push({ file_uri: img.url });
+        } else if (img.data) {
+            parts.push({ inline_data: { mime_type: img.type, data: img.data } });
+        }
+        parts.push({ text: `{"eye":"${img.eye}"}` });
+    }
+    return parts;
+}
+
+function buildOpenAIContent(prompt, leftEye, rightEye, leftEyeUrl, rightEyeUrl) {
+    /** @type {Array<{type:string,text?:string,image_url?:{url:string}}>} */
+    const content = [{ type: 'text', text: prompt }];
+    for (const img of prepareImages(leftEye, rightEye, leftEyeUrl, rightEyeUrl)) {
+        if (img.url) {
+            content.push({ type: 'image_url', image_url: { url: img.url } });
+        } else if (img.data) {
+            content.push({ type: 'image_url', image_url: { url: `data:${img.type};base64,${img.data}` } });
+        }
+        content.push({ type: 'text', text: `{"eye":"${img.eye}"}` });
+    }
+    return content;
 }
 
 function handleOptions(request, env) {
