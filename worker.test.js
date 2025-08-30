@@ -637,3 +637,37 @@ test('handleAnalysisRequest пропуска извличането на пуб�
   assert.equal(idx, 2);
 });
 
+test('handleAnalysisRequest връща поле holistic_analysis от финалния анализ', async () => {
+  const buf = Buffer.alloc(10, 0);
+  const form = new FormData();
+  form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
+  form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+
+  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k', iris_rag_kv: { get: async () => null, put: async () => {} } };
+  globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+
+  const responses = [
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify(['SIGN_A']) } }] }),
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify({ summary: 's', holistic_analysis: 'ha' }) } }] })
+  ];
+  const bodies = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    bodies.push(options.body);
+    return new Response(responses.shift(), { status: 200 });
+  };
+
+  const res = await worker.fetch(req, env);
+  const body = await res.json();
+
+  assert.equal(res.status, 200);
+  assert.equal(body.holistic_analysis, 'ha');
+
+  const secondBody = JSON.parse(bodies[1]);
+  assert.ok(secondBody.response_format.json_schema.schema.properties.holistic_analysis);
+
+  globalThis.fetch = originalFetch;
+  delete globalThis.caches;
+});
+
