@@ -5,10 +5,18 @@ export function validateKv(data) {
     if (!keyRegex.test(key)) {
       throw new Error(`Невалиден ключ: ${key}`);
     }
+    let parsed;
     try {
-      JSON.parse(value);
+      parsed = JSON.parse(value);
     } catch (err) {
       throw new Error(`Невалиден JSON в ${key}: ${err.message}`);
+    }
+    if (
+      parsed === "" ||
+      (parsed && typeof parsed === 'object' && Object.keys(parsed).length === 0)
+    ) {
+      entries.push({ key, delete: true });
+      continue;
     }
     entries.push({ key, value });
   }
@@ -67,13 +75,19 @@ async function fetchExistingKeys({ accountId, namespaceId, apiToken }) {
 
 export async function syncKv(entries, opts) {
   const { accountId, namespaceId, apiToken } = opts;
+  const deleteRequested = entries.filter(e => e.delete).map(e => e.key);
+  const uploadEntries = entries.filter(e => !e.delete);
   const existingKeys = await fetchExistingKeys({ accountId, namespaceId, apiToken });
-  const keys = entries.map(e => e.key);
-  const toDelete = existingKeys.filter(k => !keys.includes(k));
-  const uploadEntries = [...entries, ...toDelete.map(k => ({ key: k, delete: true }))];
-  if (uploadEntries.length) {
-    await bulkUpload(uploadEntries, { accountId, namespaceId, apiToken });
+  const keys = uploadEntries.map(e => e.key);
+  const missing = existingKeys.filter(k => !keys.includes(k));
+  const toDelete = [...new Set([...deleteRequested, ...missing])];
+  const finalUpload = [
+    ...uploadEntries,
+    ...toDelete.map(k => ({ key: k, delete: true }))
+  ];
+  if (finalUpload.length) {
+    await bulkUpload(finalUpload, { accountId, namespaceId, apiToken });
   }
-  const groups = groupKeys(entries);
+  const groups = groupKeys(uploadEntries);
   return { updated: keys, deleted: toDelete, groups };
 }
