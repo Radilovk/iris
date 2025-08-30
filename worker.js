@@ -2,23 +2,26 @@
 /// <reference lib="webworker" />
 /* global createImageBitmap, OffscreenCanvas */
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
-// Използва Web API за мащабиране без външни зависимости.
-// Връща JPEG Blob с максимална страна `size` и качество 0.85.
-async function preprocessImage(file, size = 1024) {
+// Използва Web API за ориентиране, мащабиране и конвертиране без външни зависимости.
+// Позволява избор на формат и прескача мащабирането за файлове под 2 MB.
+async function preprocessImage(file, { maxSize = 1024, format = 'image/jpeg' } = {}) {
     const g = globalThis;
     if (typeof g.createImageBitmap !== 'function' || typeof g.OffscreenCanvas === 'undefined') {
         return file;
     }
-    const bitmap = await g.createImageBitmap(file);
-    const scale = Math.min(size / bitmap.width, size / bitmap.height, 1);
+    if (file.size < 2 * 1024 * 1024 && file.type === format) {
+        return file;
+    }
+    const bitmap = await g.createImageBitmap(file, { imageOrientation: 'from-image' });
+    const scale = file.size >= 2 * 1024 * 1024 ? Math.min(maxSize / bitmap.width, maxSize / bitmap.height, 1) : 1;
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
     const canvas = new g.OffscreenCanvas(width, height);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
-    return new File([blob], file.name, { type: 'image/jpeg' });
+    const blob = await canvas.convertToBlob({ type: format, quality: 0.85 });
+    return new File([blob], file.name, { type: format });
 }
 
 function validateKv(data) {
