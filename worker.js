@@ -633,8 +633,10 @@ async function handleAnalysisRequest(request, env) {
         if (gender !== "Мъж" && gender !== "Жена") userData.gender = "";
         const leftProcessed = leftEyeFile ? await preprocessImage(leftEyeFile) : null;
         const rightProcessed = rightEyeFile ? await preprocessImage(rightEyeFile) : null;
-        const leftEyeImage = leftProcessed ? await fileToBase64(leftProcessed, env) : null;
-        const rightEyeImage = rightProcessed ? await fileToBase64(rightProcessed, env) : null;
+        const leftEyeUrl = leftProcessed ? await uploadImageAndGetUrl(leftProcessed, env) : null;
+        const rightEyeUrl = rightProcessed ? await uploadImageAndGetUrl(rightProcessed, env) : null;
+        const leftEyeImage = !leftEyeUrl && leftProcessed ? await fileToBase64(leftProcessed, env) : null;
+        const rightEyeImage = !rightEyeUrl && rightProcessed ? await fileToBase64(rightProcessed, env) : null;
         log("Данните от формуляра са обработени успешно.");
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
@@ -646,7 +648,9 @@ async function handleAnalysisRequest(request, env) {
             leftEyeImage,
             rightEyeImage,
             env,
-            true
+            true,
+            leftEyeUrl,
+            rightEyeUrl
         );
         
         let ragKeys;
@@ -706,7 +710,9 @@ async function handleAnalysisRequest(request, env) {
             leftEyeImage,
             rightEyeImage,
             env,
-            true
+            true,
+            leftEyeUrl,
+            rightEyeUrl
         );
         log("Финален анализ е генериран успешно.");
 
@@ -739,19 +745,25 @@ async function handleAnalysisRequest(request, env) {
 }
 
 // --- AI API ИНТЕГРАЦИИ ---
-async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, expectJson = true) {
+async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, expectJson = true, leftEyeUrl, rightEyeUrl) {
     const apiKey = env.gemini_api_key || env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("API ключът за Gemini не е конфигуриран.");
     const modelName = model.endsWith('-latest') ? model : `${model}-latest`;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    /** @type {Array<{text?:string, inline_data?:{mime_type:string, data:string}}>} */
+    /** @type {Array<{text?:string, inline_data?:{mime_type:string, data:string}, file_uri?:string}>} */
     const parts = [{ text: prompt }];
-    if (leftEye) {
+    if (leftEyeUrl) {
+        parts.push({ file_uri: leftEyeUrl });
+        parts.push({ text: "\n(Снимка на ЛЯВО око)" });
+    } else if (leftEye) {
         parts.push({ inline_data: { mime_type: leftEye.type, data: leftEye.data } });
         parts.push({ text: "\n(Снимка на ЛЯВО око)" });
     }
-    if (rightEye) {
+    if (rightEyeUrl) {
+        parts.push({ file_uri: rightEyeUrl });
+        parts.push({ text: "\n(Снимка на ДЯСНО око)" });
+    } else if (rightEye) {
         parts.push({ inline_data: { mime_type: rightEye.type, data: rightEye.data } });
         parts.push({ text: "\n(Снимка на ДЯСНО око)" });
     }
@@ -793,7 +805,7 @@ async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, exp
     return responseData.candidates[0].content.parts[0].text;
 }
 
-async function callOpenAIAPI(model, prompt, options = {}, leftEye, rightEye, env, expectJson = true) {
+async function callOpenAIAPI(model, prompt, options = {}, leftEye, rightEye, env, expectJson = true, leftEyeUrl, rightEyeUrl) {
     const apiKey = env.openai_api_key || env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("API ключът за OpenAI не е конфигуриран.");
     const url = "https://api.openai.com/v1/chat/completions";
@@ -804,11 +816,17 @@ async function callOpenAIAPI(model, prompt, options = {}, leftEye, rightEye, env
     }
     /** @type {Array<{type:string, text?:string, image_url?:{url:string}}>} */
     const content = [{ type: "text", text: prompt }];
-    if (leftEye) {
+    if (leftEyeUrl) {
+        content.push({ type: "image_url", image_url: { url: leftEyeUrl } });
+        content.push({ type: "text", text: "\n(Снимка на ЛЯВО око)" });
+    } else if (leftEye) {
         content.push({ type: "image_url", image_url: { url: `data:${leftEye.type};base64,${leftEye.data}` }});
         content.push({ type: "text", text: "\n(Снимка на ЛЯВО око)" });
     }
-    if (rightEye) {
+    if (rightEyeUrl) {
+        content.push({ type: "image_url", image_url: { url: rightEyeUrl } });
+        content.push({ type: "text", text: "\n(Снимка на ДЯСНО око)" });
+    } else if (rightEye) {
         content.push({ type: "image_url", image_url: { url: `data:${rightEye.type};base64,${rightEye.data}` }});
         content.push({ type: "text", text: "\n(Снимка на ДЯСНО око)" });
     }
@@ -963,7 +981,9 @@ export async function generateSummary(signs, ragRecords, env = {}, rolePrompt, a
         null,
         null,
         env,
-        true
+        true,
+        null,
+        null
     );
     const parsed = JSON.parse(aiResponse);
 
@@ -1015,6 +1035,21 @@ async function fileToBase64(blob, env = {}) {
     const base64 = btoa(binary);
 
     return { data: base64, type: blob.type };
+}
+
+// Качва изображение в R2/S3 и връща временен URL или null при липса на bucket.
+async function uploadImageAndGetUrl(file, env = {}, { prefix = 'eye', expiresIn = 300 } = {}) {
+    const bucket = env.eye_images || env.EYE_IMAGES;
+    if (!bucket || typeof bucket.put !== 'function') return null;
+    const key = `${prefix}/${crypto.randomUUID()}`;
+    await bucket.put(key, file, { httpMetadata: { contentType: file.type } });
+    if (typeof bucket.getPresignedUrl === 'function') {
+        const expiration = new Date(Date.now() + expiresIn * 1000);
+        const signed = await bucket.getPresignedUrl({ key, method: 'GET', expiration });
+        const url = signed?.url ? signed.url.toString() : signed?.toString();
+        return url || null;
+    }
+    return null;
 }
 
 function handleOptions(request, env) {
@@ -1077,4 +1112,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema };
+export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema };

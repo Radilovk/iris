@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema } from './worker.js';
+import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 
 test('Worker не използва браузърни API', () => {
@@ -36,6 +36,13 @@ test('fileToBase64 обработва файл по-голям от 8KB', async 
   const result = await fileToBase64(file);
   assert.equal(result.data, expected);
   assert.equal(result.type, 'image/jpeg');
+});
+
+test('uploadImageAndGetUrl връща null при липсващо bucket', async () => {
+  const buffer = Buffer.alloc(10, 0);
+  const file = new File([buffer], 'tmp.jpg', { type: 'image/jpeg' });
+  const url = await uploadImageAndGetUrl(file, {});
+  assert.equal(url, null);
 });
 
 test('corsHeaders поддържа wildcard "*"', () => {
