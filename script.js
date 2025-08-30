@@ -116,6 +116,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form submission - НАПЪЛНО ОБНОВЕНА СЕКЦИЯ
     const form = document.getElementById('iridology-form');
+
+    async function compressImage(file, maxSize = 1024, quality = 0.8) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(blob => {
+                    URL.revokeObjectURL(img.src);
+                    if (blob) {
+                        resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), { type: 'image/webp' }));
+                    } else {
+                        reject(new Error('Компресията е неуспешна'));
+                    }
+                }, 'image/webp', quality);
+            };
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
     function readFileAsDataURL(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -166,7 +191,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 4000);
         }
 
+        const leftInput = document.getElementById('left-eye-upload');
+        const rightInput = document.getElementById('right-eye-upload');
+
+        const leftFile = leftInput.files[0] ? await compressImage(leftInput.files[0]) : null;
+        const rightFile = rightInput.files[0] ? await compressImage(rightInput.files[0]) : null;
+
         const formData = new FormData(this);
+        if (leftFile) formData.set('left-eye-upload', leftFile, leftFile.name);
+        if (rightFile) formData.set('right-eye-upload', rightFile, rightFile.name);
+
         const storedForm = {};
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {

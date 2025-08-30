@@ -1,29 +1,7 @@
 /// <reference lib="dom" />
 /// <reference lib="webworker" />
-/* global createImageBitmap, OffscreenCanvas */
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
-// Използва Web API за ориентиране, мащабиране и конвертиране без външни зависимости.
-// Позволява избор на формат и прескача мащабирането за файлове под 2 MB.
-async function preprocessImage(file, { maxSize = 1024, format = 'jpeg', quality = 0.85 } = {}) {
-    const g = globalThis;
-    if (typeof g.createImageBitmap !== 'function' || typeof g.OffscreenCanvas === 'undefined') {
-        return file;
-    }
-    const mime = `image/${format}`;
-    if (file.size < 2 * 1024 * 1024 && file.type === mime) {
-        return file;
-    }
-    const bitmap = await g.createImageBitmap(file, { imageOrientation: 'from-image' });
-    const scale = file.size >= 2 * 1024 * 1024 ? Math.min(maxSize / bitmap.width, maxSize / bitmap.height, 1) : 1;
-    const width = Math.round(bitmap.width * scale);
-    const height = Math.round(bitmap.height * scale);
-    const canvas = new g.OffscreenCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
-    const blob = await canvas.convertToBlob({ type: mime, quality });
-    return new File([blob], file.name, { type: mime });
-}
+// Обработката на изображения вече се извършва клиентски.
 
 function validateKv(data) {
   const entries = [];
@@ -633,12 +611,10 @@ async function handleAnalysisRequest(request, env) {
             digestive: digestion,
         };
         if (gender !== "Мъж" && gender !== "Жена") userData.gender = "";
-        const leftProcessed = leftEyeFile ? await preprocessImage(leftEyeFile) : null;
-        const rightProcessed = rightEyeFile ? await preprocessImage(rightEyeFile) : null;
-        const leftEyeUrl = leftProcessed ? await uploadImageAndGetUrl(leftProcessed, env) : null;
-        const rightEyeUrl = rightProcessed ? await uploadImageAndGetUrl(rightProcessed, env) : null;
-        const leftEyeImage = !leftEyeUrl && leftProcessed ? await fileToBase64(leftProcessed, env) : null;
-        const rightEyeImage = !rightEyeUrl && rightProcessed ? await fileToBase64(rightProcessed, env) : null;
+        const leftEyeUrl = leftEyeFile ? await uploadImageAndGetUrl(leftEyeFile, env) : null;
+        const rightEyeUrl = rightEyeFile ? await uploadImageAndGetUrl(rightEyeFile, env) : null;
+        const leftEyeImage = !leftEyeUrl && leftEyeFile ? await fileToBase64(leftEyeFile, env) : null;
+        const rightEyeImage = !rightEyeUrl && rightEyeFile ? await fileToBase64(rightEyeFile, env) : null;
         log("Данните от формуляра са обработени успешно.");
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
@@ -1024,10 +1000,9 @@ async function validateImageSize(file, env = {}, maxBytes = 10 * 1024 * 1024) {
     return file;
 }
 
-async function fileToBase64(blob, env = {}, opts) {
-    const processed = opts ? await preprocessImage(blob, opts) : blob;
-    await validateImageSize(processed, env);
-    const arrayBuffer = await processed.arrayBuffer();
+async function fileToBase64(blob, env = {}) {
+    await validateImageSize(blob, env);
+    const arrayBuffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
     let binary = "";
@@ -1037,7 +1012,7 @@ async function fileToBase64(blob, env = {}, opts) {
     // btoa(unescape(encodeURIComponent(binary)))
     const base64 = btoa(binary);
 
-    return { data: base64, type: processed.type };
+    return { data: base64, type: blob.type };
 }
 
 // Качва изображение в R2/S3 и връща временен URL или null при липса на bucket.
