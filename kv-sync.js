@@ -1,10 +1,17 @@
 export function validateKv(data) {
   const entries = [];
   for (const [key, value] of Object.entries(data)) {
+    let parsed;
     try {
-      JSON.parse(value);
+      parsed = JSON.parse(value);
     } catch (err) {
       throw new Error(`Невалиден JSON в ${key}: ${err.message}`);
+    }
+    const isEmptyString = parsed === "";
+    const isEmptyObject = parsed && typeof parsed === 'object' && Object.keys(parsed).length === 0;
+    if (isEmptyString || isEmptyObject) {
+      entries.push({ key, delete: true });
+      continue;
     }
     entries.push({ key, value });
   }
@@ -64,12 +71,15 @@ async function fetchExistingKeys({ accountId, namespaceId, apiToken }) {
 export async function syncKv(entries, opts) {
   const { accountId, namespaceId, apiToken } = opts;
   const existingKeys = await fetchExistingKeys({ accountId, namespaceId, apiToken });
-  const keys = entries.map(e => e.key);
-  const toDelete = existingKeys.filter(k => !keys.includes(k));
-  const uploadEntries = [...entries, ...toDelete.map(k => ({ key: k, delete: true }))];
+  const uploadable = entries.filter(e => !e.delete);
+  const keys = uploadable.map(e => e.key);
+  const markedForDeletion = entries.filter(e => e.delete).map(e => e.key);
+  const toDeleteSet = new Set([...markedForDeletion, ...existingKeys.filter(k => !keys.includes(k))]);
+  const toDelete = [...toDeleteSet];
+  const uploadEntries = [...uploadable, ...toDelete.map(k => ({ key: k, delete: true }))];
   if (uploadEntries.length) {
     await bulkUpload(uploadEntries, { accountId, namespaceId, apiToken });
   }
-  const groups = groupKeys(entries);
+  const groups = groupKeys(uploadable);
   return { updated: keys, deleted: toDelete, groups };
 }
