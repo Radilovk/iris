@@ -468,6 +468,36 @@ async function adminDelete(env, request, key) {
 
 // --- ОРКЕСТРАТОР НА АНАЛИЗА ---
 
+// JSON схеми за форматиране на отговорите
+const RAG_KEYS_JSON_SCHEMA = {
+    name: 'rag_keys',
+    schema: {
+        type: 'object',
+        properties: {
+            rag_keys: {
+                type: 'array',
+                items: { type: 'string' },
+                minItems: 1,
+                additionalItems: false
+            }
+        },
+        required: ['rag_keys'],
+        additionalProperties: false
+    }
+};
+
+const ANALYSIS_JSON_SCHEMA = {
+    name: 'analysis',
+    schema: {
+        type: 'object',
+        properties: {
+            holistic_analysis: { type: 'string' }
+        },
+        required: ['holistic_analysis'],
+        additionalProperties: true
+    }
+};
+
 // Извлича първия JSON масив от низ, напр.: text -> "[\"a\",\"b\"]"
 function extractJsonArray(text = "") {
     let depth = 0;
@@ -561,7 +591,15 @@ async function handleAnalysisRequest(request, env) {
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
-        const keysResponse = await identificationApiCaller(model, IDENTIFICATION_PROMPT, {}, leftEyeImage, rightEyeImage, env, true);
+        const keysResponse = await identificationApiCaller(
+            model,
+            IDENTIFICATION_PROMPT,
+            { jsonSchema: RAG_KEYS_JSON_SCHEMA },
+            leftEyeImage,
+            rightEyeImage,
+            env,
+            true
+        );
         
         let ragKeys;
         const cleaned = extractJsonArray(keysResponse) || keysResponse;
@@ -612,7 +650,15 @@ async function handleAnalysisRequest(request, env) {
 
         const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const rolePrompt = await getRolePrompt(env);
-        const finalAnalysis = await synthesisApiCaller(model, synthesisPrompt, { systemPrompt: rolePrompt }, leftEyeImage, rightEyeImage, env, true);
+        const finalAnalysis = await synthesisApiCaller(
+            model,
+            synthesisPrompt,
+            { systemPrompt: rolePrompt, jsonSchema: ANALYSIS_JSON_SCHEMA },
+            leftEyeImage,
+            rightEyeImage,
+            env,
+            true
+        );
         log("Финален анализ е генериран успешно.");
 
         let parsedAnalysis;
@@ -698,7 +744,7 @@ async function callGeminiAPI(model, prompt, options, leftEye, rightEye, env, exp
     return responseData.candidates[0].content.parts[0].text;
 }
 
-async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, expectJson = true) {
+async function callOpenAIAPI(model, prompt, options = {}, leftEye, rightEye, env, expectJson = true) {
     const apiKey = env.openai_api_key || env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("API ключът за OpenAI не е конфигуриран.");
     const url = "https://api.openai.com/v1/chat/completions";
@@ -721,24 +767,12 @@ async function callOpenAIAPI(model, prompt, options, leftEye, rightEye, env, exp
 
     const requestBody = { model, messages };
     if (expectJson) {
+        if (!options.jsonSchema) {
+            throw new Error('jsonSchema е задължителна при expectJson=true');
+        }
         requestBody.response_format = {
-            type: "json_schema",
-            json_schema: {
-                name: "rag_keys",
-                schema: {
-                    type: "object",
-                    properties: {
-                        rag_keys: {
-                            type: "array",
-                            items: { type: "string" },
-                            minItems: 1,
-                            additionalItems: false
-                        }
-                    },
-                    required: ["rag_keys"],
-                    additionalProperties: false
-                }
-            }
+            type: 'json_schema',
+            json_schema: options.jsonSchema
         };
     }
     if (options.max_tokens) {
@@ -870,7 +904,15 @@ export async function generateSummary(signs, ragRecords, env = {}, rolePrompt) {
 
     const systemPrompt = rolePrompt || await getRolePrompt(env);
     const apiCaller = provider === 'gemini' ? callGeminiAPI : callOpenAIAPI;
-    const aiResponse = await apiCaller(model, prompt, { systemPrompt }, null, null, env, true);
+    const aiResponse = await apiCaller(
+        model,
+        prompt,
+        { systemPrompt, jsonSchema: ANALYSIS_JSON_SCHEMA },
+        null,
+        null,
+        env,
+        true
+    );
     const parsed = JSON.parse(aiResponse);
 
     const actions = ragRecords && ragRecords.support
@@ -983,4 +1025,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo };
+export { validateImageSize, fileToBase64, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA };
