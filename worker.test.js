@@ -613,14 +613,7 @@ test('handleAnalysisRequest пропуска извличането на пуб�
   form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
   const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
 
-  const env = {
-    AI_PROVIDER: 'openai',
-    openai_api_key: 'k',
-    iris_rag_kv: {
-      get: async key => (key === 'DISPOSITION_NERVOUS' ? {} : null),
-      put: async () => {}
-    }
-  };
+  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k', iris_rag_kv: { get: async () => null, put: async () => {} } };
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
 
   const responses = [
