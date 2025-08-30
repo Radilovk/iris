@@ -17,6 +17,7 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run test:kv
+      - run: npm run validate-kv
       - run: node upload-kv.js
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
