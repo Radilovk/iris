@@ -347,6 +347,12 @@ async function handleAdmin(request, env) {
     if (url.pathname === '/admin/sync' && request.method === 'POST') {
         return adminSync(env, request);
     }
+    if (url.pathname === '/admin/cleanup' && request.method === 'POST') {
+        const result = await cleanupKv(env);
+        return new Response(JSON.stringify(result), {
+            headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
+        });
+    }
     if (url.pathname === '/admin/keys' && request.method === 'GET') {
         return adminKeys(env, request);
     }
@@ -544,6 +550,23 @@ async function adminDelete(env, request, key) {
     } catch (err) {
         return jsonError(err.message, 500, request, env);
     }
+}
+
+async function cleanupKv(env) {
+    const deleted = [];
+    let cursor;
+    do {
+        const { keys, list_complete, cursor: next } = await env.iris_rag_kv.list({ cursor, limit: 1000 });
+        for (const { name } of keys) {
+            const value = await env.iris_rag_kv.get(name);
+            if (value === '' || value === null || typeof value === 'undefined') {
+                await env.iris_rag_kv.delete(name);
+                deleted.push(name);
+            }
+        }
+        cursor = list_complete ? null : next;
+    } while (cursor);
+    return { deleted };
 }
 
 
