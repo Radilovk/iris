@@ -330,6 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `Синхронизирано. Обновени: ${result.updated.length}, изтрити: ${result.deleted.length}`,
         'success'
       );
+      await fetch(`${WORKER_BASE_URL}/admin/cleanup`, { method: 'POST' });
       await loadKeys();
     } catch (err) {
       showMessage('Грешка: ' + err.message);
