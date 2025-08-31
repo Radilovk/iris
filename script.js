@@ -1,5 +1,6 @@
-import ExifReader from 'https://cdn.jsdelivr.net/npm/exifreader@4.13.1/dist/exif-reader.esm.min.js';
 import { WORKER_URL } from './config.js';
+
+let ExifReader;
 
 document.addEventListener('DOMContentLoaded', function() {
     const formSteps = document.querySelectorAll('.form-step');
@@ -122,10 +123,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const arrayBuffer = await file.arrayBuffer();
         let orientation = 1;
         try {
+            if (!ExifReader) {
+                const module = await import('https://cdn.jsdelivr.net/npm/exifreader@4.13.1/dist/exif-reader.esm.min.js');
+                ExifReader = module.default || module;
+            }
             const tags = ExifReader.load(arrayBuffer);
             orientation = tags.Orientation ? tags.Orientation.value : 1;
         } catch (err) {
-            console.warn('Неуспешно прочитане на EXIF:', err);
+            console.warn('Неуспешно зареждане или прочитане на EXIF:', err);
         }
 
         return new Promise((resolve, reject) => {
