@@ -19,9 +19,21 @@ function extractWorkerKeys() {
 }
 
 export function validateRagKeys() {
-  const kvKeys = Object.keys(KV_DATA);
+  const kvKeys = new Set(Object.keys(KV_DATA));
+  if (KV_DATA.grouped) {
+    try {
+      const grouped = JSON.parse(KV_DATA.grouped);
+      for (const section of ['findings', 'links', 'advice']) {
+        const obj = grouped[section] || {};
+        for (const k of Object.keys(obj)) kvKeys.add(k);
+      }
+    } catch (e) {
+      throw new Error('Невалиден JSON в KV_DATA.grouped');
+    }
+  }
+
   const expected = extractWorkerKeys();
-  const missing = expected.filter(k => !kvKeys.includes(k));
+  const missing = expected.filter(k => !kvKeys.has(k));
   if (missing.length) {
     throw new Error(`Липсващи RAG ключове: ${missing.join(', ')}`);
   }

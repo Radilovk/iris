@@ -856,70 +856,63 @@ async function fetchExternalInfo(query, env) {
 
 // --- RAG ИЗВЛИЧАНЕ ОТ KV ---
 export async function fetchRagData(keys, env) {
-    const { iris_rag_kv } = env;
-    if (!iris_rag_kv) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
+    const { RAG } = env;
+    if (!RAG) throw new Error("KV Namespace 'RAG' не е свързан с този Worker.");
 
     const cache = /** @type {any} */ (caches).default;
     const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
-    const missingKeys = [];
+    const cacheReq = new Request('https://rag-cache/grouped');
+    let grouped;
 
-    async function fetchArray(arr = []) {
-        if (!Array.isArray(arr) || arr.length === 0) return {};
-        const data = {};
-        const entries = await Promise.all(arr.map(async key => {
-            const cacheReq = new Request(`https://rag-cache/${key}`);
-            let value;
-
-            const cached = await cache.match(cacheReq);
-            if (cached) {
-                try {
-                    value = await cached.json();
-                } catch (e) {
-                    console.warn('Грешка при четене от кеша за ключ', key, e);
-                }
-            }
-
-            if (!value) {
-                value = await iris_rag_kv.get(key, 'json');
-                if (value) {
-                    await cache.put(
-                        cacheReq,
-                        new Response(JSON.stringify(value), {
-                            headers: { 'Cache-Control': `max-age=${ttl}` }
-                        })
-                    );
-                } else {
-                    missingKeys.push(key);
-                }
-            }
-
-            return value ? [key, value] : null;
-        }));
-
-        for (const entry of entries) {
-            if (entry) data[entry[0]] = entry[1];
+    const cached = await cache.match(cacheReq);
+    if (cached) {
+        try {
+            grouped = await cached.json();
+        } catch (e) {
+            console.warn('Грешка при четене от кеша за grouped', e);
         }
-        return data;
+    }
+
+    if (!grouped) {
+        grouped = await RAG.get('grouped', 'json') || {};
+        await cache.put(cacheReq, new Response(JSON.stringify(grouped), {
+            headers: { 'Cache-Control': `max-age=${ttl}` }
+        }));
+    }
+
+    const { findings = {}, links = {}, advice = {} } = grouped;
+    const missing = [];
+
+    function pick(src = {}, arr = []) {
+        const out = {};
+        for (const k of arr) {
+            if (src && Object.hasOwn(src, k)) out[k] = src[k];
+            else missing.push(k);
+        }
+        return out;
     }
 
     if (Array.isArray(keys)) {
-        const result = await fetchArray(keys);
-        if (missingKeys.length) {
-            console.warn(`Липсващи RAG ключове: ${missingKeys.join(', ')}`);
-        }
-        return result;
-    } else if (keys && typeof keys === 'object') {
-        const result = {};
-        for (const [cat, arr] of Object.entries(keys)) {
-            result[cat] = await fetchArray(arr);
-        }
-        if (missingKeys.length) {
-            console.warn(`Липсващи RAG ключове: ${missingKeys.join(', ')}`);
+        const result = pick(findings, keys);
+        if (missing.length) {
+            console.warn(`Липсващи RAG ключове: ${missing.join(', ')}`);
         }
         return result;
     }
-    if (missingKeys.length) {
-        console.warn(`Липсващи RAG ключове: ${missingKeys.join(', ')}`);
+
+    if (keys && typeof keys === 'object') {
+        const res = {};
+        if (Array.isArray(keys.findings)) res.findings = pick(findings, keys.findings);
+        if (Array.isArray(keys.links)) res.links = pick(links, keys.links);
+        if (Array.isArray(keys.advice)) res.advice = pick(advice, keys.advice);
+        if (missing.length) {
+            console.warn(`Липсващи RAG ключове: ${missing.join(', ')}`);
+        }
+        return res;
+    }
+
+    if (missing.length) {
+        console.warn(`Липсващи RAG ключове: ${missing.join(', ')}`);
     }
     return {};
 }

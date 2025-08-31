@@ -1,5 +1,5 @@
 export function validateKv(data) {
-  const keyRegex = /^[A-Z0-9_]+$/;
+  const keyRegex = /^(grouped|[A-Z0-9_]+)$/;
   const entries = [];
   for (const [key, value] of Object.entries(data)) {
     if (!keyRegex.test(key)) {
