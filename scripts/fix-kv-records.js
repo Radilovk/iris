@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { validateKv, syncKv } from '../kv-sync.js';
+import { validateKv, syncKv } from '../kv-utils.js';
 
 const ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
 const NAMESPACE_ID = process.env.CF_KV_NAMESPACE_ID;

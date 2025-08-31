@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { validateKv, syncKv } from './kv-sync.js';
+import { validateKv, syncKv } from './kv-utils.js';
 import { validateRagKeys } from './validate-rag-keys.js';
 
 const ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
