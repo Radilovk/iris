@@ -616,6 +616,7 @@ test('handleAnalysisRequest преобразува алиасите към ка�
       get: async key => {
         if (key === 'AI_MODEL') return 'gpt-4o';
         if (key === 'ROLE_PROMPT') return { prompt: '' };
+        if (key === 'RAG_KEY_ALIASES') return { SIGN_RADIAL_FURROW: 'SIGN_IRIS_RADII_SOLARIS' };
         fetched.push(key);
         return { ok: true };
       },

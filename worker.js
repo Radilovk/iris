@@ -210,21 +210,18 @@ function debugLog(env = {}, ...args) {
 }
 
 // --- RAG АЛИАСИ ---
-const RAG_KEY_ALIASES = {
-    SIGN_RADIAL_FURROW: 'SIGN_IRIS_RADII_SOLARIS',
-    CONSTITUTION_HEMOGLOBIN: 'CONSTITUTION_COLOR_HAEMATOGENIC',
-    CONSTITUTION_LYMPHATIC: 'CONSTITUTION_COLOR_LYMPHATIC',
-    CONSTITUTION_MIXED_BILIARY: 'CONSTITUTION_COLOR_MIXED_BILIARY',
-    CONSTITUTION_CONNECTIVE_TISSUE: 'CONSTITUTION_STRUCTURE_CONNECTIVE_TISSUE',
-    DISPOSITION_NERVOUS_SYSTEM: 'DISPOSITION_NERVOUS',
-    'нервна система': 'DISPOSITION_NERVOUS',
-    RECOMMENDATION_BALANCED_DIET: 'RECOMMENDATION_DIETARY_BALANCE',
-    'балансирано хранене': 'RECOMMENDATION_DIETARY_BALANCE',
-    CONSTITUTION_WOOLLY: 'CONSTITUTION_WOOL_COVERED',
-    'овча покривка': 'CONSTITUTION_WOOL_COVERED',
-    SIGN_IRIS_LACUNA: 'SIGN_LACUNA',
-    'лакуна': 'SIGN_LACUNA',
-};
+let ragKeyAliasesCache = null;
+
+async function getRagKeyAliases(env) {
+    if (ragKeyAliasesCache) return ragKeyAliasesCache;
+    try {
+        const raw = await env.iris_rag_kv.get('RAG_KEY_ALIASES');
+        ragKeyAliasesCache = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : {};
+    } catch {
+        ragKeyAliasesCache = {};
+    }
+    return ragKeyAliasesCache;
+}
 
 // --- ПРОМПТОВЕ ---
 const IDENTIFICATION_PROMPT = `
@@ -664,7 +661,8 @@ async function handleAnalysisRequest(request, env) {
             console.info(logMsg, keysResponse);
             return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
-        ragKeys = [...new Set(ragKeys.map(k => RAG_KEY_ALIASES[k] || k))];
+        const aliases = await getRagKeyAliases(env);
+        ragKeys = [...new Set(ragKeys.map(k => aliases[k] || k))];
         log("Получени RAG ключове за извличане:", ragKeys);
 
         log("Стъпка 2: Извличане на данни от KV базата...");
@@ -1117,4 +1115,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache };
+export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, getRagKeyAliases };
