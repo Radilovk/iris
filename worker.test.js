@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache } from './worker.js';
+import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 import { validateRagKeys } from './validate-rag-keys.js';
 
@@ -622,7 +622,7 @@ test('handleAnalysisRequest преобразува алиасите към ка�
       put: async () => {}
     },
     RAG: {
-      get: async () => ({ findings: { SIGN_IRIS_RADII_SOLARIS: { ok: true } } })
+      get: async () => ({ findings: { SIGN_IRIS_RADII_SOLARIS: { ok: true, aliases: ['SIGN_RADIAL_FURROW'] } } })
     }
   };
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
@@ -650,6 +650,12 @@ test('handleAnalysisRequest преобразува алиасите към ка�
   const schemaName = bodies[1].response_format.json_schema.name;
   assert.ok(schemaName === 'analysis' || schemaName === 'custom');
   resetAnalysisJsonSchemaCache();
+});
+
+test('resolveAlias връща каноничен ключ за "лакуна"', () => {
+  const findings = { SIGN_IRIS_LACUNA: { aliases: ['SIGN_LACUNA', 'лакуна'] } };
+  const resolved = resolveAlias('лакуна', findings);
+  assert.equal(resolved, 'SIGN_IRIS_LACUNA');
 });
 
 test('fetchExternalInfo връща null без предупреждение при липсващи ключове', async () => {
@@ -721,7 +727,7 @@ test('handleAnalysisRequest пропуска извличането на пуб�
       put: async () => {}
     },
     RAG: {
-      get: async () => ({ findings: { DISPOSITION_NERVOUS: {} } })
+      get: async () => ({ findings: { DISPOSITION_NERVOUS: { aliases: ['нервна система'] } } })
     }
   };
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
