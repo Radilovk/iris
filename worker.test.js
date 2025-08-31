@@ -543,6 +543,60 @@ test('/admin/sync синхронизира данни', async () => {
   assert.deepEqual(Object.keys(store).sort(), expectedKeys);
 });
 
+test('/admin/sync изтрива празни стойности', async () => {
+  const store = {
+    DROP_EMPTY: 'old1',
+    DROP_NULL: 'old2',
+    DROP_WS: 'old3',
+    DROP_EMPTY_OBJ: 'old4',
+    KEEP: 'keep-old'
+  };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    const u = typeof url === 'string' ? new URL(url) : url;
+    if (u.pathname.endsWith('/keys')) {
+      return new Response(
+        JSON.stringify({ result: Object.keys(store).map(name => ({ name })), result_info: { list_complete: true } }),
+        { status: 200 }
+      );
+    }
+    if (u.pathname.endsWith('/bulk')) {
+      const body = JSON.parse(options.body);
+      for (const entry of body) {
+        if (entry.delete) delete store[entry.key];
+        else store[entry.key] = entry.value;
+      }
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    }
+    return new Response('not found', { status: 404 });
+  };
+
+  const env = {
+    CF_ACCOUNT_ID: 'acc',
+    CF_KV_NAMESPACE_ID: 'ns',
+    CF_API_TOKEN: 'token'
+  };
+  const payload = {
+    DROP_EMPTY: "\"\"",
+    DROP_NULL: "null",
+    DROP_WS: "\"   \"",
+    DROP_EMPTY_OBJ: "{}",
+    KEEP: "\"new\""
+  };
+  const req = new Request('https://example.com/admin/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const res = await worker.fetch(req, env);
+  globalThis.fetch = originalFetch;
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.deepEqual(body.deleted.sort(), ['DROP_EMPTY', 'DROP_NULL', 'DROP_WS', 'DROP_EMPTY_OBJ'].sort());
+  assert.deepEqual(body.updated, ['KEEP']);
+  assert.deepEqual(store, { KEEP: "\"new\"" });
+});
+
 test('fetchRagData използва кеша при второ извикване', async () => {
   const store = new Map();
   globalThis.caches = {
