@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache } from './worker.js';
 import { KV_DATA } from './kv-data.js';
+import { validateRagKeys } from './validate-rag-keys.js';
 
 test('Worker не използва браузърни API', () => {
   assert.equal(typeof globalThis.window, 'undefined');
@@ -13,6 +14,10 @@ test('ROLE_PROMPT съдържа ключ missing_data', () => {
   const data = JSON.parse(KV_DATA.ROLE_PROMPT);
   assert.ok(Object.hasOwn(data, 'missing_data'));
   assert.equal(typeof data.missing_data, 'string');
+});
+
+test('kv-data съдържа очакваните RAG ключове', () => {
+  validateRagKeys();
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {
