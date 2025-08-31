@@ -9,5 +9,6 @@
     },
     "required": ["summary", "recommendations", "holistic_analysis"],
     "additionalProperties": true
-  }
+  },
+  "source": "Системен запис"
 }
