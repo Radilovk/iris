@@ -543,6 +543,49 @@ test('/admin/sync синхронизира данни', async () => {
   assert.deepEqual(Object.keys(store).sort(), expectedKeys);
 });
 
+test('/admin/sync изтрива празни ключове', async () => {
+  const uploaded = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    const u = typeof url === 'string' ? new URL(url) : url;
+    if (u.pathname.endsWith('/keys')) {
+      return new Response(
+        JSON.stringify({ result: ['A', 'B', 'C'].map(name => ({ name })), result_info: { list_complete: true } }),
+        { status: 200 }
+      );
+    }
+    if (u.pathname.endsWith('/bulk')) {
+      uploaded.push(...JSON.parse(options.body));
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    }
+    return new Response('not found', { status: 404 });
+  };
+
+  const env = {
+    CF_ACCOUNT_ID: 'acc',
+    CF_KV_NAMESPACE_ID: 'ns',
+    CF_API_TOKEN: 'token'
+  };
+  const req = new Request('https://example.com/admin/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ A: '""', B: '{}', C: '"ok"' })
+  });
+
+  const res = await worker.fetch(req, env);
+  globalThis.fetch = originalFetch;
+
+  assert.equal(res.status, 200);
+  const map = uploaded.reduce((m, e) => (m[e.key] = e, m), {});
+  assert.deepEqual(Object.keys(map).sort(), ['A', 'B', 'C']);
+  assert.deepEqual(map.A, { key: 'A', delete: true });
+  assert.deepEqual(map.B, { key: 'B', delete: true });
+  assert.deepEqual(map.C, { key: 'C', value: '"ok"' });
+  const body = await res.json();
+  assert.deepEqual(body.deleted.sort(), ['A', 'B']);
+  assert.deepEqual(body.updated, ['C']);
+});
+
 test('fetchRagData използва кеша при второ извикване', async () => {
   const store = new Map();
   globalThis.caches = {

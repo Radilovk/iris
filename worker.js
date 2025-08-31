@@ -3,12 +3,26 @@
 // Обработката на изображения вече се извършва клиентски.
 
 function validateKv(data) {
+  const keyRegex = /^(grouped|[A-Z0-9_]+)$/;
   const entries = [];
   for (const [key, value] of Object.entries(data)) {
+    if (!keyRegex.test(key)) {
+      throw new Error(`Невалиден ключ: ${key}`);
+    }
+    let parsed;
     try {
-      JSON.parse(value);
+      parsed = JSON.parse(value);
     } catch (err) {
       throw new Error(`Невалиден JSON в ${key}: ${err.message}`);
+    }
+    if (
+      parsed === "" ||
+      parsed === null ||
+      (typeof parsed === 'string' && parsed.trim() === '') ||
+      (parsed && typeof parsed === 'object' && Object.keys(parsed).length === 0)
+    ) {
+      entries.push({ key, delete: true });
+      continue;
     }
     entries.push({ key, value });
   }
@@ -18,7 +32,7 @@ function validateKv(data) {
 function groupKeys(entries) {
   const groups = {};
   for (const { key } of entries) {
-    const category = key.split('_')[0];
+    const category = key.split(/[:_]/)[0];
     if (!groups[category]) groups[category] = [];
     groups[category].push(key);
   }
@@ -67,14 +81,20 @@ async function fetchExistingKeys({ accountId, namespaceId, apiToken }) {
 
 async function syncKv(entries, opts) {
   const { accountId, namespaceId, apiToken } = opts;
+  const deleteRequested = entries.filter(e => e.delete).map(e => e.key);
+  const uploadEntries = entries.filter(e => !e.delete);
   const existingKeys = await fetchExistingKeys({ accountId, namespaceId, apiToken });
-  const keys = entries.map(e => e.key);
-  const toDelete = existingKeys.filter(k => !keys.includes(k));
-  const uploadEntries = [...entries, ...toDelete.map(k => ({ key: k, delete: true }))];
-  if (uploadEntries.length) {
-    await bulkUpload(uploadEntries, { accountId, namespaceId, apiToken });
+  const keys = uploadEntries.map(e => e.key);
+  const missing = existingKeys.filter(k => !keys.includes(k));
+  const toDelete = [...new Set([...deleteRequested, ...missing])];
+  const finalUpload = [
+    ...uploadEntries,
+    ...toDelete.map(k => ({ key: k, delete: true }))
+  ];
+  if (finalUpload.length) {
+    await bulkUpload(finalUpload, { accountId, namespaceId, apiToken });
   }
-  const groups = groupKeys(entries);
+  const groups = groupKeys(uploadEntries);
   return { updated: keys, deleted: toDelete, groups };
 }
 
