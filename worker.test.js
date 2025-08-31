@@ -542,14 +542,14 @@ test('fetchRagData използва кеша при второ извикван�
   };
   let kvCalls = 0;
   const env = {
-    iris_rag_kv: {
-      get: async () => { kvCalls++; return { v: 1 }; }
+    RAG: {
+      get: async () => { kvCalls++; return { findings: { a: { v: 1 } } }; }
     },
     RAG_CACHE_TTL: '60'
   };
-  const first = await fetchRagData(['a'], env);
+  const first = await fetchRagData({ findings: ['a'] }, env);
   assert.equal(kvCalls, 1);
-  const second = await fetchRagData(['a'], env);
+  const second = await fetchRagData({ findings: ['a'] }, env);
   assert.equal(kvCalls, 1);
   assert.deepEqual(first, second);
   delete globalThis.caches;
@@ -557,48 +557,45 @@ test('fetchRagData използва кеша при второ извикван�
 
 test('fetchRagData извлича само данни за DISPOSITION_ACIDITY', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
-  const fetched = [];
   const env = {
-    iris_rag_kv: {
-      get: async key => { fetched.push(key); return { key }; }
+    RAG: {
+      get: async () => ({ findings: { DISPOSITION_ACIDITY: { key: 'DISPOSITION_ACIDITY' }, OTHER: { key: 'OTHER' } } })
     }
   };
-  const data = await fetchRagData({ DISPOSITION: ['DISPOSITION_ACIDITY'] }, env);
-  assert.deepEqual(fetched, ['DISPOSITION_ACIDITY']);
-  assert.deepEqual(data, { DISPOSITION: { 'DISPOSITION_ACIDITY': { key: 'DISPOSITION_ACIDITY' } } });
+  const data = await fetchRagData({ findings: ['DISPOSITION_ACIDITY'] }, env);
+  assert.deepEqual(data, { findings: { DISPOSITION_ACIDITY: { key: 'DISPOSITION_ACIDITY' } } });
   delete globalThis.caches;
 });
 
 test('fetchRagData извлича новите ключове', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
-    iris_rag_kv: {
-      get: async key => {
-        if (key === 'RECOMMENDATION_HYDRATION') return { water: true };
-        if (key === 'DISPOSITION_LYMPHATIC') return { lymph: true };
-        return null;
-      }
+    RAG: {
+      get: async () => ({
+        advice: { RECOMMENDATION_HYDRATION: { water: true } },
+        findings: { DISPOSITION_LYMPHATIC: { lymph: true } }
+      })
     }
   };
   const data = await fetchRagData({
-    RECOMMENDATION: ['RECOMMENDATION_HYDRATION'],
-    DISPOSITION: ['DISPOSITION_LYMPHATIC']
+    advice: ['RECOMMENDATION_HYDRATION'],
+    findings: ['DISPOSITION_LYMPHATIC']
   }, env);
   assert.deepEqual(data, {
-    RECOMMENDATION: { RECOMMENDATION_HYDRATION: { water: true } },
-    DISPOSITION: { DISPOSITION_LYMPHATIC: { lymph: true } }
+    advice: { RECOMMENDATION_HYDRATION: { water: true } },
+    findings: { DISPOSITION_LYMPHATIC: { lymph: true } }
   });
   delete globalThis.caches;
 });
 
 test('fetchRagData логва едно предупреждение за липсващи ключове', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
-  const env = { iris_rag_kv: { get: async () => null } };
+  const env = { RAG: { get: async () => ({ findings: {} }) } };
   const warnings = [];
   const originalWarn = console.warn;
   console.warn = msg => warnings.push(msg);
 
-  await fetchRagData(['a', 'b'], env);
+  await fetchRagData({ findings: ['a', 'b'] }, env);
 
   console.warn = originalWarn;
   assert.deepEqual(warnings, ['Липсващи RAG ключове: a, b']);
@@ -613,7 +610,6 @@ test('handleAnalysisRequest преобразува алиасите към ка�
   form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
   const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
 
-  const fetched = [];
   const env = {
     AI_PROVIDER: 'openai',
     openai_api_key: 'k',
@@ -621,10 +617,12 @@ test('handleAnalysisRequest преобразува алиасите към ка�
       get: async key => {
         if (key === 'AI_MODEL') return 'gpt-4o';
         if (key === 'ROLE_PROMPT') return { prompt: '' };
-        fetched.push(key);
         return { ok: true };
       },
       put: async () => {}
+    },
+    RAG: {
+      get: async () => ({ findings: { SIGN_IRIS_RADII_SOLARIS: { ok: true } } })
     }
   };
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
@@ -647,7 +645,7 @@ test('handleAnalysisRequest преобразува алиасите към ка�
   delete globalThis.caches;
 
   assert.equal(res.status, 200);
-  assert.ok(fetched.includes('SIGN_IRIS_RADII_SOLARIS'));
+  assert.ok(JSON.stringify(bodies[1]).includes('SIGN_IRIS_RADII_SOLARIS'));
   assert.equal(bodies[0].response_format.json_schema.name, 'rag_keys');
   const schemaName = bodies[1].response_format.json_schema.name;
   assert.ok(schemaName === 'analysis' || schemaName === 'custom');
@@ -721,6 +719,9 @@ test('handleAnalysisRequest пропуска извличането на пуб�
     iris_rag_kv: {
       get: async key => (key === 'DISPOSITION_NERVOUS' ? {} : null),
       put: async () => {}
+    },
+    RAG: {
+      get: async () => ({ findings: { DISPOSITION_NERVOUS: {} } })
     }
   };
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };

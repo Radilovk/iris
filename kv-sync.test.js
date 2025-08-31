@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { validateKv, syncKv } from './kv-sync.js';
 
 test('validateKv приема валиден ключ', () => {
-  const data = { 'VALID_KEY': '{"a":1}' };
+  const data = { grouped: '{"findings":{}}' };
   const entries = validateKv(data);
-  assert.deepEqual(entries, [{ key: 'VALID_KEY', value: '{"a":1}' }]);
+  assert.deepEqual(entries, [{ key: 'grouped', value: '{"findings":{}}' }]);
 });
 
 test('validateKv хвърля грешка при невалиден ключ', () => {
@@ -39,18 +39,19 @@ test('syncKv изчиства празните ключове', async () => {
     return { ok: true, text: async () => '' };
   };
 
-  const entries = validateKv({ KEEP: '"ok"', DROP1: '""', DROP2: '{}' });
+  const entries = validateKv({ KEEP: '"ok"', DROP1: '""', DROP2: '{}', grouped: '{"findings":{}}' });
   const res = await syncKv(entries, { accountId: 'a', namespaceId: 'n', apiToken: 't' });
 
   assert.deepEqual(uploaded, [
     { key: 'KEEP', value: '"ok"' },
+    { key: 'grouped', value: '{"findings":{}}' },
     { key: 'DROP1', delete: true },
     { key: 'DROP2', delete: true },
     { key: 'EXTRA', delete: true }
   ]);
-  assert.deepEqual(res.updated, ['KEEP']);
+  assert.deepEqual(res.updated.sort(), ['KEEP', 'grouped'].sort());
   assert.deepEqual(res.deleted.sort(), ['DROP1', 'DROP2', 'EXTRA'].sort());
-  assert.deepEqual(res.groups, { KEEP: ['KEEP'] });
+  assert.deepEqual(res.groups, { KEEP: ['KEEP'], grouped: ['grouped'] });
 
   global.fetch = originalFetch;
 });
