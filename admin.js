@@ -1,5 +1,6 @@
 import { KV_DATA } from './kv-data.js';
 import { WORKER_BASE_URL } from './config.js';
+import { validateRagKeys } from './validate-rag-keys.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const syncBtn = document.getElementById('sync-btn');
@@ -300,6 +301,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   syncBtn.addEventListener('click', async () => {
+    try {
+      validateRagKeys();
+    } catch (err) {
+      showMessage(err.message);
+      return;
+    }
     syncBtn.disabled = true;
     showLoading();
     try {
