@@ -120,21 +120,51 @@ document.addEventListener('DOMContentLoaded', function() {
     async function compressImage(file, maxSize = 1024, quality = 0.8) {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.onload = () => {
+            img.onload = async () => {
                 const canvas = document.createElement('canvas');
                 const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
                 canvas.width = img.width * scale;
                 canvas.height = img.height * scale;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(blob => {
-                    URL.revokeObjectURL(img.src);
-                    if (blob) {
+
+                URL.revokeObjectURL(img.src);
+
+                // Запазваме PNG файловете без конвертиране
+                if (file.type === 'image/png') {
+                    return canvas.toBlob(blob => {
+                        if (blob) {
+                            resolve(new File([blob], file.name, { type: 'image/png' }));
+                        } else {
+                            reject(new Error('Компресията е неуспешна'));
+                        }
+                    }, 'image/png');
+                }
+
+                try {
+                    if (typeof ImageEncoder !== 'undefined') {
+                        const bitmap = await createImageBitmap(canvas);
+                        const encoder = new ImageEncoder({
+                            type: 'image/webp',
+                            quality: 1,
+                            lossless: true
+                        });
+                        const { data } = await encoder.encode(bitmap);
+                        const blob = new Blob([data], { type: 'image/webp' });
                         resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), { type: 'image/webp' }));
                     } else {
-                        reject(new Error('Компресията е неуспешна'));
+                        // Fallback за браузъри без ImageEncoder
+                        canvas.toBlob(blob => {
+                            if (blob) {
+                                resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), { type: 'image/webp' }));
+                            } else {
+                                reject(new Error('Компресията е неуспешна'));
+                            }
+                        }, 'image/webp', quality);
                     }
-                }, 'image/webp', quality);
+                } catch (err) {
+                    reject(err);
+                }
             };
             img.onerror = reject;
             img.src = URL.createObjectURL(file);
