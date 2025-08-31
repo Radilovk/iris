@@ -441,8 +441,13 @@ async function adminSync(env, request) {
 
 async function adminKeys(env, request) {
     try {
-        const { keys } = await env.iris_rag_kv.list({ limit: 1000 });
-        return new Response(JSON.stringify({ keys: keys.map(k => k.name) }), {
+        const keys = await fetchExistingKeys({
+            accountId: env.CF_ACCOUNT_ID,
+            namespaceId: env.CF_KV_NAMESPACE_ID,
+            apiToken: env.CF_API_TOKEN
+        });
+        const unique = [...new Set(keys)];
+        return new Response(JSON.stringify({ keys: unique }), {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
     } catch (err) {

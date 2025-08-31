@@ -435,11 +435,22 @@ test('handleAnalysisRequest улавя грешка чрез наследено 
 test('/admin/keys връща списък с ключове', async () => {
   const req = new Request('https://example.com/admin/keys');
   const env = {
-    iris_rag_kv: { list: async () => ({ keys: [] }) }
+    CF_ACCOUNT_ID: 'a',
+    CF_KV_NAMESPACE_ID: 'n',
+    CF_API_TOKEN: 't'
   };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(
+    JSON.stringify({
+      result: [{ name: 'K1' }, { name: 'K1' }, { name: 'K2' }],
+      result_info: { list_complete: true }
+    }),
+    { status: 200 }
+  );
   const res = await worker.fetch(req, env);
+  globalThis.fetch = originalFetch;
   assert.equal(res.status, 200);
-  assert.deepEqual(await res.json(), { keys: [] });
+  assert.deepEqual(await res.json(), { keys: ['K1', 'K2'] });
 });
 
 
