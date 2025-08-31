@@ -1,3 +1,4 @@
+import ExifReader from 'https://cdn.jsdelivr.net/npm/exifreader@4.13.1/dist/exif-reader.esm.min.js';
 import { WORKER_URL } from './config.js';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -118,21 +119,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('iridology-form');
 
     async function compressImage(file, maxSize = 1024, quality = 0.8) {
+        const arrayBuffer = await file.arrayBuffer();
+        let orientation = 1;
+        try {
+            const tags = ExifReader.load(arrayBuffer);
+            orientation = tags.Orientation ? tags.Orientation.value : 1;
+        } catch (err) {
+            console.warn('Неуспешно прочитане на EXIF:', err);
+        }
+
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = async () => {
-                const withinBounds = img.width <= maxSize && img.height <= maxSize;
+                const rawWidth = img.width;
+                const rawHeight = img.height;
+                let width = rawWidth;
+                let height = rawHeight;
+
+                if (orientation > 4 && orientation < 9) {
+                    width = rawHeight;
+                    height = rawWidth;
+                }
+
+                const withinBounds = width <= maxSize && height <= maxSize;
                 if (file.size < 2 * 1024 * 1024 && withinBounds) {
                     URL.revokeObjectURL(img.src);
                     return resolve(file);
                 }
 
                 const canvas = document.createElement('canvas');
-                const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
-                canvas.width = img.width * scale;
-                canvas.height = img.height * scale;
+                const scale = Math.min(maxSize / width, maxSize / height, 1);
+                canvas.width = width * scale;
+                canvas.height = height * scale;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                ctx.save();
+                switch (orientation) {
+                    case 3:
+                        ctx.translate(canvas.width, canvas.height);
+                        ctx.rotate(Math.PI);
+                        break;
+                    case 6:
+                        ctx.translate(canvas.width, 0);
+                        ctx.rotate(Math.PI / 2);
+                        break;
+                    case 8:
+                        ctx.translate(0, canvas.height);
+                        ctx.rotate(-Math.PI / 2);
+                        break;
+                }
+
+                ctx.drawImage(img, 0, 0, rawWidth * scale, rawHeight * scale);
+                ctx.restore();
 
                 URL.revokeObjectURL(img.src);
 
