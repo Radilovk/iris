@@ -210,26 +210,40 @@ function debugLog(env = {}, ...args) {
 }
 
 // --- RAG АЛИАСИ ---
-const RAG_KEY_ALIASES = {
-    SIGN_RADIAL_FURROW: 'SIGN_IRIS_RADII_SOLARIS',
-    SIGN_RadiiSolari: 'SIGN_IRIS_RADII_SOLARIS',
-    CONSTITUTION_HEMOGLOBIN: 'CONSTITUTION_COLOR_HAEMATOGENIC',
-    CONSTITUTION_LYMPHATIC: 'CONSTITUTION_COLOR_LYMPHATIC',
-    CONSTITUTION_Lymphatic: 'CONSTITUTION_COLOR_LYMPHATIC',
-    CONSTITUTION_MIXED_BILIARY: 'CONSTITUTION_COLOR_MIXED_BILIARY',
-    CONSTITUTION_CONNECTIVE_TISSUE: 'CONSTITUTION_STRUCTURE_CONNECTIVE_TISSUE',
-    DISPOSITION_NERVOUS_SYSTEM: 'DISPOSITION_NERVOUS',
-    DISPOSITION_Nervous: 'DISPOSITION_NERVOUS',
-    'нервна система': 'DISPOSITION_NERVOUS',
-    RECOMMENDATION_BALANCED_DIET: 'RECOMMENDATION_DIETARY_BALANCE',
-    'балансирано хранене': 'RECOMMENDATION_DIETARY_BALANCE',
-    RECOMMENDATION_DietaryAdjustment: 'RECOMMENDATION_DIETARY_ADJUSTMENT',
-    'диетична корекция': 'RECOMMENDATION_DIETARY_ADJUSTMENT',
-    CONSTITUTION_WOOLLY: 'CONSTITUTION_WOOL_COVERED',
-    'овча покривка': 'CONSTITUTION_WOOL_COVERED',
-    SIGN_IRIS_LACUNA: 'SIGN_LACUNA',
-    'лакуна': 'SIGN_LACUNA',
-};
+export function resolveAlias(key, group = {}) {
+    for (const [canonical, data] of Object.entries(group)) {
+        if (Array.isArray(data.aliases) && data.aliases.includes(key)) return canonical;
+    }
+    if (Object.hasOwn(group, key)) return key;
+    return undefined;
+}
+
+async function getGrouped(env) {
+    const { RAG } = env;
+    if (!RAG) throw new Error("KV Namespace 'RAG' не е свързан с този Worker.");
+
+    const cache = /** @type {any} */ (caches).default;
+    const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
+    const cacheReq = new Request('https://rag-cache/grouped');
+    let grouped;
+
+    const cached = await cache.match(cacheReq);
+    if (cached) {
+        try {
+            grouped = await cached.json();
+        } catch (e) {
+            console.warn('Грешка при четене от кеша за grouped', e);
+        }
+    }
+
+    if (!grouped) {
+        grouped = await RAG.get('grouped', 'json') || {};
+        await cache.put(cacheReq, new Response(JSON.stringify(grouped), {
+            headers: { 'Cache-Control': `max-age=${ttl}` }
+        }));
+    }
+    return grouped;
+}
 
 // --- ПРОМПТОВЕ ---
 const IDENTIFICATION_PROMPT = `
@@ -669,11 +683,19 @@ async function handleAnalysisRequest(request, env) {
             console.info(logMsg, keysResponse);
             return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
-        ragKeys = [...new Set(ragKeys.map(k => RAG_KEY_ALIASES[k] || k))];
+        const grouped = await getGrouped(env);
+        const groups = [grouped.findings || {}, grouped.links || {}, grouped.advice || {}];
+        ragKeys = [...new Set(ragKeys.map(k => {
+            for (const g of groups) {
+                const r = resolveAlias(k, g);
+                if (r) return r;
+            }
+            return k;
+        }))];
         log("Получени RAG ключове за извличане:", ragKeys);
 
         log("Стъпка 2: Извличане на данни от KV базата...");
-        const ragData = await fetchRagData(ragKeys, env);
+        const ragData = await fetchRagData(ragKeys, env, grouped);
         log("Извлечени са", Object.keys(ragData).length, "записа от KV.");
 
         log("Стъпка 2.1: Извличане на публични източници...");
@@ -855,31 +877,8 @@ async function fetchExternalInfo(query, env) {
 }
 
 // --- RAG ИЗВЛИЧАНЕ ОТ KV ---
-export async function fetchRagData(keys, env) {
-    const { RAG } = env;
-    if (!RAG) throw new Error("KV Namespace 'RAG' не е свързан с този Worker.");
-
-    const cache = /** @type {any} */ (caches).default;
-    const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
-    const cacheReq = new Request('https://rag-cache/grouped');
-    let grouped;
-
-    const cached = await cache.match(cacheReq);
-    if (cached) {
-        try {
-            grouped = await cached.json();
-        } catch (e) {
-            console.warn('Грешка при четене от кеша за grouped', e);
-        }
-    }
-
-    if (!grouped) {
-        grouped = await RAG.get('grouped', 'json') || {};
-        await cache.put(cacheReq, new Response(JSON.stringify(grouped), {
-            headers: { 'Cache-Control': `max-age=${ttl}` }
-        }));
-    }
-
+export async function fetchRagData(keys, env, grouped) {
+    grouped = grouped || await getGrouped(env);
     const { findings = {}, links = {}, advice = {} } = grouped;
     const missing = [];
 
