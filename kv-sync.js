@@ -13,6 +13,8 @@ export function validateKv(data) {
     }
     if (
       parsed === "" ||
+      parsed === null ||
+      (typeof parsed === 'string' && parsed.trim() === '') ||
       (parsed && typeof parsed === 'object' && Object.keys(parsed).length === 0)
     ) {
       entries.push({ key, delete: true });

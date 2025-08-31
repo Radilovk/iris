@@ -14,11 +14,18 @@ test('validateKv хвърля грешка при невалиден ключ', 
 });
 
 test('validateKv маркира празни стойности за изтриване', () => {
-  const data = { 'EMPTY': '""', 'EMPTY_OBJ': '{}' };
+  const data = {
+    'EMPTY': '""',
+    'EMPTY_OBJ': '{}',
+    'NULL': 'null',
+    'SPACES': '"   "'
+  };
   const entries = validateKv(data);
   assert.deepEqual(entries, [
     { key: 'EMPTY', delete: true },
-    { key: 'EMPTY_OBJ', delete: true }
+    { key: 'EMPTY_OBJ', delete: true },
+    { key: 'NULL', delete: true },
+    { key: 'SPACES', delete: true }
   ]);
 });
 
@@ -39,7 +46,14 @@ test('syncKv изчиства празните ключове', async () => {
     return { ok: true, text: async () => '' };
   };
 
-  const entries = validateKv({ KEEP: '"ok"', DROP1: '""', DROP2: '{}', grouped: '{"findings":{}}' });
+  const entries = validateKv({
+    KEEP: '"ok"',
+    DROP1: '""',
+    DROP2: '{}',
+    DROP3: 'null',
+    DROP4: '"   "',
+    grouped: '{"findings":{}}'
+  });
   const res = await syncKv(entries, { accountId: 'a', namespaceId: 'n', apiToken: 't' });
 
   assert.deepEqual(uploaded, [
@@ -47,10 +61,15 @@ test('syncKv изчиства празните ключове', async () => {
     { key: 'grouped', value: '{"findings":{}}' },
     { key: 'DROP1', delete: true },
     { key: 'DROP2', delete: true },
+    { key: 'DROP3', delete: true },
+    { key: 'DROP4', delete: true },
     { key: 'EXTRA', delete: true }
   ]);
   assert.deepEqual(res.updated.sort(), ['KEEP', 'grouped'].sort());
-  assert.deepEqual(res.deleted.sort(), ['DROP1', 'DROP2', 'EXTRA'].sort());
+  assert.deepEqual(
+    res.deleted.sort(),
+    ['DROP1', 'DROP2', 'DROP3', 'DROP4', 'EXTRA'].sort()
+  );
   assert.deepEqual(res.groups, { KEEP: ['KEEP'], grouped: ['grouped'] });
 
   global.fetch = originalFetch;
