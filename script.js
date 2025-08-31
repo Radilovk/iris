@@ -121,6 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = async () => {
+                const withinBounds = img.width <= maxSize && img.height <= maxSize;
+                if (file.size < 2 * 1024 * 1024 && withinBounds) {
+                    URL.revokeObjectURL(img.src);
+                    return resolve(file);
+                }
+
                 const canvas = document.createElement('canvas');
                 const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
                 canvas.width = img.width * scale;
