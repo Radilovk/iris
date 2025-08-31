@@ -607,7 +607,7 @@ test('fetchRagData използва кеша при второ извикван�
   };
   let kvCalls = 0;
   const env = {
-    RAG: {
+    iris_rag_kv: {
       get: async () => { kvCalls++; return { findings: { a: { v: 1 } } }; }
     },
     RAG_CACHE_TTL: '60'
@@ -623,7 +623,7 @@ test('fetchRagData използва кеша при второ извикван�
 test('fetchRagData извлича само данни за DISPOSITION_ACIDITY', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
-    RAG: {
+    iris_rag_kv: {
       get: async () => ({ findings: { DISPOSITION_ACIDITY: { key: 'DISPOSITION_ACIDITY' }, OTHER: { key: 'OTHER' } } })
     }
   };
@@ -635,7 +635,7 @@ test('fetchRagData извлича само данни за DISPOSITION_ACIDITY',
 test('fetchRagData извлича новите ключове', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
-    RAG: {
+    iris_rag_kv: {
       get: async () => ({
         advice: { RECOMMENDATION_HYDRATION: { water: true } },
         findings: { DISPOSITION_LYMPHATIC: { lymph: true } }
@@ -655,7 +655,7 @@ test('fetchRagData извлича новите ключове', async () => {
 
 test('fetchRagData логва едно предупреждение за липсващи ключове', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
-  const env = { RAG: { get: async () => ({ findings: {} }) } };
+  const env = { iris_rag_kv: { get: async () => ({ findings: {} }) } };
   const warnings = [];
   const originalWarn = console.warn;
   console.warn = msg => warnings.push(msg);
@@ -682,12 +682,10 @@ test('handleAnalysisRequest преобразува алиасите към ка�
       get: async key => {
         if (key === 'AI_MODEL') return 'gpt-4o';
         if (key === 'ROLE_PROMPT') return { prompt: '' };
+        if (key === 'grouped') return { findings: { SIGN_IRIS_RADII_SOLARIS: { ok: true, aliases: ['SIGN_RADIAL_FURROW'] } } };
         return { ok: true };
       },
       put: async () => {}
-    },
-    RAG: {
-      get: async () => ({ findings: { SIGN_IRIS_RADII_SOLARIS: { ok: true, aliases: ['SIGN_RADIAL_FURROW'] } } })
     }
   };
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
@@ -788,11 +786,12 @@ test('handleAnalysisRequest пропуска извличането на пуб�
     AI_PROVIDER: 'openai',
     openai_api_key: 'k',
     iris_rag_kv: {
-      get: async key => (key === 'DISPOSITION_NERVOUS' ? {} : null),
+      get: async key => {
+        if (key === 'DISPOSITION_NERVOUS') return {};
+        if (key === 'grouped') return { findings: { DISPOSITION_NERVOUS: { aliases: ['нервна система'] } } };
+        return null;
+      },
       put: async () => {}
-    },
-    RAG: {
-      get: async () => ({ findings: { DISPOSITION_NERVOUS: { aliases: ['нервна система'] } } })
     }
   };
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
