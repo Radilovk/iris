@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const newModelInput = document.getElementById('new-model');
   const addModelBtn = document.getElementById('add-model');
   const modelListEl = document.getElementById('model-list');
+  const reloadWorkerBtn = document.getElementById('reload-worker');
 
   const DEFAULT_MODEL_OPTIONS = {
     gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
@@ -339,6 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       await fetch(`${WORKER_BASE_URL}/admin/cleanup`, { method: 'POST' });
       await loadKeys();
+      showMessage('Worker и промптът са актуализирани', 'success');
     } catch (err) {
       showMessage('Грешка: ' + err.message);
     } finally {
@@ -366,6 +368,21 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       hideLoading();
       uploadBtn.disabled = false;
+    }
+  });
+
+  reloadWorkerBtn.addEventListener('click', async () => {
+    reloadWorkerBtn.disabled = true;
+    showLoading();
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/cleanup`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text());
+      showMessage('Worker презареден', 'success');
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
+    } finally {
+      hideLoading();
+      reloadWorkerBtn.disabled = false;
     }
   });
 

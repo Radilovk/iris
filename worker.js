@@ -414,6 +414,7 @@ async function handleAdmin(request, env) {
     }
     if (url.pathname === '/admin/cleanup' && request.method === 'POST') {
         const result = await cleanupKv(env);
+        resetAnalysisJsonSchemaCache();
         return new Response(JSON.stringify(result), {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
@@ -522,6 +523,7 @@ async function adminSync(env, request) {
             namespaceId: env.CF_KV_NAMESPACE_ID,
             apiToken: env.CF_API_TOKEN
         });
+        resetAnalysisJsonSchemaCache();
         return new Response(JSON.stringify(result), {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
