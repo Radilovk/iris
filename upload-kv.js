@@ -2,6 +2,7 @@ import 'dotenv/config';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { validateKv, syncKv } from './kv-sync.js';
+import { validateRagKeys } from './validate-rag-keys.js';
 
 const ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
 const NAMESPACE_ID = process.env.CF_KV_NAMESPACE_ID;
@@ -10,6 +11,7 @@ const KV_DIR = path.resolve('KV');
 const REQUIRED_SENTENCE = 'Ако липсва информация, опиши какви допълнителни данни са нужни.';
 
 async function main() {
+  validateRagKeys();
   if (!ACCOUNT_ID || !NAMESPACE_ID || !API_TOKEN) {
     console.error('Липсват променливи CF_ACCOUNT_ID, CF_KV_NAMESPACE_ID или CF_API_TOKEN.');
     process.exit(1);
