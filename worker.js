@@ -4,71 +4,16 @@
 export const RAG_REQUIRED_KEYS = [
   'ROLE_PROMPT',
   'AI_MODEL',
-  'AI_PROVIDER',
-  'ANALYSIS_FLOW_AND_ELIMINATION_CHANNELS',
-  'CONCEPT_METABOLIC_LOAD_AND_INFLAMMATION',
-  'CONSTITUTION_COLOR_HAEMATOGENIC',
-  'CONSTITUTION_COLOR_LYMPHATIC',
-  'CONSTITUTION_COLOR_MIXED_BILIARY',
-  'CONSTITUTION_STRUCTURE_CONNECTIVE_TISSUE',
-  'CONSTITUTION_WOOL_COVERED',
-  'DIATHESIS_OVERLAY_HYDROGENOID',
-  'DIATHESIS_OVERLAY_HYPERACIDIC',
-  'DISPOSITION_ACIDITY',
-  'DISPOSITION_LYMPHATIC',
-  'DISPOSITION_NERVOUS',
-  'DISPOSITION_STRUCTURE_FLEXIBLE_ADAPTIVE',
-  'DISPOSITION_STRUCTURE_HIGH_RESISTANCE',
-  'DISPOSITION_STRUCTURE_SELF_PROTECTIVE',
-  'EMOTION_IRIS_LIVER',
-  'ENDOCRINE_GLAND_SIGNS',
-  'FRAMEWORK_HOLISTIC_ANALYSIS_STEPS',
-  'IRIS_FIBER_DENSITY_SCALE',
-  'IRIS_MAP_TOPOGRAPHY',
-  'IRIS_TISSUE_ACTIVITY_STAGES',
-  'LIFESTYLE_DIET_HIGH_PROTEIN_IMPACT',
-  'MIASM_PSORA',
-  'MIASM_SYCOSIS',
-  'MIASM_SYPHILIS',
-  'MODEL_OPTIONS',
-  'PHILOSOPHY_TERRAIN_VS_GERM',
-  'SIGN_COLLARETTE_GENERAL_ANALYSIS',
-  'SIGN_IRIS_LYMPHATIC_ROSARY',
-  'SIGN_IRIS_PIGMENT_GENERAL_OVERVIEW',
-  'SIGN_IRIS_PSORA_SPOTS',
-  'SIGN_IRIS_RADII_SOLARIS',
-  'SIGN_IRIS_RING_CONTRACTION_FURROWS',
-  'SIGN_IRIS_RING_SCURF_RIM',
-  'SIGN_IRIS_SODIUM_RING',
-  'SIGN_IRIS_TRANSVERSALS',
-  'SIGN_LACUNA',
-  'SIGN_PUPIL_GENERAL_ANALYSIS',
-  'SIGN_SCLERA_TRAUMA_FORK',
-  'SIGN_SCLERA_VESSEL_INTERPRETATION',
-  'SYNDROME_CARDIO_RENAL',
-  'SIGN_IRIS_LACUNA_LEAF',
-  'BOOK_EVALUATING_THE_USE_OF_IRIDOLOGY',
-  'BOOK_HORMONAL_DISBALANCES',
-  'BOOK_IRIDOLOGY_CASE_STUDIES',
-  'BOOK_IRIDOLOGY_TEXTBOOK_THE_CORE_CURRICULUM',
-  'BOOK_METABOLIC_SYNDROMES',
-  'BOOK_PRACTICAL_IRIDOLOGY',
-  'BOOK_SYNTHESIS_IRIDIOLOGY',
-  'BOOK_ЕНДОКРИНОЛОГИЯ_И_ИРИДОЛОГИЯ',
-  'BOOK_ИРИДОЛОГИЯ_ОТ_ФАРИДА_ШАРАН',
-  'BOOK_ИРИДОЛОГИЯ_ЦЯЛОСТНО_РЪКОВОДСТВО',
-  'RECOMMENDATION_DIETARY_ADJUSTMENT',
-  'RECOMMENDATION_DIETARY_BALANCE',
-  'RECOMMENDATION_HYDRATION',
-  'RECOMMENDATION_PRACTICE_CASTOR_OIL_PACK',
-  'RECOMMENDATION_PRINCIPLE_NUTRITIONAL_FOUNDATION'
+  'grouped:findings',
+  'grouped:links',
+  'grouped:advice'
 ];
 
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
 // Обработката на изображения вече се извършва клиентски.
 
 function validateKv(data) {
-  const keyRegex = /^(grouped|[A-Z0-9_]+)$/;
+  const keyRegex = /^(grouped(:[a-z]+)?|[A-Z0-9_]+)$/;
   const entries = [];
   for (const [key, value] of Object.entries(data)) {
     if (!keyRegex.test(key)) {
@@ -97,7 +42,7 @@ function validateKv(data) {
 function groupKeys(entries) {
   const groups = {};
   for (const { key } of entries) {
-    const category = key.split('_')[0];
+    const category = key.split(/[:_]/)[0];
     if (!groups[category]) groups[category] = [];
     groups[category].push(key);
   }
@@ -322,7 +267,16 @@ async function getGrouped(env) {
     }
 
     if (!grouped) {
-        grouped = await RAG.get('grouped', 'json') || {};
+        const [findings, links, advice] = await Promise.all([
+            RAG.get('grouped:findings', 'json'),
+            RAG.get('grouped:links', 'json'),
+            RAG.get('grouped:advice', 'json')
+        ]);
+        grouped = {
+            findings: findings || {},
+            links: links || {},
+            advice: advice || {}
+        };
         await cache.put(cacheReq, new Response(JSON.stringify(grouped), {
             headers: { 'Cache-Control': `max-age=${ttl}` }
         }));

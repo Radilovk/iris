@@ -608,14 +608,18 @@ test('fetchRagData използва кеша при второ извикван�
   let kvCalls = 0;
   const env = {
     iris_rag_kv: {
-      get: async () => { kvCalls++; return { findings: { a: { v: 1 } } }; }
+      get: async key => {
+        kvCalls++;
+        if (key === 'grouped:findings') return { a: { v: 1 } };
+        return {};
+      }
     },
     RAG_CACHE_TTL: '60'
   };
   const first = await fetchRagData({ findings: ['a'] }, env);
-  assert.equal(kvCalls, 1);
+  assert.equal(kvCalls, 3);
   const second = await fetchRagData({ findings: ['a'] }, env);
-  assert.equal(kvCalls, 1);
+  assert.equal(kvCalls, 3);
   assert.deepEqual(first, second);
   delete globalThis.caches;
 });
@@ -624,7 +628,12 @@ test('fetchRagData извлича само данни за DISPOSITION_ACIDITY',
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
     iris_rag_kv: {
-      get: async () => ({ findings: { DISPOSITION_ACIDITY: { key: 'DISPOSITION_ACIDITY' }, OTHER: { key: 'OTHER' } } })
+      get: async key => {
+        if (key === 'grouped:findings') {
+          return { DISPOSITION_ACIDITY: { key: 'DISPOSITION_ACIDITY' }, OTHER: { key: 'OTHER' } };
+        }
+        return {};
+      }
     }
   };
   const data = await fetchRagData({ findings: ['DISPOSITION_ACIDITY'] }, env);
@@ -636,10 +645,15 @@ test('fetchRagData извлича новите ключове', async () => {
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
     iris_rag_kv: {
-      get: async () => ({
-        advice: { RECOMMENDATION_HYDRATION: { water: true } },
-        findings: { DISPOSITION_LYMPHATIC: { lymph: true } }
-      })
+      get: async key => {
+        if (key === 'grouped:advice') {
+          return { RECOMMENDATION_HYDRATION: { water: true } };
+        }
+        if (key === 'grouped:findings') {
+          return { DISPOSITION_LYMPHATIC: { lymph: true } };
+        }
+        return {};
+      }
     }
   };
   const data = await fetchRagData({
@@ -680,11 +694,12 @@ test('handleAnalysisRequest преобразува алиасите към ка�
      openai_api_key: 'k',
      iris_rag_kv: {
        get: async key => {
-         if (key === 'AI_MODEL') return 'gpt-4o';
-         if (key === 'ROLE_PROMPT') return { prompt: '' };
-         if (key === 'grouped') return { findings: { SIGN_IRIS_RADII_SOLARIS: { ok: true, aliases: ['SIGN_RADIAL_FURROW'] } } };
-         return { ok: true };
-       },
+        if (key === 'AI_MODEL') return 'gpt-4o';
+        if (key === 'ROLE_PROMPT') return { prompt: '' };
+        if (key === 'grouped:findings') return { SIGN_IRIS_RADII_SOLARIS: { ok: true, aliases: ['SIGN_RADIAL_FURROW'] } };
+        if (key === 'grouped:links' || key === 'grouped:advice') return {};
+        return { ok: true };
+      },
        put: async () => {}
      }
    };
@@ -790,7 +805,8 @@ test('handleAnalysisRequest пропуска извличането на пуб�
           if (key === 'AI_MODEL') return 'gpt-4o';
           if (key === 'ROLE_PROMPT') return { prompt: '' };
           if (key === 'DISPOSITION_NERVOUS') return {};
-          if (key === 'grouped') return { findings: { DISPOSITION_NERVOUS: { aliases: ['нервна система'] } } };
+          if (key === 'grouped:findings') return { DISPOSITION_NERVOUS: { aliases: ['нервна система'] } };
+          if (key === 'grouped:links' || key === 'grouped:advice') return {};
           return null;
         },
         put: async () => {}
