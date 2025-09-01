@@ -1,6 +1,8 @@
 import { KV_DATA } from './kv-data.js';
 import { RAG_REQUIRED_KEYS } from './worker.js';
 
+// KV_DATA съдържа обекти и примитиви, без стрингово сериализиране.
+
 export function validateRagKeys() {
   const kvKeys = new Set(Object.keys(KV_DATA));
   const missing = [];
