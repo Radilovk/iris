@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
+      - run: node scripts/generate-rag-keys.js --check
       - run: npm run test:kv
       - run: npm run validate-kv
       - run: node upload-kv.js

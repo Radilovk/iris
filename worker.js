@@ -1,13 +1,7 @@
 /// <reference lib="webworker" />
 
 // Задължителни RAG ключове
-export const RAG_REQUIRED_KEYS = [
-  'ROLE_PROMPT',
-  'AI_MODEL',
-  'grouped:findings',
-  'grouped:links',
-  'grouped:advice'
-];
+export { RAG_REQUIRED_KEYS } from './rag-keys.js';
 
 // --- ПРЕРАБОТКА НА ИЗОБРАЖЕНИЯ ---
 // Обработката на изображения вече се извършва клиентски.
