@@ -57,12 +57,12 @@ fetch(WORKER_URL, { method: 'POST', body: formData })
    - `if (file.size > 5*1024*1024) compress(file);`
 3. **Предобработка и идентификация на знаци** – снимките се преобразуват в Base64 и чрез промпт се извличат RAG ключове (напр. `["SIGN_IRIS_RING_CONTRACTION_FURROWS"]`).
    - промпт: `Опиши наличните знаци като JSON...`
-4. **RAG извличане** – `fetchRagData` зарежда съответните JSON записи от KV кеширано.
-   - `cache[key] || await env.RAG.get(key)`
+4. **RAG извличане** – `fetchRagData` зарежда съответните JSON записи от `iris_rag_kv` кеширано.
+   - `cache[key] || await env.iris_rag_kv.get(key)`
 5. **Синтез** – втори AI повик генерира крайния JSON анализ и добавя разширен дисклеймър.
    - `generateSummary(signs, ragRecords)`
-6. **Отговор** – резултатът се връща на клиента и се записва в KV за последващ преглед.
-   - `await env.RESULTS.put(id, JSON.stringify(result))`
+6. **Отговор** – резултатът се връща на клиента и се записва в `iris_rag_kv` за последващ преглед.
+   - `await env.iris_rag_kv.put(id, JSON.stringify(result))`
 
 **Очакван JSON отговор**
 
