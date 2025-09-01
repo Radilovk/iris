@@ -11,7 +11,7 @@ test('Worker не използва браузърни API', () => {
 });
 
 test('ROLE_PROMPT съдържа ключ missing_data', () => {
-  const data = JSON.parse(KV_DATA.ROLE_PROMPT);
+  const data = KV_DATA.ROLE_PROMPT;
   assert.ok(Object.hasOwn(data, 'missing_data'));
   assert.equal(typeof data.missing_data, 'string');
 });
@@ -577,11 +577,11 @@ test('/admin/sync изтрива празни стойности', async () => {
     CF_API_TOKEN: 'token'
   };
   const payload = {
-    DROP_EMPTY: "\"\"",
-    DROP_NULL: "null",
-    DROP_WS: "\"   \"",
-    DROP_EMPTY_OBJ: "{}",
-    KEEP: "\"new\""
+    DROP_EMPTY: "",
+    DROP_NULL: null,
+    DROP_WS: "   ",
+    DROP_EMPTY_OBJ: {},
+    KEEP: "new"
   };
   const req = new Request('https://example.com/admin/sync', {
     method: 'POST',
@@ -594,7 +594,7 @@ test('/admin/sync изтрива празни стойности', async () => {
   const body = await res.json();
   assert.deepEqual(body.deleted.sort(), ['DROP_EMPTY', 'DROP_NULL', 'DROP_WS', 'DROP_EMPTY_OBJ'].sort());
   assert.deepEqual(body.updated, ['KEEP']);
-  assert.deepEqual(store, { KEEP: "\"new\"" });
+  assert.deepEqual(store, { KEEP: JSON.stringify('new') });
 });
 
 test('fetchRagData използва кеша при второ извикване', async () => {

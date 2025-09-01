@@ -5,22 +5,22 @@ export function validateKv(data) {
     if (!keyRegex.test(key)) {
       throw new Error(`Невалиден ключ: ${key}`);
     }
-    let parsed;
-    try {
-      parsed = JSON.parse(value);
-    } catch (err) {
-      throw new Error(`Невалиден JSON в ${key}: ${err.message}`);
-    }
     if (
-      parsed === "" ||
-      parsed === null ||
-      (typeof parsed === 'string' && parsed.trim() === '') ||
-      (parsed && typeof parsed === 'object' && Object.keys(parsed).length === 0)
+      value === "" ||
+      value === null ||
+      (typeof value === 'string' && value.trim() === '') ||
+      (value && typeof value === 'object' && Object.keys(value).length === 0)
     ) {
       entries.push({ key, delete: true });
       continue;
     }
-    entries.push({ key, value });
+    let stringified;
+    try {
+      stringified = JSON.stringify(value);
+    } catch (err) {
+      throw new Error(`Невалиден JSON в ${key}: ${err.message}`);
+    }
+    entries.push({ key, value: stringified });
   }
   return entries;
 }
