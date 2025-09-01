@@ -304,8 +304,8 @@ export function resolveAlias(key, group = {}) {
 }
 
 async function getGrouped(env) {
-    const { RAG } = env;
-    if (!RAG) throw new Error("KV Namespace 'RAG' не е свързан с този Worker.");
+    const RAG = env.iris_rag_kv;
+    if (!RAG) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
 
     const cache = /** @type {any} */ (caches).default;
     const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
