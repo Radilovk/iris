@@ -831,3 +831,52 @@ test('handleAnalysisRequest пропуска извличането на пуб�
   assert.equal(idx, 2);
 });
 
+test('handleAnalysisRequest съхранява USER_PROFILE и го подава към модела', async () => {
+  const buf = Buffer.alloc(10, 0);
+  const form = new FormData();
+  form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
+  form.append('right-eye', new File([buf], 'r.jpg', { type: 'image/jpeg' }));
+  form.append('USER_PROFILE', JSON.stringify({ age: 35, digestion: ['Киселини'] }));
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+
+  let stored;
+  const env = {
+    AI_PROVIDER: 'openai',
+    openai_api_key: 'k',
+    iris_rag_kv: {
+      get: async (key) => {
+        if (key === 'AI_MODEL') return 'gpt-4o';
+        if (key === 'ROLE_PROMPT') return { prompt: '' };
+        if (key === 'DISPOSITION_NERVOUS') return {};
+        if (key === 'grouped:findings') return { DISPOSITION_NERVOUS: { aliases: ['нервна система'] } };
+        if (key === 'grouped:links' || key === 'grouped:advice') return {};
+        if (key === 'USER_PROFILE') return stored ? JSON.parse(stored) : null;
+        return null;
+      },
+      put: async (key, value) => { if (key === 'USER_PROFILE') stored = value; }
+    }
+  };
+  globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+
+  const responses = [
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify(['нервна система']) } }] }),
+    JSON.stringify({ choices: [{ message: { content: JSON.stringify({ holistic_analysis: 'ok' }) } }] })
+  ];
+  const bodies = [];
+  let idx = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    bodies.push(JSON.parse(init.body));
+    return new Response(responses[idx++], { status: 200 });
+  };
+
+  const res = await worker.fetch(req, env);
+
+  globalThis.fetch = originalFetch;
+  delete globalThis.caches;
+
+  assert.equal(res.status, 200);
+  assert.deepEqual(JSON.parse(stored), { age: 35, digestion: ['Киселини'] });
+  assert.ok(JSON.stringify(bodies[1]).includes('Киселини'));
+});
+

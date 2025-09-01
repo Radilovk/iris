@@ -694,6 +694,16 @@ async function handleAnalysisRequest(request, env) {
         const digestionOther = formData.get("digestion-other");
         if (digestionOther) digestion.push(digestionOther);
 
+        const profileRaw = formData.get("USER_PROFILE");
+        let storedProfile = {};
+        if (profileRaw) {
+            try {
+                storedProfile = JSON.parse(profileRaw);
+            } catch (e) {
+                log("Невалиден JSON в USER_PROFILE:", e.message);
+            }
+        }
+
         const gender = formData.get("gender");
         const userData = {
             name: formData.get("name"),
@@ -710,6 +720,16 @@ async function handleAnalysisRequest(request, env) {
             digestive: digestion,
         };
         if (gender !== "Мъж" && gender !== "Жена") userData.gender = "";
+        if (storedProfile && typeof storedProfile === 'object') {
+            Object.assign(userData, storedProfile);
+        }
+        if (env.iris_rag_kv) {
+            try {
+                await env.iris_rag_kv.put('USER_PROFILE', JSON.stringify(storedProfile));
+            } catch (e) {
+                log('Неуспешен запис на USER_PROFILE:', e.message);
+            }
+        }
         const leftEyeUrl = leftEyeFile ? await uploadImageAndGetUrl(leftEyeFile, env) : null;
         const rightEyeUrl = rightEyeFile ? await uploadImageAndGetUrl(rightEyeFile, env) : null;
         const leftEyeImage = !leftEyeUrl && leftEyeFile ? await fileToBase64(leftEyeFile, env) : null;
@@ -780,9 +800,19 @@ async function handleAnalysisRequest(request, env) {
             log("Пропуснато извличане на публични източници");
         }
 
+        let loadedProfile = {};
+        if (env.iris_rag_kv) {
+            try {
+                loadedProfile = await env.iris_rag_kv.get('USER_PROFILE', 'json') || {};
+            } catch (e) {
+                log('Неуспешно зареждане на USER_PROFILE:', e.message);
+            }
+        }
+        ragData.USER_PROFILE = loadedProfile;
+
         log("Стъпка 3: Изпращане на заявка за финален синтез...");
         const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
-            .replace('{{USER_DATA}}', formatUserData(userData))
+            .replace('{{USER_DATA}}', formatUserData({ ...userData, ...loadedProfile }))
             .replace('{{RAG_DATA}}', JSON.stringify(ragData, null, 2));
 
         const synthesisApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
