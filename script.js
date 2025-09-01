@@ -237,6 +237,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (leftFile) formData.set('left-eye-upload', leftFile, leftFile.name);
         if (rightFile) formData.set('right-eye-upload', rightFile, rightFile.name);
 
+        // Извличаме профилни данни и ги записваме като отделен ключ
+        const profile = {
+            age: formData.get('age'),
+            digestion: (() => {
+                const arr = formData.getAll('digestion');
+                const other = formData.get('digestion-other');
+                if (other) arr.push(other);
+                return arr;
+            })()
+        };
+        formData.set('USER_PROFILE', JSON.stringify(profile));
+
         const storedForm = {};
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
