@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias } from './worker.js';
+import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias, getIdentificationPrompt, getSynthesisPromptTemplate, resetPromptCache } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 import { validateRagKeys } from './validate-rag-keys.js';
 
@@ -18,6 +18,43 @@ test('ROLE_PROMPT съдържа ключ missing_data', () => {
 
 test('kv-data съдържа очакваните RAG ключове', () => {
   validateRagKeys();
+});
+
+test('промптовете се кешират и използват при липса на KV', async () => {
+  const store = new Map();
+  globalThis.caches = {
+    default: {
+      match: async req => store.get(req.url) || null,
+      put: async (req, res) => { store.set(req.url, res); }
+    }
+  };
+  const env = {
+    iris_rag_kv: {
+      get: async key => {
+        if (key === 'IDENTIFICATION_PROMPT') return 'ID_FROM_KV';
+        if (key === 'SYNTHESIS_PROMPT_TEMPLATE') return 'SYN_FROM_KV';
+        return null;
+      }
+    }
+  };
+  const firstId = await getIdentificationPrompt(env);
+  const firstSyn = await getSynthesisPromptTemplate(env);
+  assert.equal(firstId, 'ID_FROM_KV');
+  assert.equal(firstSyn, 'SYN_FROM_KV');
+  resetPromptCache();
+  const cachedId = await getIdentificationPrompt({});
+  const cachedSyn = await getSynthesisPromptTemplate({});
+  assert.equal(cachedId, 'ID_FROM_KV');
+  assert.equal(cachedSyn, 'SYN_FROM_KV');
+  delete globalThis.caches;
+});
+
+test('getIdentificationPrompt връща стойност по подразбиране без KV', async () => {
+  globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+  resetPromptCache();
+  const prompt = await getIdentificationPrompt({});
+  assert.ok(prompt.includes('# ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ'));
+  delete globalThis.caches;
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {

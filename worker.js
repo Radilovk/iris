@@ -279,7 +279,7 @@ async function getGrouped(env) {
 }
 
 // --- ПРОМПТОВЕ ---
-const IDENTIFICATION_PROMPT = `
+const DEFAULT_IDENTIFICATION_PROMPT = `
 # ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
 Ти си AI асистент, специализиран в разпознаването на ирисови знаци. Разгледай предоставените снимки на ляво и дясно око.
 Твоята ЕДИНСТВЕНА задача е да идентифицираш всички значими конституционални типове, предразположения, диатези, специфични знаци,
@@ -293,7 +293,7 @@ const IDENTIFICATION_PROMPT = `
 `;
 
 // КОРЕКЦИЯ #1: Премахната е директната референция към "ROLE_PROMPT"
-const SYNTHESIS_PROMPT_TEMPLATE = `
+const DEFAULT_SYNTHESIS_PROMPT_TEMPLATE = `
 # ЗАДАЧА: ФИНАЛЕН СИНТЕЗ
 Ти получи системни инструкции за твоята роля. Сега, анализирай предоставените данни и генерирай цялостен холистичен анализ в JSON формат, както е дефинирано в твоите инструкции.
 
@@ -322,6 +322,67 @@ const SYNTHESIS_PROMPT_TEMPLATE = `
   ]
 }
 `;
+
+const promptCache = {};
+
+async function fetchPrompt(key, fallback, env = {}) {
+    if (promptCache[key]) return promptCache[key];
+
+    const cache = globalThis.caches?.default;
+    const cacheReq = new Request(`https://prompt-cache/${key}`);
+    const ttl = parseInt(env.PROMPT_CACHE_TTL, 10) || 3600;
+
+    let value;
+    if (env.iris_rag_kv) {
+        try {
+            const v = await env.iris_rag_kv.get(key);
+            if (typeof v === 'string' && v.trim()) {
+                value = v;
+            }
+        } catch (e) {
+            console.warn(`Неуспешно извличане на ${key} от KV:`, e);
+        }
+    }
+
+    if (!value && cache) {
+        try {
+            const cached = await cache.match(cacheReq);
+            if (cached) {
+                value = await cached.text();
+            }
+        } catch (e) {
+            console.warn(`Грешка при четене от кеша за ${key}:`, e);
+        }
+    }
+
+    if (!value) {
+        value = fallback;
+    }
+
+    promptCache[key] = value;
+    if (cache) {
+        try {
+            await cache.put(cacheReq, new Response(value, { headers: { 'Cache-Control': `max-age=${ttl}` } }));
+        } catch (e) {
+            console.warn(`Грешка при запис в кеша за ${key}:`, e);
+        }
+    }
+
+    return value;
+}
+
+export async function getIdentificationPrompt(env = {}) {
+    return fetchPrompt('IDENTIFICATION_PROMPT', DEFAULT_IDENTIFICATION_PROMPT, env);
+}
+
+export async function getSynthesisPromptTemplate(env = {}) {
+    return fetchPrompt('SYNTHESIS_PROMPT_TEMPLATE', DEFAULT_SYNTHESIS_PROMPT_TEMPLATE, env);
+}
+
+export function resetPromptCache() {
+    delete promptCache.IDENTIFICATION_PROMPT;
+    delete promptCache.SYNTHESIS_PROMPT_TEMPLATE;
+}
 
 // --- ОСНОВЕН КОНТРОЛЕР ---
 export default {
@@ -732,9 +793,10 @@ async function handleAnalysisRequest(request, env) {
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
+        const identificationPrompt = await getIdentificationPrompt(env);
         const keysResponse = await identificationApiCaller(
             model,
-            IDENTIFICATION_PROMPT,
+            identificationPrompt,
             { jsonSchema: RAG_KEYS_JSON_SCHEMA },
             leftEyeImage,
             rightEyeImage,
@@ -805,7 +867,8 @@ async function handleAnalysisRequest(request, env) {
         ragData.USER_PROFILE = loadedProfile;
 
         log("Стъпка 3: Изпращане на заявка за финален синтез...");
-        const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
+        const synthesisTemplate = await getSynthesisPromptTemplate(env);
+        const synthesisPrompt = synthesisTemplate
             .replace('{{USER_DATA}}', formatUserData({ ...userData, ...loadedProfile }))
             .replace('{{RAG_DATA}}', JSON.stringify(ragData, null, 2));
 
@@ -1014,7 +1077,8 @@ export async function generateSummary(signs, ragRecords, env = {}, rolePrompt, a
     const provider = await getAIProvider(env);
     const model = await getAIModel(env);
 
-    const prompt = SYNTHESIS_PROMPT_TEMPLATE
+    const template = await getSynthesisPromptTemplate(env);
+    const prompt = template
         .replace('{{USER_DATA}}', JSON.stringify({ signs }, null, 2))
         .replace('{{RAG_DATA}}', JSON.stringify(ragRecords, null, 2));
 
