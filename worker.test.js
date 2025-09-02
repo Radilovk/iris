@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias } from './worker.js';
+import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias, verifyRagKeys } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 import { validateRagKeys } from './validate-rag-keys.js';
 
@@ -18,6 +18,11 @@ test('ROLE_PROMPT съдържа ключ missing_data', () => {
 
 test('kv-data съдържа очакваните RAG ключове', () => {
   validateRagKeys();
+});
+
+test('verifyRagKeys хвърля грешка при липсващи RAG ключове', async () => {
+  const env = { iris_rag_kv: { get: async () => null } };
+  await assert.rejects(() => verifyRagKeys(env), /Липсващи RAG ключове/);
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {
