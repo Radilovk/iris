@@ -1062,7 +1062,7 @@ function formatUserData(data) {
 }
 
 // Проверява дали изображението не надвишава максималния допустим размер.
-async function validateImageSize(file, env = {}, maxBytes = 10 * 1024 * 1024) {
+async function validateImageSize(file, env = {}, maxBytes = 20 * 1024 * 1024) {
     const log = (...args) => debugLog(env, ...args);
     log(`Валидиране на файл: ${file.name}, размер: ${file.size} байта.`);
     if (file.size > maxBytes) {
@@ -1076,8 +1076,13 @@ async function fileToBase64(blob, env = {}) {
     const arrayBuffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
-    let binary = "";
-    bytes.forEach(b => (binary += String.fromCharCode(b)));
+    const chunkSize = 0x8000;
+    const chunks = [];
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        chunks.push(String.fromCharCode(...chunk));
+    }
+    const binary = chunks.join('');
 
     // За текст с Unicode може да се използва:
     // btoa(unescape(encodeURIComponent(binary)))

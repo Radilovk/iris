@@ -21,7 +21,7 @@ test('kv-data съдържа очакваните RAG ключове', () => {
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {
-  const bigBuffer = Buffer.alloc(11 * 1024 * 1024, 0); // 11MB
+  const bigBuffer = Buffer.alloc(21 * 1024 * 1024, 0); // 21MB
   const bigFile = new File([bigBuffer], 'big.jpg', { type: 'image/jpeg' });
   await assert.rejects(() => validateImageSize(bigFile));
 });
