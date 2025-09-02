@@ -242,7 +242,15 @@ export function resolveAlias(key, group = {}) {
     return undefined;
 }
 
+let cachedRagKeys;
+
+function resetRagKeyCache() {
+    cachedRagKeys = undefined;
+}
+
 async function verifyRagKeys(env = {}) {
+    if (cachedRagKeys) return cachedRagKeys;
+
     const RAG = env.iris_rag_kv;
     if (!RAG) {
         const msg = "KV Namespace 'iris_rag_kv' не е свързан с този Worker.";
@@ -258,11 +266,12 @@ async function verifyRagKeys(env = {}) {
         console.warn(msg);
         throw new Error(msg);
     }
-    return {
+    cachedRagKeys = {
         findings: values[0],
         links: values[1],
         advice: values[2]
     };
+    return cachedRagKeys;
 }
 
 async function getGrouped(env) {
@@ -379,6 +388,7 @@ async function handleAdmin(request, env) {
     if (url.pathname === '/admin/cleanup' && request.method === 'POST') {
         const result = await cleanupKv(env);
         resetAnalysisJsonSchemaCache();
+        resetRagKeyCache();
         return new Response(JSON.stringify(result), {
             headers: corsHeaders(request, env, { 'Content-Type': 'application/json' })
         });
@@ -1228,4 +1238,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, verifyRagKeys };
+export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, verifyRagKeys, resetRagKeyCache };
