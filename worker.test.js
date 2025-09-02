@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias, verifyRagKeys } from './worker.js';
+import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias, verifyRagKeys, resetRagKeyCache } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 import { validateRagKeys } from './validate-rag-keys.js';
 
@@ -20,9 +20,37 @@ test('kv-data съдържа очакваните RAG ключове', () => {
   validateRagKeys();
 });
 
-test('verifyRagKeys хвърля грешка при липсващи RAG ключове', async () => {
+test('verifyRagKeys хвърля грешка при липсващи RAG ключове', { concurrency: 1 }, async () => {
+  resetRagKeyCache();
   const env = { iris_rag_kv: { get: async () => null } };
   await assert.rejects(() => verifyRagKeys(env), /Липсващи RAG ключове/);
+});
+
+test('verifyRagKeys кешира резултат и resetRagKeyCache нулира кеша', { concurrency: 1 }, async () => {
+  resetRagKeyCache();
+  let calls = 0;
+  const data = {
+    'grouped:findings': { a: 1 },
+    'grouped:links': { b: 2 },
+    'grouped:advice': { c: 3 }
+  };
+  const env = {
+    iris_rag_kv: {
+      get: async (key, type) => {
+        calls++;
+        assert.equal(type, 'json');
+        return data[key];
+      }
+    }
+  };
+  const first = await verifyRagKeys(env);
+  const second = await verifyRagKeys(env);
+  assert.equal(calls, 3);
+  assert.deepEqual(first, second);
+
+  resetRagKeyCache();
+  await verifyRagKeys(env);
+  assert.equal(calls, 6);
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {
@@ -603,6 +631,7 @@ test('/admin/sync изтрива празни стойности', async () => {
 });
 
 test('fetchRagData използва кеша при второ извикване', async () => {
+  resetRagKeyCache();
   const store = new Map();
   globalThis.caches = {
     default: {
@@ -630,6 +659,7 @@ test('fetchRagData използва кеша при второ извикван�
 });
 
 test('fetchRagData извлича само данни за DISPOSITION_ACIDITY', async () => {
+  resetRagKeyCache();
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
     iris_rag_kv: {
@@ -647,6 +677,7 @@ test('fetchRagData извлича само данни за DISPOSITION_ACIDITY',
 });
 
 test('fetchRagData извлича новите ключове', async () => {
+  resetRagKeyCache();
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
     iris_rag_kv: {
@@ -673,6 +704,7 @@ test('fetchRagData извлича новите ключове', async () => {
 });
 
 test('fetchRagData логва едно предупреждение за липсващи ключове', async () => {
+  resetRagKeyCache();
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = { iris_rag_kv: { get: async () => ({ findings: {} }) } };
   const warnings = [];
@@ -688,6 +720,7 @@ test('fetchRagData логва едно предупреждение за лип�
 
 test('handleAnalysisRequest преобразува алиасите към канонични ключове', { concurrency: 1 }, async () => {
   resetAnalysisJsonSchemaCache();
+  resetRagKeyCache();
   const buf = Buffer.alloc(10, 0);
   const form = new FormData();
   form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
