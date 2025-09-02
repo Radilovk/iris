@@ -242,10 +242,30 @@ export function resolveAlias(key, group = {}) {
     return undefined;
 }
 
-async function getGrouped(env) {
+async function verifyRagKeys(env = {}) {
     const RAG = env.iris_rag_kv;
-    if (!RAG) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
+    if (!RAG) {
+        const msg = "KV Namespace 'iris_rag_kv' не е свързан с този Worker.";
+        console.warn(msg);
+        throw new Error(msg);
+    }
+    const keys = ['grouped:findings', 'grouped:links', 'grouped:advice'];
+    const values = await Promise.all(keys.map(k => RAG.get(k, 'json')));
+    const missing = [];
+    values.forEach((v, i) => { if (v === null) missing.push(keys[i]); });
+    if (missing.length) {
+        const msg = `Липсващи RAG ключове: ${missing.join(', ')}`;
+        console.warn(msg);
+        throw new Error(msg);
+    }
+    return {
+        findings: values[0],
+        links: values[1],
+        advice: values[2]
+    };
+}
 
+async function getGrouped(env) {
     const cache = /** @type {any} */ (caches).default;
     const ttl = parseInt(env.RAG_CACHE_TTL, 10) || 300;
     const cacheReq = new Request('https://rag-cache/grouped');
@@ -261,11 +281,7 @@ async function getGrouped(env) {
     }
 
     if (!grouped) {
-        const [findings, links, advice] = await Promise.all([
-            RAG.get('grouped:findings', 'json'),
-            RAG.get('grouped:links', 'json'),
-            RAG.get('grouped:advice', 'json')
-        ]);
+        const { findings, links, advice } = await verifyRagKeys(env);
         grouped = {
             findings: findings || {},
             links: links || {},
@@ -1207,4 +1223,4 @@ function jsonError(message, status = 400, request, env, extraHeaders = {}) {
     });
 }
 
-export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache };
+export { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, callOpenAIAPI, callGeminiAPI, fetchExternalInfo, RAG_KEYS_JSON_SCHEMA, ANALYSIS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, verifyRagKeys };
