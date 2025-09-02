@@ -85,10 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Проверка за размер на файла (до 5MB)
-            const maxSize = 5 * 1024 * 1024;
+            // Проверка за размер на файла (до 20MB)
+            const maxSize = 20 * 1024 * 1024;
             if (file.size > maxSize) {
-                showError('Файлът трябва да е до 5MB.');
+                showError('Файлът трябва да е до 20MB.');
                 input.value = '';
                 if (fileNameEl) fileNameEl.textContent = '';
                 return;
