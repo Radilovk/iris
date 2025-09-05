@@ -242,6 +242,24 @@ export function resolveAlias(key, group = {}) {
     return undefined;
 }
 
+async function verifyRagKeys(env = {}) {
+    const RAG = env.iris_rag_kv;
+    if (!RAG) {
+        const msg = "KV Namespace 'iris_rag_kv' не е свързан с този Worker.";
+        console.warn(msg);
+        throw new Error(msg);
+    }
+    const required = ['grouped:findings', 'grouped:links', 'grouped:advice'];
+    const results = await Promise.all(required.map(k => RAG.get(k)));
+    const missing = required.filter((k, i) => results[i] === null);
+    if (missing.length) {
+        const msg = `Липсват задължителни RAG ключове: ${missing.join(', ')}`;
+        console.warn(msg);
+        throw new Error(msg);
+    }
+    return true;
+}
+
 async function getGrouped(env) {
     const RAG = env.iris_rag_kv;
     if (!RAG) throw new Error("KV Namespace 'iris_rag_kv' не е свързан с този Worker.");
@@ -729,6 +747,14 @@ async function handleAnalysisRequest(request, env) {
         const leftEyeImage = !leftEyeUrl && leftEyeFile ? await fileToBase64(leftEyeFile, env) : null;
         const rightEyeImage = !rightEyeUrl && rightEyeFile ? await fileToBase64(rightEyeFile, env) : null;
         log("Данните от формуляра са обработени успешно.");
+
+        try {
+            await verifyRagKeys(env);
+        } catch (e) {
+            log(e.message);
+            console.warn(e.message);
+            return jsonError(e.message, 500, request, env);
+        }
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
         const identificationApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;

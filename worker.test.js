@@ -366,7 +366,14 @@ test('handleAnalysisRequest връща контролирано съобщени
     new Response(JSON.stringify({ choices: [{ message: { content: 'няма json' } }] }), { status: 200 });
 
   const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
-  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k' };
+  const env = {
+    AI_PROVIDER: 'openai',
+    openai_api_key: 'k',
+    iris_rag_kv: {
+      get: async key => (key.startsWith('grouped:') ? {} : null),
+      put: async () => {}
+    }
+  };
   const res = await worker.fetch(req, env);
 
   assert.equal(res.status, 400);
@@ -390,7 +397,14 @@ test('handleAnalysisRequest връща грешка при отговор { erro
     );
 
   const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
-  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k' };
+  const env = {
+    AI_PROVIDER: 'openai',
+    openai_api_key: 'k',
+    iris_rag_kv: {
+      get: async key => (key.startsWith('grouped:') ? {} : null),
+      put: async () => {}
+    }
+  };
   const res = await worker.fetch(req, env);
 
   assert.equal(res.status, 400);
@@ -421,7 +435,14 @@ test('handleAnalysisRequest улавя грешка чрез наследено 
   };
 
   const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
-  const env = { AI_PROVIDER: 'openai', openai_api_key: 'k' };
+  const env = {
+    AI_PROVIDER: 'openai',
+    openai_api_key: 'k',
+    iris_rag_kv: {
+      get: async key => (key.startsWith('grouped:') ? {} : null),
+      put: async () => {}
+    }
+  };
   const res = await worker.fetch(req, env);
 
   JSON.parse = originalParse;
@@ -430,6 +451,22 @@ test('handleAnalysisRequest улавя грешка чрез наследено 
   assert.deepEqual(await res.json(), { error: 'AI грешка' });
 
   globalThis.fetch = originalFetch;
+});
+
+test('verifyRagKeys връща грешка при липсващи grouped ключове', async () => {
+  const buf = Buffer.alloc(10, 0);
+  const form = new FormData();
+  form.append('left-eye', new File([buf], 'l.jpg', { type: 'image/jpeg' }));
+  const req = new Request('https://example.com/analyze', { method: 'POST', body: form });
+  const env = {
+    AI_PROVIDER: 'openai',
+    openai_api_key: 'k',
+    iris_rag_kv: { get: async () => null }
+  };
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 500);
+  const body = await res.json();
+  assert.match(body.error, /Липсват задължителни RAG ключове/);
 });
 
 test('/admin/keys връща списък с ключове', async () => {
