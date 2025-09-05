@@ -30,6 +30,8 @@ test('verifyRagKeys хвърля грешка при липсващи RAG клю
       'grouped:extra1',
       'grouped:extra2'
     ]),
+    RAG_MIN_KEYS: '3',
+    RAG_MAX_KEYS: '5',
     iris_rag_kv: { get: async () => null }
   };
   await assert.rejects(() => verifyRagKeys(env), /Липсващи RAG ключове/);
@@ -48,11 +50,16 @@ test('verifyRagKeys кешира резултат и resetRagKeyCache нулир
   const keys = Object.keys(data);
   const env = {
     RAG_GROUP_KEYS: JSON.stringify(keys),
+    RAG_MIN_KEYS: '3',
+    RAG_MAX_KEYS: '5',
     iris_rag_kv: {
       get: async (key, type) => {
         calls++;
-        assert.equal(type, 'json');
-        return data[key];
+        if (!['RAG_MIN_KEYS', 'RAG_MAX_KEYS'].includes(key)) {
+          assert.equal(type, 'json');
+          return data[key];
+        }
+        return null;
       }
     }
   };
@@ -64,6 +71,28 @@ test('verifyRagKeys кешира резултат и resetRagKeyCache нулир
   resetRagKeyCache();
   await verifyRagKeys(env);
   assert.equal(calls, keys.length * 2);
+});
+
+test('verifyRagKeys игнорира ключове без префикса grouped:', { concurrency: 1 }, async () => {
+  resetRagKeyCache();
+  const data = {
+    'grouped:findings': { a: 1 },
+    'other:skip': { b: 2 },
+    'grouped:links': { c: 3 }
+  };
+  const env = {
+    RAG_GROUP_KEYS: JSON.stringify(Object.keys(data)),
+    RAG_MIN_KEYS: '2',
+    RAG_MAX_KEYS: '5',
+    iris_rag_kv: {
+      get: async (key, type) => {
+        assert.equal(type, 'json');
+        return data[key] || null;
+      }
+    }
+  };
+  const result = await verifyRagKeys(env);
+  assert.deepEqual(result, { findings: { a: 1 }, links: { c: 3 } });
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {
@@ -674,6 +703,9 @@ test('fetchRagData използва кеша при второ извикван�
   };
   let kvCalls = 0;
   const env = {
+    RAG_GROUP_KEYS: JSON.stringify(['grouped:findings','grouped:links','grouped:advice']),
+    RAG_MIN_KEYS: '3',
+    RAG_MAX_KEYS: '5',
     iris_rag_kv: {
       get: async key => {
         kvCalls++;
@@ -695,6 +727,9 @@ test('fetchRagData извлича само данни за DISPOSITION_ACIDITY',
   resetRagKeyCache();
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
+    RAG_GROUP_KEYS: JSON.stringify(['grouped:findings','grouped:links','grouped:advice']),
+    RAG_MIN_KEYS: '3',
+    RAG_MAX_KEYS: '5',
     iris_rag_kv: {
       get: async key => {
         if (key === 'grouped:findings') {
@@ -713,6 +748,9 @@ test('fetchRagData извлича новите ключове', async () => {
   resetRagKeyCache();
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
   const env = {
+    RAG_GROUP_KEYS: JSON.stringify(['grouped:findings','grouped:links','grouped:advice']),
+    RAG_MIN_KEYS: '3',
+    RAG_MAX_KEYS: '5',
     iris_rag_kv: {
       get: async key => {
         if (key === 'grouped:advice') {
@@ -739,7 +777,12 @@ test('fetchRagData извлича новите ключове', async () => {
 test('fetchRagData логва едно предупреждение за липсващи ключове', async () => {
   resetRagKeyCache();
   globalThis.caches = { default: { match: async () => null, put: async () => {} } };
-  const env = { iris_rag_kv: { get: async () => ({ findings: {} }) } };
+  const env = {
+    RAG_GROUP_KEYS: JSON.stringify(['grouped:findings','grouped:links','grouped:advice']),
+    RAG_MIN_KEYS: '3',
+    RAG_MAX_KEYS: '5',
+    iris_rag_kv: { get: async () => ({ findings: {} }) }
+  };
   const warnings = [];
   const originalWarn = console.warn;
   console.warn = msg => warnings.push(msg);
@@ -763,6 +806,9 @@ test('handleAnalysisRequest преобразува алиасите към ка�
    const env = {
      AI_PROVIDER: 'openai',
      openai_api_key: 'k',
+     RAG_GROUP_KEYS: JSON.stringify(['grouped:findings','grouped:links','grouped:advice']),
+     RAG_MIN_KEYS: '3',
+     RAG_MAX_KEYS: '5',
      iris_rag_kv: {
        get: async key => {
         if (key === 'AI_MODEL') return 'gpt-4o';
@@ -871,6 +917,9 @@ test('handleAnalysisRequest пропуска извличането на пуб�
     const env = {
       AI_PROVIDER: 'openai',
       openai_api_key: 'k',
+      RAG_GROUP_KEYS: JSON.stringify(['grouped:findings','grouped:links','grouped:advice']),
+      RAG_MIN_KEYS: '3',
+      RAG_MAX_KEYS: '5',
       iris_rag_kv: {
         get: async key => {
           if (key === 'AI_MODEL') return 'gpt-4o';
@@ -914,6 +963,9 @@ test('handleAnalysisRequest съхранява USER_PROFILE и го подава
   const env = {
     AI_PROVIDER: 'openai',
     openai_api_key: 'k',
+    RAG_GROUP_KEYS: JSON.stringify(['grouped:findings','grouped:links','grouped:advice']),
+    RAG_MIN_KEYS: '3',
+    RAG_MAX_KEYS: '5',
     iris_rag_kv: {
       get: async (key) => {
         if (key === 'AI_MODEL') return 'gpt-4o';
