@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias, verifyRagKeys, resetRagKeyCache } from './worker.js';
+import worker, { validateImageSize, fileToBase64, uploadImageAndGetUrl, corsHeaders, getAIProvider, getAIModel, callOpenAIAPI, callGeminiAPI, fetchRagData, fetchExternalInfo, generateSummary, RAG_KEYS_JSON_SCHEMA, getAnalysisJsonSchema, resetAnalysisJsonSchemaCache, resolveAlias, verifyRagKeys, resetRagKeyCache, getIdentificationPrompt, getSynthesisPromptTemplate } from './worker.js';
 import { KV_DATA } from './kv-data.js';
 import { validateRagKeys } from './validate-rag-keys.js';
 
@@ -201,6 +201,20 @@ test('getAIModel игнорира празни или невалидни сто�
     AI_PROVIDER: 'openai'
   };
   assert.equal(await getAIModel(invalidEnv), 'gpt-4o');
+});
+
+test('getIdentificationPrompt чете от KV или използва стойност по подразбиране', async () => {
+  const env = { iris_rag_kv: { get: async () => ({ prompt: 'KV_PROMPT' }) } };
+  assert.equal(await getIdentificationPrompt(env), 'KV_PROMPT');
+  const fallback = await getIdentificationPrompt({});
+  assert.match(fallback, /ИДЕНТИФИКАЦИЯ НА ЗНАЦИ/);
+});
+
+test('getSynthesisPromptTemplate чете от KV или използва стойност по подразбиране', async () => {
+  const env = { iris_rag_kv: { get: async () => ({ prompt: 'KV_SYNTH' }) } };
+  assert.equal(await getSynthesisPromptTemplate(env), 'KV_SYNTH');
+  const fallback = await getSynthesisPromptTemplate({});
+  assert.match(fallback, /ФИНАЛЕН СИНТЕЗ/);
 });
 
 test('getAnalysisJsonSchema кешира резултата от KV', { concurrency: 1 }, async () => {

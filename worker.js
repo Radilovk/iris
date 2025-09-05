@@ -140,6 +140,28 @@ async function getRolePrompt(env = {}) {
     return DEFAULT_ROLE_PROMPT;
 }
 
+async function getPromptFromKV(env = {}, key, fallback) {
+    if (env.iris_rag_kv) {
+        try {
+            const data = await env.iris_rag_kv.get(key, 'json');
+            if (data && typeof data.prompt === 'string') {
+                return data.prompt;
+            }
+        } catch (e) {
+            console.warn(`Неуспешно извличане на ${key} от KV:`, e);
+        }
+    }
+    return fallback;
+}
+
+export async function getIdentificationPrompt(env = {}) {
+    return getPromptFromKV(env, 'IDENTIFICATION_PROMPT', DEFAULT_IDENTIFICATION_PROMPT);
+}
+
+export async function getSynthesisPromptTemplate(env = {}) {
+    return getPromptFromKV(env, 'SYNTHESIS_PROMPT_TEMPLATE', DEFAULT_SYNTHESIS_PROMPT_TEMPLATE);
+}
+
 // --- КОНФИГУРАЦИЯ ---
 // Чете AI_PROVIDER от environment с подразбиране към "gemini"
 export async function getAIProvider(env = {}) {
@@ -304,7 +326,7 @@ async function getGrouped(env) {
 }
 
 // --- ПРОМПТОВЕ ---
-const IDENTIFICATION_PROMPT = `
+const DEFAULT_IDENTIFICATION_PROMPT = `
 # ЗАДАЧА: ИДЕНТИФИКАЦИЯ НА ЗНАЦИ
 Ти си AI асистент, специализиран в разпознаването на ирисови знаци. Разгледай предоставените снимки на ляво и дясно око.
 Твоята ЕДИНСТВЕНА задача е да идентифицираш всички значими конституционални типове, предразположения, диатези, специфични знаци,
@@ -318,7 +340,7 @@ const IDENTIFICATION_PROMPT = `
 `;
 
 // КОРЕКЦИЯ #1: Премахната е директната референция към "ROLE_PROMPT"
-const SYNTHESIS_PROMPT_TEMPLATE = `
+const DEFAULT_SYNTHESIS_PROMPT_TEMPLATE = `
 # ЗАДАЧА: ФИНАЛЕН СИНТЕЗ
 Ти получи системни инструкции за твоята роля. Сега, анализирай предоставените данни и генерирай цялостен холистичен анализ в JSON формат, както е дефинирано в твоите инструкции.
 
@@ -757,10 +779,11 @@ async function handleAnalysisRequest(request, env) {
         log("Данните от формуляра са обработени успешно.");
 
         log("Стъпка 1: Изпращане на заявка за идентификация на знаци...");
+        const identificationPrompt = await getIdentificationPrompt(env);
         const identificationApiCaller = provider === "gemini" ? callGeminiAPI : callOpenAIAPI;
         const keysResponse = await identificationApiCaller(
             model,
-            IDENTIFICATION_PROMPT,
+            identificationPrompt,
             { jsonSchema: RAG_KEYS_JSON_SCHEMA },
             leftEyeImage,
             rightEyeImage,
@@ -831,7 +854,8 @@ async function handleAnalysisRequest(request, env) {
         ragData.USER_PROFILE = loadedProfile;
 
         log("Стъпка 3: Изпращане на заявка за финален синтез...");
-        const synthesisPrompt = SYNTHESIS_PROMPT_TEMPLATE
+        const synthesisTemplate = await getSynthesisPromptTemplate(env);
+        const synthesisPrompt = synthesisTemplate
             .replace('{{USER_DATA}}', formatUserData({ ...userData, ...loadedProfile }))
             .replace('{{RAG_DATA}}', JSON.stringify(ragData, null, 2));
 
@@ -1039,8 +1063,8 @@ export async function fetchRagData(keys, env, grouped) {
 export async function generateSummary(signs, ragRecords, env = {}, rolePrompt, analysisSchema) {
     const provider = await getAIProvider(env);
     const model = await getAIModel(env);
-
-    const prompt = SYNTHESIS_PROMPT_TEMPLATE
+    const synthesisTemplate = await getSynthesisPromptTemplate(env);
+    const prompt = synthesisTemplate
         .replace('{{USER_DATA}}', JSON.stringify({ signs }, null, 2))
         .replace('{{RAG_DATA}}', JSON.stringify(ragRecords, null, 2));
 
