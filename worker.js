@@ -1087,8 +1087,14 @@ function formatUserData(data) {
     `;
 }
 
+const DEFAULT_MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
 // Проверява дали изображението не надвишава максималния допустим размер.
-async function validateImageSize(file, env = {}, maxBytes = 20 * 1024 * 1024) {
+async function validateImageSize(file, env = {}) {
+    const maxBytes =
+        typeof env.MAX_IMAGE_BYTES !== 'undefined'
+            ? Number(env.MAX_IMAGE_BYTES)
+            : DEFAULT_MAX_IMAGE_BYTES;
     const log = (...args) => debugLog(env, ...args);
     log(`Валидиране на файл: ${file.name}, размер: ${file.size} байта.`);
     if (file.size > maxBytes) {

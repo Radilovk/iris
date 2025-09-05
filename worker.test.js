@@ -59,6 +59,12 @@ test('validateImageSize връща грешка при твърде голям �
   await assert.rejects(() => validateImageSize(bigFile));
 });
 
+test('validateImageSize уважава MAX_IMAGE_BYTES от env', async () => {
+  const buffer = Buffer.alloc(2 * 1024 * 1024, 0); // 2MB
+  const file = new File([buffer], 'env.jpg', { type: 'image/jpeg' });
+  await assert.rejects(() => validateImageSize(file, { MAX_IMAGE_BYTES: 1 * 1024 * 1024 }));
+});
+
 test('fileToBase64 работи за малък файл', async () => {
   const smallBuffer = Buffer.alloc(1024 * 1024, 0); // 1MB
   const smallFile = new File([smallBuffer], 'small.jpg', { type: 'image/jpeg' });
