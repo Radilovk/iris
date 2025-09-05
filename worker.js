@@ -193,7 +193,7 @@ export async function getAIModel(env = {}) {
     return provider === 'openai' ? 'gpt-4o' : 'gemini-1.5-pro';
 }
 
-// Гарантира присъствието на задължителните полета в схемата
+// Гарантира присъствието на ключови полета, но не ги маркира като задължителни
 function ensureAnalysisSchema(schema = {}) {
     if (!schema.properties) schema.properties = {};
     for (const key of ['summary', 'recommendations', 'holistic_analysis']) {
@@ -201,12 +201,7 @@ function ensureAnalysisSchema(schema = {}) {
             schema.properties[key] = { type: 'string' };
         }
     }
-    if (!Array.isArray(schema.required)) schema.required = [];
-    for (const key of ['summary', 'recommendations', 'holistic_analysis']) {
-        if (!schema.required.includes(key)) {
-            schema.required.push(key);
-        }
-    }
+    // Оставяме дефиницията на "required" на подадената схема
     return schema;
 }
 
@@ -662,7 +657,6 @@ const ANALYSIS_JSON_SCHEMA = {
             recommendations: { type: 'string' },
             holistic_analysis: { type: 'string' }
         },
-        required: ['summary', 'recommendations', 'holistic_analysis'],
         additionalProperties: true
     }
 };
