@@ -44,8 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Показване на съобщение за зареждане, докато се обработват данните
     reportCard.innerHTML = `<div class="loading-box"><i class="fas fa-spinner fa-spin"></i> Генериране на доклада...</div>`;
 
-    // Дефинираме конфигурация за всяка секция от доклада
-    // Това прави кода по-лесен за поддръжка и превод
+    // Конфигурация по подразбиране за познати ключове
     const reportSectionsConfig = {
         "summary": { title: "Общо Резюме", icon: "fa-heart-pulse" },
         "constitution": { title: "Конституционални Характеристики", icon: "fa-shield-halved" },
@@ -68,10 +67,10 @@ document.addEventListener('DOMContentLoaded', function () {
             reportCard.innerHTML = '';
             let disclaimer = '';
 
-            // Обхождаме конфигурацията, за да подредим секциите в правилния ред
-            Object.keys(reportSectionsConfig).forEach(key => {
+            // Обхождаме всички ключове, върнати от AI
+            Object.keys(data).forEach(key => {
                 const value = data[key];
-                if (!value) return; // Ако AI не е върнал такъв ключ, пропускаме го
+                if (!value) return;
 
                 // Проверяваме дали стойността съдържа дисклеймъра и я отделяме
                 if (typeof value === 'string' && value.includes("Важно:")) {
@@ -79,20 +78,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     return; // Не го рендираме като нормална секция
                 }
 
-                const config = reportSectionsConfig[key];
-                const wrapper = config.collapsible ? document.createElement('details') : document.createElement('div');
+                const cfg = reportSectionsConfig[key] || { title: key.replace(/_/g, ' '), icon: 'fa-circle-info' };
+                const wrapper = cfg.collapsible ? document.createElement('details') : document.createElement('div');
                 wrapper.className = 'report-section';
 
                 let contentContainer = wrapper;
-                if (config.collapsible) {
+                if (cfg.collapsible) {
                     const summary = document.createElement('summary');
-                    summary.innerHTML = `<i class="fas ${config.icon}"></i> ${config.title}`;
+                    summary.innerHTML = `<i class="fas ${cfg.icon}"></i> ${DOMPurify.sanitize(cfg.title)}`;
                     wrapper.appendChild(summary);
                     contentContainer = document.createElement('div');
                     wrapper.appendChild(contentContainer);
                 } else {
                     const titleEl = document.createElement('h3');
-                    titleEl.innerHTML = `<i class="fas ${config.icon}"></i> ${config.title}`;
+                    titleEl.innerHTML = `<i class="fas ${cfg.icon}"></i> ${DOMPurify.sanitize(cfg.title)}`;
                     wrapper.appendChild(titleEl);
                 }
 

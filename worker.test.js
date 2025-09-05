@@ -217,7 +217,7 @@ test('getAnalysisJsonSchema кешира резултата от KV', { concurre
   const second = await getAnalysisJsonSchema(env);
   assert.equal(calls, 1);
   assert.deepEqual(first, second);
-  assert.deepEqual(first.schema.required.sort(), ['holistic_analysis', 'recommendations', 'summary']);
+  assert.deepEqual(first.schema.required.sort(), ['summary']);
   resetAnalysisJsonSchemaCache();
 });
 
@@ -231,7 +231,7 @@ test('getAnalysisJsonSchema използва структура от ENV', { con
   };
   const result = await getAnalysisJsonSchema(env);
   assert.equal(result.name, 'custom');
-  assert.deepEqual(result.schema.required.sort(), ['holistic_analysis', 'recommendations', 'summary']);
+  assert.deepEqual(result.schema.required.sort(), ['summary']);
   resetAnalysisJsonSchemaCache();
 });
 
@@ -824,7 +824,7 @@ test('generateSummary приема custom json_schema', { concurrency: 1 }, asyn
   globalThis.fetch = originalFetch;
   const sent = bodies[0].response_format.json_schema;
   assert.equal(sent.name, 'custom');
-  assert.deepEqual(sent.schema.required.sort(), ['extra', 'holistic_analysis', 'recommendations', 'summary']);
+  assert.deepEqual(sent.schema.required.sort(), ['extra']);
   resetAnalysisJsonSchemaCache();
 });
 
