@@ -257,20 +257,44 @@ async function verifyRagKeys(env = {}) {
         console.warn(msg);
         throw new Error(msg);
     }
-    const keys = ['grouped:findings', 'grouped:links', 'grouped:advice'];
+    let keys;
+    if (env.RAG_GROUP_KEYS) {
+        try {
+            keys = typeof env.RAG_GROUP_KEYS === 'string' ? JSON.parse(env.RAG_GROUP_KEYS) : env.RAG_GROUP_KEYS;
+        } catch (e) {
+            console.warn('Невалиден RAG_GROUP_KEYS:', e);
+        }
+    }
+    if (!Array.isArray(keys) || !keys.length) {
+        try {
+            const kvKeys = await RAG.get('RAG_GROUP_KEYS', 'json');
+            if (Array.isArray(kvKeys)) keys = kvKeys;
+        } catch (e) {
+            console.warn('Неуспешно извличане на RAG_GROUP_KEYS от KV:', e);
+        }
+    }
+    if (!Array.isArray(keys) || keys.length < 5 || keys.length > 7) {
+        const msg = 'RAG_GROUP_KEYS трябва да съдържа 5-7 ключа';
+        console.warn(msg);
+        throw new Error(msg);
+    }
     const values = await Promise.all(keys.map(k => RAG.get(k, 'json')));
     const missing = [];
-    values.forEach((v, i) => { if (v === null) missing.push(keys[i]); });
+    const result = {};
+    values.forEach((v, i) => {
+        if (v === null) {
+            missing.push(keys[i]);
+        } else {
+            const prop = keys[i].split(':').pop();
+            result[prop] = v;
+        }
+    });
     if (missing.length) {
         const msg = `Липсващи RAG ключове: ${missing.join(', ')}`;
         console.warn(msg);
         throw new Error(msg);
     }
-    cachedRagKeys = {
-        findings: values[0],
-        links: values[1],
-        advice: values[2]
-    };
+    cachedRagKeys = result;
     return cachedRagKeys;
 }
 
@@ -290,12 +314,8 @@ async function getGrouped(env) {
     }
 
     if (!grouped) {
-        const { findings, links, advice } = await verifyRagKeys(env);
-        grouped = {
-            findings: findings || {},
-            links: links || {},
-            advice: advice || {}
-        };
+        grouped = await verifyRagKeys(env);
+        grouped = Object.fromEntries(Object.entries(grouped).map(([k, v]) => [k, v || {}]));
         await cache.put(cacheReq, new Response(JSON.stringify(grouped), {
             headers: { 'Cache-Control': `max-age=${ttl}` }
         }));
@@ -793,7 +813,7 @@ async function handleAnalysisRequest(request, env) {
             return jsonError('AI върна невалиден формат. Очакван JSON масив, напр.: ["нервна система","панкреас"]', 400, request, env);
         }
         const grouped = await getGrouped(env);
-        const groups = [grouped.findings || {}, grouped.links || {}, grouped.advice || {}];
+        const groups = Object.values(grouped);
         ragKeys = [...new Set(ragKeys.map(k => {
             for (const g of groups) {
                 const r = resolveAlias(k, g);

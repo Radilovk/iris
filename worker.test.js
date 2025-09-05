@@ -22,7 +22,16 @@ test('kv-data съдържа очакваните RAG ключове', () => {
 
 test('verifyRagKeys хвърля грешка при липсващи RAG ключове', { concurrency: 1 }, async () => {
   resetRagKeyCache();
-  const env = { iris_rag_kv: { get: async () => null } };
+  const env = {
+    RAG_GROUP_KEYS: JSON.stringify([
+      'grouped:findings',
+      'grouped:links',
+      'grouped:advice',
+      'grouped:extra1',
+      'grouped:extra2'
+    ]),
+    iris_rag_kv: { get: async () => null }
+  };
   await assert.rejects(() => verifyRagKeys(env), /Липсващи RAG ключове/);
 });
 
@@ -32,9 +41,13 @@ test('verifyRagKeys кешира резултат и resetRagKeyCache нулир
   const data = {
     'grouped:findings': { a: 1 },
     'grouped:links': { b: 2 },
-    'grouped:advice': { c: 3 }
+    'grouped:advice': { c: 3 },
+    'grouped:extra1': { d: 4 },
+    'grouped:extra2': { e: 5 }
   };
+  const keys = Object.keys(data);
   const env = {
+    RAG_GROUP_KEYS: JSON.stringify(keys),
     iris_rag_kv: {
       get: async (key, type) => {
         calls++;
@@ -45,12 +58,12 @@ test('verifyRagKeys кешира резултат и resetRagKeyCache нулир
   };
   const first = await verifyRagKeys(env);
   const second = await verifyRagKeys(env);
-  assert.equal(calls, 3);
+  assert.equal(calls, keys.length);
   assert.deepEqual(first, second);
 
   resetRagKeyCache();
   await verifyRagKeys(env);
-  assert.equal(calls, 6);
+  assert.equal(calls, keys.length * 2);
 });
 
 test('validateImageSize връща грешка при твърде голям файл', async () => {
