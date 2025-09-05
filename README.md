@@ -93,6 +93,20 @@ fetch(WORKER_URL, { method: 'POST', body: formData })
 }
 ```
 
+### Групирани ключове
+
+`verifyRagKeys` зарежда списък `RAG_GROUP_KEYS` и използва само елементи с префикс `grouped:` (може да се промени чрез `RAG_GROUP_PREFIX`).
+Допустимият им брой се контролира от променливите `RAG_MIN_KEYS` и `RAG_MAX_KEYS`, които се четат от `env` или от KV. По подразбиране се очакват между **3** и **5** ключа.
+
+**Пример**
+
+```toml
+[vars]
+RAG_GROUP_KEYS = '["grouped:findings","grouped:links","grouped:advice"]'
+RAG_MIN_KEYS = "2"
+RAG_MAX_KEYS = "4"
+```
+
 **Добавяне на нов запис**
 
 1. създайте `KV/SIGN_MY_KEY.json`;

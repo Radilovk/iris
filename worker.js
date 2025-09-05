@@ -274,10 +274,32 @@ async function verifyRagKeys(env = {}) {
         console.warn(msg);
         throw new Error(msg);
     }
+
+    // четене на лимитите от env или KV
+    let min = parseInt(env.RAG_MIN_KEYS, 10);
+    let max = parseInt(env.RAG_MAX_KEYS, 10);
+    if (Number.isNaN(min) || Number.isNaN(max)) {
+        try {
+            const [kvMin, kvMax] = await Promise.all([
+                Number.isNaN(min) ? RAG.get('RAG_MIN_KEYS') : null,
+                Number.isNaN(max) ? RAG.get('RAG_MAX_KEYS') : null
+            ]);
+            if (Number.isNaN(min) && kvMin) min = parseInt(kvMin, 10);
+            if (Number.isNaN(max) && kvMax) max = parseInt(kvMax, 10);
+        } catch (e) {
+            console.warn('Неуспешно извличане на RAG_MIN/MAX_KEYS от KV:', e);
+        }
+    }
+    if (Number.isNaN(min)) min = 3;
+    if (Number.isNaN(max)) max = 5;
+
+    const PREFIX = env.RAG_GROUP_PREFIX || 'grouped:';
+
     let keys;
     if (env.RAG_GROUP_KEYS) {
         try {
-            keys = typeof env.RAG_GROUP_KEYS === 'string' ? JSON.parse(env.RAG_GROUP_KEYS) : env.RAG_GROUP_KEYS;
+            const parsed = typeof env.RAG_GROUP_KEYS === 'string' ? JSON.parse(env.RAG_GROUP_KEYS) : env.RAG_GROUP_KEYS;
+            if (Array.isArray(parsed)) keys = parsed;
         } catch (e) {
             console.warn('Невалиден RAG_GROUP_KEYS:', e);
         }
@@ -290,8 +312,9 @@ async function verifyRagKeys(env = {}) {
             console.warn('Неуспешно извличане на RAG_GROUP_KEYS от KV:', e);
         }
     }
-    if (!Array.isArray(keys) || keys.length < 5 || keys.length > 7) {
-        const msg = 'RAG_GROUP_KEYS трябва да съдържа 5-7 ключа';
+    keys = Array.isArray(keys) ? keys.filter(k => typeof k === 'string' && k.startsWith(PREFIX)) : [];
+    if (keys.length < min || keys.length > max) {
+        const msg = `RAG_GROUP_KEYS трябва да съдържа ${min}-${max} ключа с префикс ${PREFIX}`;
         console.warn(msg);
         throw new Error(msg);
     }
