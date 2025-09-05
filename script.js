@@ -1,4 +1,4 @@
-import { WORKER_URL } from './config.js';
+import { WORKER_URL, MAX_IMAGE_BYTES } from './config.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     const formSteps = document.querySelectorAll('.form-step');
@@ -85,10 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Проверка за размер на файла (до 20MB)
-            const maxSize = 20 * 1024 * 1024;
+            // Проверка за размер на файла
+            const maxSize = MAX_IMAGE_BYTES;
+            const maxSizeMB = Math.round(maxSize / 1024 / 1024);
             if (file.size > maxSize) {
-                showError('Файлът трябва да е до 20MB.');
+                showError(`Файлът трябва да е до ${maxSizeMB}MB.`);
                 input.value = '';
                 if (fileNameEl) fileNameEl.textContent = '';
                 return;
