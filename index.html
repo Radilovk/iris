@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- ПРОМЯНА: Уверете се, че пътят до CSS файла е правилен -->
     <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
@@ -47,19 +46,19 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="name">Име:</label>
-                            <input type="text" id="name" name="name" required aria-required="true" aria-label="Име">
+                            <input type="text" id="name" name="name" required>
                         </div>
                         <div class="form-group">
                             <label for="age">Възраст:</label>
-                            <input type="number" id="age" name="age" required aria-required="true" aria-label="Възраст">
+                            <input type="number" id="age" name="age" required>
                         </div>
                         <div class="form-group">
                             <label for="height">Ръст (см):</label>
-                            <input type="number" id="height" name="height" aria-label="Ръст">
+                            <input type="number" id="height" name="height">
                         </div>
                         <div class="form-group">
                             <label for="weight">Килограми:</label>
-                            <input type="number" id="weight" name="weight" aria-label="Килограми">
+                            <input type="number" id="weight" name="weight">
                         </div>
                         <div class="form-group full-width">
                             <label for="gender">Пол:</label>
@@ -71,32 +70,28 @@
                         </div>
                         <div class="form-group full-width">
                             <label for="main-complaint">Основна причина за консултацията / Основни оплаквания:</label>
-                            <textarea id="main-complaint" name="main-complaint" rows="3" aria-label="Основни оплаквания" required aria-required="true"></textarea>
+                            <textarea id="main-complaint" name="main-complaint" rows="3" required></textarea>
                         </div>
                         <div class="form-group full-width">
                              <label>Претърпявали ли сте операции или сериозни травми?</label>
-                            <input type="text" id="surgeries" name="surgeries" placeholder="Ако да, опишете накратко (напр. апендектомия, фрактури)" aria-label="Претърпяни операции">
+                            <input type="text" id="surgeries" name="surgeries" placeholder="Ако да, опишете (напр. апендектомия)">
                         </div>
                         <div class="form-group full-width">
-                            <label>Фамилна анамнеза (сърдечни проблеми, диабет, рак и др.):</label>
-                            <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'" aria-label="Фамилна анамнеза">
+                            <label>Фамилна анамнеза (сърдечни проблеми, диабет и др.):</label>
+                            <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'">
                         </div>
-                        <!-- START: ПРЕМИНАВАНЕ КЪМ ЧЕКБОКСОВЕ -->
                         <div class="form-group full-width">
-                            <label>Оплаквания, свързани с храносмилането (изберете всички приложими):</label>
-                            <div class="checkbox-group" id="digestion-group">
+                            <label>Оплаквания, свързани с храносмилането:</label>
+                            <div class="checkbox-group">
                                 <label class="checkbox-item"><input type="checkbox" name="digestion" value="Запек"> Запек</label>
                                 <label class="checkbox-item"><input type="checkbox" name="digestion" value="Подуване"> Подуване</label>
                                 <label class="checkbox-item"><input type="checkbox" name="digestion" value="Киселини"> Киселини</label>
                                 <label class="checkbox-item"><input type="checkbox" name="digestion" value="Газове"> Газове</label>
                                 <label class="checkbox-item"><input type="checkbox" name="digestion" value="Диария"> Диария</label>
-                                <label class="checkbox-item"><input type="checkbox" id="digestion-other-checkbox"> Друго</label>
                             </div>
-                            <input type="text" id="digestion-other-text" name="digestion-other" placeholder="Опишете другото оплакване" style="display: none; margin-top: 0.5rem;">
                         </div>
-                        <!-- END: ПРЕМИНАВАНЕ КЪМ ЧЕКБОКСОВЕ -->
                     </div>
-                    <button type="button" class="btn btn-primary next-btn">Продължи към Стъпка 2 <i class="fas fa-arrow-right"></i></button>
+                    <button type="button" class="btn btn-primary next-btn">Продължи <i class="fas fa-arrow-right"></i></button>
                 </div>
 
                 <!-- СТЪПКА 2: ВЪПРОСНИК - НАЧИН НА ЖИВОТ -->
@@ -105,7 +100,7 @@
                     <div class="form-grid">
                          <div class="form-group full-width">
                             <label for="water">Прием на вода на ден:</label>
-                            <select id="water" name="water" required aria-label="Прием на вода">
+                            <select id="water" name="water" required>
                                 <option>Под 1 литър</option>
                                 <option selected>1-2 литра</option>
                                 <option>Над 2 литра</option>
@@ -113,17 +108,17 @@
                         </div>
                         <div class="form-group full-width">
                              <label for="sleep">Средно часове сън:</label>
-                            <input type="number" id="sleep" name="sleep" required aria-label="Средно часове сън" value="7">
+                            <input type="number" id="sleep" name="sleep" required value="7">
                         </div>
                         <div class="form-group full-width">
                             <label for="stress">Ниво на стрес (1-10):</label>
-                            <input type="range" id="stress" name="stress" min="1" max="10" value="5" oninput="this.nextElementSibling.value = this.value" required aria-label="Ниво на стрес">
+                            <input type="range" id="stress" name="stress" min="1" max="10" value="5" oninput="this.nextElementSibling.value = this.value" required>
                             <output>5</output>
                         </div>
                     </div>
                     <div class="button-group">
-                        <button type="button" class="btn btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Предишна стъпка</button>
-                        <button type="button" class="btn btn-primary next-btn">Продължи към Стъпка 3 <i class="fas fa-arrow-right"></i></button>
+                        <button type="button" class="btn btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Назад</button>
+                        <button type="button" class="btn btn-primary next-btn">Продължи <i class="fas fa-arrow-right"></i></button>
                     </div>
                 </div>
 
@@ -131,38 +126,43 @@
                 <div class="form-step" data-step="3">
                     <h3>Стъпка 3: Качете снимки на вашите очи</h3>
                     <div class="upload-instructions">
-                        <i class="fas fa-camera"></i>
                         <h4>Инструкции за перфектната снимка:</h4>
                         <ul>
                             <li><i class="fas fa-check-circle"></i> Използвайте <strong>задната камера</strong> на телефона си.</li>
-                            <li><i class="fas fa-check-circle"></i> Включете **светкавицата (режим 'фенерче')** под ъгъл.</li>
-                            <li><i class="fas fa-check-circle"></i> Приближете максимално, докато ирисът е на фокус.</li>
-                            <li><i class="fas fa-check-circle"></i> Дръжте клепачите широко отворени.</li>
+                            <li><i class="fas fa-check-circle"></i> Включете <strong>светкавицата</strong> под ъгъл, за да избегнете отблясъци.</li>
+                            <li><i class="fas fa-check-circle"></i> Приближете максимално, докато ирисът е <strong>на фокус</strong>.</li>
                         </ul>
-                        <!-- START: ВИЗУАЛНИ ПРИМЕРИ -->
-                        <div class="photo-examples-container">
-                            <div class="photo-example">
-                                <img src="https://i.ibb.co/L6z4x2B/good-example.jpg" alt="Правилна снимка на ирис">
-                                <p>✅ <strong>Правилно:</strong> Ясна, на фокус, без отблясъци</p>
-                            </div>
-                            <div class="photo-example">
-                                <img src="https://i.ibb.co/3WfNf2Q/bad-example.jpg" alt="Грешна снимка на ирис">
-                                <p>❌ <strong>Грешно:</strong> Размазана, с отблясък, тъмна</p>
-                            </div>
-                        </div>
-                        <!-- END: ВИЗУАЛНИ ПРИМЕРИ -->
                     </div>
                     <div class="upload-area-container">
-                        <div class="upload-area">
+                        <div class="upload-area form-group">
                             <label for="left-eye-upload">Ляво око</label>
-                            <input type="file" id="left-eye-upload" name="left-eye-upload" accept="image/*" required aria-required="true" aria-label="Ляво око - качване на снимка">
+                            <input type="file" id="left-eye-upload" name="left-eye-upload" accept="image/*" required>
                             <div class="upload-preview" id="left-eye-preview"><i class="fas fa-eye"></i><p>Качи снимка</p></div>
-                            <span class="file-name"></span>
                         </div>
-                        <div class="upload-area">
+                        <div class="upload-area form-group">
                             <label for="right-eye-upload">Дясно око</label>
-                            <input type="file" id="right-eye-upload" name="right-eye-upload" accept="image/*" required aria-required="true" aria-label="Дясно око - качване на снимка">
+                            <input type="file" id="right-eye-upload" name="right-eye-upload" accept="image/*" required>
                             <div class="upload-preview" id="right-eye-preview"><i class="fas fa-eye"></i><p>Качи снимка</p></div>
-                            <span class="file-name"></span>
                         </div>
-                 
+                    </div>
+                    <div class="disclaimer-note">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Този анализ е предназначен за образователни цели и не представлява медицинска диагноза.</p>
+                    </div>
+                    <div class="button-group">
+                         <button type="button" class="btn btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Назад</button>
+                        <button type="submit" class="btn btn-primary submit-btn">Изпрати за анализ <i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </form>
+            <div id="message-box">
+                 <div class="progress-bar-container" style="display: none;">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="message-content"></div>
+            </div>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
