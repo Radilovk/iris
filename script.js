@@ -1,6 +1,6 @@
 // --- КОНФИГУРАЦИЯ ---
 const WORKER_URL = 'https://iris.radilov-k.workers.dev/'; // URL на вашия Cloudflare Worker
-const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15MB - Увеличен лимит за оригиналния файл
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15MB - Лимит за оригиналния файл
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('iridology-form');
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- СЪОБЩЕНИЯ И ВАЛИДАЦИЯ ---
+    // --- СЪОБЩЕНИЯ И ВАЛИДАЦИЯ (КОРИГИРАНА) ---
     function showMessage(message, type = 'info') {
         if (!messageContent) return;
         messageContent.textContent = message;
@@ -105,17 +105,29 @@ document.addEventListener('DOMContentLoaded', function() {
         return isValid;
     }
     
+    // *** КОРЕКЦИЯ: Тази функция сега скролва до грешката ***
     function validateStep(stepNumber) {
         clearMessage();
-        const stepFields = form.querySelector(`.form-step[data-step="${stepNumber}"]`).querySelectorAll('[required]');
-        let allValid = true;
-        stepFields.forEach(field => {
+        const stepContainer = form.querySelector(`.form-step[data-step="${stepNumber}"]`);
+        const stepFields = stepContainer.querySelectorAll('[required]');
+        let firstInvalidField = null;
+
+        for (const field of stepFields) {
             if (!validateField(field)) {
-                allValid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = field;
+                }
             }
-        });
-        if(!allValid) showMessage('Моля, попълнете всички задължителни полета.', 'error');
-        return allValid;
+        }
+        
+        if (firstInvalidField) {
+            showMessage('Моля, попълнете всички задължителни полета, оцветени в червено.', 'error');
+            // Скролваме до първото грешно поле, за да го покажем на потребителя
+            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+
+        return true;
     }
 
     form.querySelectorAll('[required]').forEach(field => {
@@ -162,6 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
+        // Проверяваме всички стъпки преди изпращане
         if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
 
         const submitBtn = this.querySelector('.submit-btn');
@@ -223,39 +236,4 @@ document.addEventListener('DOMContentLoaded', function() {
             progressBarContainer.style.display = 'none';
             showMessage('Възникна грешка: ' + error.message, 'error');
             submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Изпрати за анализ <i class="fas fa-paper-plane"></i>';
-        }
-    });
-});
-
-/**
- * Интелигентно оптимизира изображението:
- * 1. Преоразмерява го до максимална страна 1024px.
- * 2. Запазва го в lossless PNG формат, за да гарантира 100% запазване на качеството.
- * @param {File} file - Оригиналният файл с изображение.
- * @param {number} maxSize - Максималният размер на по-дългата страна (ширина или височина).
- * @returns {Promise<File>} - Оптимизираният файл.
- */
-async function optimizeImage(file, maxSize = 1024) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onerror = reject;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            URL.revokeObjectURL(img.src);
-
-            // Запазваме в PNG формат за 100% без загуба на качество след преоразмеряването
-            canvas.toBlob(blob => {
-                if (!blob) return reject(new Error('Оптимизацията на изображението е неуспешна.'));
-                const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.png'), { type: 'image/png' });
-                resolve(newFile);
-            }, 'image/png');
-        };
-    });
-}
+            submitBtn.innerHTML = 'Изпрати за анализ <i class="fas fa-paper-plane"></i
