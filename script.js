@@ -3,48 +3,40 @@ const WORKER_URL = 'https://iris.radilov-k.workers.dev/'; // URL на вашия
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15MB - Лимит за оригиналния файл
 
 document.addEventListener('DOMContentLoaded', function() {
+    // --- ЕЛЕМЕНТИ ---
     const form = document.getElementById('iridology-form');
     if (!form) return;
 
-    // --- ЕЛЕМЕНТИ ---
     const formSteps = form.querySelectorAll('.form-step');
     const nextBtns = form.querySelectorAll('.next-btn');
     const prevBtns = form.querySelectorAll('.prev-btn');
     const stepperSteps = form.querySelectorAll('.step');
-    
     const messageBox = document.getElementById('message-box');
     const messageContent = messageBox.querySelector('.message-content');
     const progressBarContainer = messageBox.querySelector('.progress-bar-container');
     const progressBar = messageBox.querySelector('.progress-bar');
-    
-    const otherCheckbox = document.getElementById('digestion-other-checkbox');
-    const otherText = document.getElementById('digestion-other-text');
 
-    // --- УПРАВЛЕНИЕ НА СТЪПКИТЕ ---
     let currentStep = 1;
 
-    function updateStepper() {
+    // --- ОСНОВНА ЛОГИКА ЗА НАВИГАЦИЯ ---
+    function showStep(stepNumber) {
+        currentStep = stepNumber;
+        formSteps.forEach(step => step.classList.remove('active'));
+        form.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+
         stepperSteps.forEach((step, index) => {
-            const stepNumber = index + 1;
             step.classList.remove('active', 'completed');
-            if (stepNumber === currentStep) {
+            if (index + 1 === currentStep) {
                 step.classList.add('active');
-            } else if (stepNumber < currentStep) {
+            } else if (index + 1 < currentStep) {
                 step.classList.add('completed');
             }
         });
     }
 
-    function showStep(stepNumber) {
-        formSteps.forEach(step => step.classList.remove('active'));
-        document.querySelector(`.form-step[data-step="${stepNumber}"]`).classList.add('active');
-        currentStep = stepNumber;
-        updateStepper();
-    }
-
     nextBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            if (validateStep(currentStep) && currentStep < formSteps.length) {
+            if (validateCurrentStep() && currentStep < formSteps.length) {
                 showStep(currentStep + 1);
             }
         });
@@ -52,109 +44,93 @@ document.addEventListener('DOMContentLoaded', function() {
 
     prevBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            if (currentStep > 1) showStep(currentStep - 1);
+            if (currentStep > 1) {
+                showStep(currentStep - 1);
+            }
         });
     });
 
-    // --- ЛОГИКА ЗА ЧЕКБОКСОВЕ ---
-    if (otherCheckbox && otherText) {
-        otherCheckbox.addEventListener('change', () => {
-            const isChecked = otherCheckbox.checked;
-            otherText.style.display = isChecked ? 'block' : 'none';
-            if (isChecked) {
-                otherText.setAttribute('required', 'true');
+    // --- ВАЛИДАЦИЯ ---
+    function validateCurrentStep() {
+        const currentStepElement = form.querySelector(`.form-step[data-step="${currentStep}"]`);
+        const requiredFields = currentStepElement.querySelectorAll('[required]');
+        let isStepValid = true;
+        let firstInvalidField = null;
+
+        requiredFields.forEach(field => {
+            const parentGroup = field.closest('.form-group');
+            parentGroup.classList.remove('error');
+
+            let isFieldValid = true;
+            if (field.type === 'file') {
+                if (field.files.length === 0) isFieldValid = false;
             } else {
-                otherText.removeAttribute('required');
-                otherText.value = '';
-                validateField(otherText);
+                if (!field.value.trim()) isFieldValid = false;
+            }
+
+            if (!isFieldValid) {
+                isStepValid = false;
+                parentGroup.classList.add('error');
+                if (!firstInvalidField) firstInvalidField = field;
             }
         });
+
+        if (!isStepValid) {
+            showMessage('Моля, попълнете задължителните полета.', 'error');
+            if (firstInvalidField) {
+                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            clearMessage();
+        }
+
+        return isStepValid;
     }
 
-    // --- СЪОБЩЕНИЯ И ВАЛИДАЦИЯ (КОРИГИРАНА) ---
+    form.querySelectorAll('[required]').forEach(field => {
+        field.addEventListener('input', () => { if (field.value.trim()) field.closest('.form-group').classList.remove('error'); });
+        field.addEventListener('change', () => { if (field.value) field.closest('.form-group').classList.remove('error'); });
+    });
+
+    // --- СЪОБЩЕНИЯ ---
     function showMessage(message, type = 'info') {
-        if (!messageContent) return;
         messageContent.textContent = message;
-        messageContent.className = `message-content active`;
+        messageContent.className = 'message-content active';
         messageBox.className = `${type}-box`;
     }
 
     function clearMessage() {
-         if (!messageContent) return;
-         messageContent.textContent = '';
-         messageContent.className = 'message-content';
-         messageBox.className = '';
+        messageContent.textContent = '';
+        messageContent.className = 'message-content';
+        messageBox.className = '';
     }
 
-    function validateField(field) {
-        let isValid = true;
-        const parent = field.closest('.form-group') || field.parentElement;
-        parent.classList.remove('error');
-
-        if (field.hasAttribute('required')) {
-            if (field.type === 'file') {
-                isValid = field.files.length > 0;
-            } else {
-                isValid = field.value.trim() !== '';
-            }
-        }
-        
-        if (!isValid) {
-            parent.classList.add('error');
-        }
-        return isValid;
-    }
-    
-    // *** КОРЕКЦИЯ: Тази функция сега скролва до грешката ***
-    function validateStep(stepNumber) {
-        clearMessage();
-        const stepContainer = form.querySelector(`.form-step[data-step="${stepNumber}"]`);
-        const stepFields = stepContainer.querySelectorAll('[required]');
-        let firstInvalidField = null;
-
-        for (const field of stepFields) {
-            if (!validateField(field)) {
-                if (!firstInvalidField) {
-                    firstInvalidField = field;
-                }
-            }
-        }
-        
-        if (firstInvalidField) {
-            showMessage('Моля, попълнете всички задължителни полета, оцветени в червено.', 'error');
-            // Скролваме до първото грешно поле, за да го покажем на потребителя
-            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return false;
-        }
-
-        return true;
-    }
-
-    form.querySelectorAll('[required]').forEach(field => {
-        field.addEventListener('blur', () => validateField(field));
-        field.addEventListener('change', () => validateField(field));
-    });
-
-    // --- ПРЕГЛЕД НА КАЧЕНИ ФАЙЛОВЕ ---
-    function setupFileUpload(inputId, previewId) {
-        const input = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        if(!input || !preview) return;
+    // --- КАЧВАНЕ НА ФАЙЛОВЕ ---
+    form.querySelectorAll('input[type="file"]').forEach(input => {
+        const preview = document.getElementById(input.id.replace('-upload', '-preview'));
+        if (!preview) return;
 
         preview.addEventListener('click', () => input.click());
 
         input.addEventListener('change', function() {
-            validateField(this);
             const file = this.files[0];
+            const parentGroup = this.closest('.form-group');
+            parentGroup.classList.remove('error'); // Изчистваме грешката при нов избор
+
             if (!file) return;
 
             if (!file.type.startsWith('image/')) {
-                 input.value = '';
-                 return showMessage('Моля, качете файл в един от следните формати: JPG, PNG, WebP.', 'error');
+                this.value = '';
+                showMessage('Моля, качете изображение.', 'error');
+                parentGroup.classList.add('error');
+                return;
             }
+
             if (file.size > MAX_IMAGE_BYTES) {
-                 input.value = '';
-                 return showMessage(`Оригиналният файл трябва да е до ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)}MB.`, 'error');
+                 this.value = '';
+                 showMessage(`Файлът трябва да е до ${MAX_IMAGE_BYTES / 1024 / 1024}MB.`, 'error');
+                 parentGroup.classList.add('error');
+                 return;
             }
 
             const reader = new FileReader();
@@ -163,19 +139,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 preview.querySelector('p').style.display = 'none';
                 preview.style.backgroundImage = `url(${e.target.result})`;
                 preview.style.borderStyle = 'solid';
-            }
+            };
             reader.readAsDataURL(file);
         });
-    }
-
-    setupFileUpload('left-eye-upload', 'left-eye-preview');
-    setupFileUpload('right-eye-upload', 'right-eye-preview');
-
-    // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
+    });
+    
+    // --- ИЗПРАЩАНЕ НА ФОРМАТА (С ВЪЗСТАНОВЕН PROGRESS BAR) ---
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        // Проверяваме всички стъпки преди изпращане
-        if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
+        if (!validateCurrentStep()) return;
 
         const submitBtn = this.querySelector('.submit-btn');
         submitBtn.disabled = true;
@@ -185,8 +157,9 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBarContainer.style.display = 'block';
         progressBar.style.width = '0%';
         
+        // **ВЪЗСТАНОВЕНА ФУНКЦИОНАЛНОСТ:** Динамични съобщения и progress bar
         const progressSteps = [
-            { percent: 25, message: 'Оптимизираме вашите изображения за максимално качество...' },
+            { percent: 25, message: 'Оптимизираме вашите изображения...' },
             { percent: 50, message: 'Изпращаме данните за визуален анализ...' },
             { percent: 75, message: 'AI извършва холистичен синтез...' },
             { percent: 95, message: 'Генерираме вашия персонален доклад...' }
@@ -200,15 +173,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 clearInterval(progressInterval);
             }
-        }, 2500);
+        }, 2000); // Малко по-бавно за по-добър ефект
 
         try {
             const formData = new FormData(form);
-            const digestionValues = Array.from(form.querySelectorAll('input[name="digestion"]:checked')).map(cb => cb.value);
-            formData.delete('digestion');
-            if (otherCheckbox.checked && otherText.value) digestionValues.push(otherText.value);
-            formData.append('digestion', JSON.stringify(digestionValues));
-
+            
             const leftInput = document.getElementById('left-eye-upload');
             const rightInput = document.getElementById('right-eye-upload');
             const [leftOptimized, rightOptimized] = await Promise.all([
@@ -224,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errData.error);
             }
             const data = await response.json();
-
+            
             clearInterval(progressInterval);
             progressBar.style.width = '100%';
             showMessage('Успех! Пренасочваме ви към доклада...', 'success');
@@ -236,4 +205,29 @@ document.addEventListener('DOMContentLoaded', function() {
             progressBarContainer.style.display = 'none';
             showMessage('Възникна грешка: ' + error.message, 'error');
             submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Изпрати за анализ <i class="fas fa-paper-plane"></i
+            submitBtn.innerHTML = 'Изпрати за анализ <i class="fas fa-paper-plane"></i>';
+        }
+    });
+
+    async function optimizeImage(file, maxSize = 1024) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onerror = reject;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(img.src);
+                canvas.toBlob(blob => {
+                    if (!blob) return reject(new Error('Оптимизацията е неуспешна.'));
+                    const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.png'), { type: 'image/png' });
+                    resolve(newFile);
+                }, 'image/png');
+            };
+        });
+    }
+});
