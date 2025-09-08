@@ -1,6 +1,6 @@
-// --- КОРИГИРАНО: Премахваме import и дефинираме константите тук ---
-const WORKER_URL = 'https://iris.radilov-k.workers.dev/'; // Поставете вашия URL тук
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
+// --- КОНФИГУРАЦИЯ ---
+const WORKER_URL = 'https://iris.radilov-k.workers.dev/'; // URL на вашия Cloudflare Worker
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15MB - Увеличен лимит за оригиналния файл
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('iridology-form');
@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 otherText.setAttribute('required', 'true');
             } else {
                 otherText.removeAttribute('required');
-                otherText.value = ''; // Изчистваме полето, ако чекбоксът се махне
-                validateField(otherText); // Премахваме евентуална грешка
+                otherText.value = '';
+                validateField(otherText);
             }
         });
     }
@@ -94,8 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (field.hasAttribute('required')) {
             if (field.type === 'file') {
                 isValid = field.files.length > 0;
-            } else if (field.type === 'checkbox') {
-                 isValid = field.checked;
             } else {
                 isValid = field.value.trim() !== '';
             }
@@ -134,12 +132,18 @@ document.addEventListener('DOMContentLoaded', function() {
         preview.addEventListener('click', () => input.click());
 
         input.addEventListener('change', function() {
-            validateField(this); // Валидираме веднага
+            validateField(this);
             const file = this.files[0];
             if (!file) return;
 
-            if (!file.type.startsWith('image/')) return showMessage('Моля, качете изображение.', 'error');
-            if (file.size > MAX_IMAGE_BYTES) return showMessage(`Файлът трябва да е до ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)}MB.`, 'error');
+            if (!file.type.startsWith('image/')) {
+                 input.value = '';
+                 return showMessage('Моля, качете файл в един от следните формати: JPG, PNG, WebP.', 'error');
+            }
+            if (file.size > MAX_IMAGE_BYTES) {
+                 input.value = '';
+                 return showMessage(`Оригиналният файл трябва да е до ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)}MB.`, 'error');
+            }
 
             const reader = new FileReader();
             reader.onload = e => {
@@ -169,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBar.style.width = '0%';
         
         const progressSteps = [
-            { percent: 25, message: 'Компресираме вашите изображения...' },
+            { percent: 25, message: 'Оптимизираме вашите изображения за максимално качество...' },
             { percent: 50, message: 'Изпращаме данните за визуален анализ...' },
             { percent: 75, message: 'AI извършва холистичен синтез...' },
             { percent: 95, message: 'Генерираме вашия персонален доклад...' }
@@ -187,23 +191,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const formData = new FormData(form);
-            // Актуализирана логика за чекбоксове
             const digestionValues = Array.from(form.querySelectorAll('input[name="digestion"]:checked')).map(cb => cb.value);
             formData.delete('digestion');
             if (otherCheckbox.checked && otherText.value) digestionValues.push(otherText.value);
             formData.append('digestion', JSON.stringify(digestionValues));
 
-            // Компресия
             const leftInput = document.getElementById('left-eye-upload');
             const rightInput = document.getElementById('right-eye-upload');
-            const [leftCompressed, rightCompressed] = await Promise.all([
-                leftInput.files[0] ? compressImage(leftInput.files[0]) : null,
-                rightInput.files[0] ? compressImage(rightInput.files[0]) : null
+            const [leftOptimized, rightOptimized] = await Promise.all([
+                leftInput.files[0] ? optimizeImage(leftInput.files[0]) : null,
+                rightInput.files[0] ? optimizeImage(rightInput.files[0]) : null
             ]);
-            if (leftCompressed) formData.set('left-eye-upload', leftCompressed, leftCompressed.name);
-            if (rightCompressed) formData.set('right-eye-upload', rightCompressed, rightCompressed.name);
+            if (leftOptimized) formData.set('left-eye-upload', leftOptimized, leftOptimized.name);
+            if (rightOptimized) formData.set('right-eye-upload', rightOptimized, rightOptimized.name);
 
-            // Заявка
             const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({ error: `Грешка ${response.status}` }));
@@ -211,7 +212,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const data = await response.json();
 
-            // Успех
             clearInterval(progressInterval);
             progressBar.style.width = '100%';
             showMessage('Успех! Пренасочваме ви към доклада...', 'success');
@@ -228,8 +228,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// --- ПОМОЩНА ФУНКЦИЯ ЗА КОМПРЕСИЯ ---
-async function compressImage(file, maxSize = 1024, quality = 0.8) {
+/**
+ * Интелигентно оптимизира изображението:
+ * 1. Преоразмерява го до максимална страна 1024px.
+ * 2. Запазва го в lossless PNG формат, за да гарантира 100% запазване на качеството.
+ * @param {File} file - Оригиналният файл с изображение.
+ * @param {number} maxSize - Максималният размер на по-дългата страна (ширина или височина).
+ * @returns {Promise<File>} - Оптимизираният файл.
+ */
+async function optimizeImage(file, maxSize = 1024) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -242,11 +249,13 @@ async function compressImage(file, maxSize = 1024, quality = 0.8) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             URL.revokeObjectURL(img.src);
+
+            // Запазваме в PNG формат за 100% без загуба на качество след преоразмеряването
             canvas.toBlob(blob => {
-                if (!blob) return reject(new Error('Компресията е неуспешна.'));
-                const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), { type: 'image/webp' });
+                if (!blob) return reject(new Error('Оптимизацията на изображението е неуспешна.'));
+                const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.png'), { type: 'image/png' });
                 resolve(newFile);
-            }, 'image/webp', quality);
+            }, 'image/png');
         };
     });
 }
