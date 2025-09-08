@@ -1,280 +1,207 @@
-import { WORKER_URL, MAX_IMAGE_BYTES } from './config.js';
+:root {
+    --bg-color: #f4f7f9;
+    --text-color: #333;
+    --primary-color: #007bff;
+    --primary-gradient: linear-gradient(135deg, #4facfe, #00f2fe);
+    --secondary-color: #28a745;
+    --error-color: #dc3545;
+    --card-bg: #ffffff;
+    --border-color: #e0e0e0;
+}
 
-document.addEventListener('DOMContentLoaded', function() {
-    // --- ЕЛЕМЕНТИ ---
-    const form = document.getElementById('iridology-form');
-    if (!form) return;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-    const formSteps = form.querySelectorAll('.form-step');
-    const nextBtns = form.querySelectorAll('.next-btn');
-    const prevBtns = form.querySelectorAll('.prev-btn');
-    const stepperSteps = form.querySelectorAll('.step');
-    
-    const messageBox = document.getElementById('message-box');
-    const messageContent = messageBox.querySelector('.message-content');
-    const progressBarContainer = messageBox.querySelector('.progress-bar-container');
-    const progressBar = messageBox.querySelector('.progress-bar');
-    
-    // Елементи за чекбоксове
-    const otherCheckbox = document.getElementById('digestion-other-checkbox');
-    const otherText = document.getElementById('digestion-other-text');
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* =============================================== */
+/* === ОСНОВНА СТРАНИЦА (HERO & FORM) === */
+/* =============================================== */
+
+.hero-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 80vh;
+    gap: 2rem;
+}
+.hero-content { flex: 1; }
+.hero-content h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.hero-content p { font-size: 1.1rem; color: #555; margin-bottom: 2rem; }
+.cta-button {
+    display: inline-block;
+    background: var(--primary-gradient);
+    color: white;
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+}
+.hero-image { flex: 1; text-align: center; }
+.hero-image img { max-width: 100%; height: auto; animation: float 6s ease-in-out infinite; }
+
+@keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+
+.analysis-section { padding-top: 4rem; text-align: center; }
+.analysis-section h2 { font-size: 2.5rem; margin-bottom: 2rem; }
+.card {
+    background: var(--card-bg);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    text-align: left;
+}
+
+/* Stepper */
+.stepper-nav { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 0; }
+.step { display: flex; flex-direction: column; align-items: center; color: #ccc; transition: color 0.3s ease; list-style: none; }
+.step span { width: 40px; height: 40px; border-radius: 50%; background-color: #eee; color: #aaa; display: flex; justify-content: center; align-items: center; font-weight: 700; transition: all 0.3s ease; border: 2px solid #eee; }
+.step p { font-size: 0.9rem; margin-top: 0.5rem; }
+.step.active span { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+.step.active p { color: var(--primary-color); font-weight: 600; }
+.step.completed span { background-color: var(--secondary-color); color: white; border-color: var(--secondary-color); }
+.step.completed p { color: var(--secondary-color); font-weight: 600; }
+.step-line { flex-grow: 1; height: 2px; background-color: #eee; margin: 0 1rem; transform: translateY(-10px); }
+
+/* Form */
+.form-step { display: none; }
+.form-step.active { display: block; animation: slideIn 0.5s forwards; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+
+.form-step h3 { text-align: center; margin-bottom: 2rem; font-weight: 600; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
+
+/* --- НОВО: Стилове за валидация --- */
+.form-group.error input,
+.form-group.error select,
+.form-group.error textarea {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+}
+
+/* --- НОВО: Стилове за чекбоксове --- */
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.checkbox-item { display: flex; align-items: center; background: #f8f9fa; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; }
+.checkbox-item:hover { border-color: var(--primary-color); }
+.checkbox-item input { margin-right: 0.5rem; width: 1.1em; height: 1.1em; accent-color: var(--primary-color); }
+
+.button-group { display: flex; justify-content: space-between; margin-top: 2rem; }
+.btn { padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-primary:hover:not(:disabled) { background-color: #0056b3; }
+.btn-secondary { background-color: #eee; color: #555; }
+.btn-secondary:hover:not(:disabled) { background-color: #ddd; }
+
+/* Upload Area */
+.upload-instructions { text-align: center; background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; }
+.upload-instructions i.fa-camera { font-size: 2rem; color: var(--primary-color); margin-bottom: 1rem; }
+.upload-instructions ul { list-style: none; text-align: left; display: inline-block; padding: 0; }
+.upload-instructions li { margin-bottom: 0.5rem; }
+.upload-instructions i.fa-check-circle { color: var(--secondary-color); margin-right: 0.5rem; }
+.upload-area-container { display: flex; gap: 2rem; justify-content: center; }
+.upload-area { text-align: center; }
+.upload-area input[type="file"] { display: none; }
+.upload-area .upload-preview { width: 180px; height: 180px; border: 2px dashed var(--border-color); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s ease; background-size: cover; background-position: center; overflow: hidden; }
+.upload-area .upload-preview:hover { border-color: var(--primary-color); background-color: #f0f8ff; }
+.upload-area .upload-preview i { font-size: 3rem; color: #ccc; }
+.upload-area .upload-preview p { color: #aaa; margin-top: 0.5rem; }
+.upload-area .file-name { display: block; margin-top: 0.5rem; font-size: 0.8rem; color: #555; text-align: center; }
+
+/* --- НОВО: Стилове за примерите със снимки --- */
+.photo-examples-container { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.photo-example { text-align: center; }
+.photo-example img { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; border: 2px solid var(--border-color); }
+.photo-example p { font-size: 0.8rem; margin-top: 0.5rem; color: #555; }
+
+.upload-note { margin-top: 1rem; font-size: 0.9rem; color: #555; text-align: center; }
+.disclaimer-note { display: flex; align-items: center; gap: 1rem; background-color: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 2rem; border-left: 4px solid var(--primary-color); }
+.disclaimer-note i { color: var(--primary-color); font-size: 1.5rem; }
+.disclaimer-note p { font-size: 0.9rem; color: #555; margin: 0; text-align: left; }
+
+/* Message Box & Progress Bar */
+#message-box { margin-top: 1.5rem; width: 100%; text-align: center; }
+.message-content { padding: 1rem; border-radius: 8px; font-weight: 600; display: none; /* Ще се показва само когато има съобщение */ }
+.message-content.active { display: block; }
+.error-box .message-content { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+.success-box .message-content { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+.info-box .message-content { color: #0c5460; background-color: #d1ecf1; border: 1px solid #bee5eb; }
+
+/* --- НОВО: Стилове за progress bar --- */
+.progress-bar-container { width: 100%; background-color: #e9ecef; border-radius: 8px; overflow: hidden; margin-bottom: 0.5rem; }
+.progress-bar { height: 10px; width: 0%; background: var(--primary-gradient); transition: width 0.5s ease-in-out; }
 
 
-    // --- УПРАВЛЕНИЕ НА СТЪПКИТЕ ---
-    let currentStep = 1;
+/* =============================================== */
+/* === СТРАНИЦА С ДОКЛАД (REPORT) === */
+/* =============================================== */
+.report-header { text-align: center; margin-bottom: 2rem; }
+.report-header h2 { font-size: 2.5rem; margin-bottom: 0.5rem; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.report-header p { font-size: 1.1rem; color: #555; }
+#report-card.card { box-shadow: none; padding: 0; }
+.report-section { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
+.report-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.report-section h3 { display: flex; align-items: center; font-size: 1.5rem; color: var(--text-color); margin-bottom: 1rem; }
+.report-section h3 i { color: var(--primary-color); font-size: 1.3rem; margin-right: 1rem; width: 30px; text-align: center; }
+.report-section p, .report-section ul { font-size: 1rem; line-height: 1.7; color: #555; }
+.report-section ul { list-style: none; padding-left: 0; }
+.report-section ul li { display: flex; align-items: flex-start; margin-bottom: 0.8rem; }
+.report-section ul li i { color: var(--secondary-color); margin-right: 1rem; margin-top: 5px; }
+.report-disclaimer { display: flex; align-items: flex-start; gap: 1rem; background-color: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border-left: 4px solid var(--primary-color); }
+.report-disclaimer i { color: var(--primary-color); font-size: 1.5rem; margin-top: 3px; }
+.report-disclaimer p { font-size: 0.9rem; margin: 0; }
+.loading-box { display: flex; justify-content: center; align-items: center; font-size: 1.2rem; color: #555; padding: 3rem; }
+.loading-box i { margin-right: 1rem; font-size: 1.5rem; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    function updateStepper() {
-        stepperSteps.forEach((step, index) => {
-            const stepNumber = index + 1;
-            step.classList.remove('active', 'completed');
-            if (stepNumber === currentStep) {
-                step.classList.add('active');
-            } else if (stepNumber < currentStep) {
-                step.classList.add('completed');
-            }
-        });
-    }
-
-    function showStep(stepNumber) {
-        formSteps.forEach(step => step.classList.remove('active'));
-        document.querySelector(`.form-step[data-step="${stepNumber}"]`).classList.add('active');
-        currentStep = stepNumber;
-        updateStepper();
-    }
-
-    nextBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Валидираме само текущата стъпка преди да преминем напред
-            if (validateStep(currentStep) && currentStep < formSteps.length) {
-                showStep(currentStep + 1);
-            }
-        });
-    });
-
-    prevBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (currentStep > 1) showStep(currentStep - 1);
-        });
-    });
-
-    // --- ЛОГИКА ЗА ЧЕКБОКСОВЕ ---
-    if (otherCheckbox && otherText) {
-        otherCheckbox.addEventListener('change', () => {
-            otherText.style.display = otherCheckbox.checked ? 'block' : 'none';
-            if(otherCheckbox.checked) otherText.setAttribute('required', 'true');
-            else otherText.removeAttribute('required');
-        });
-    }
-
-    // --- ФУНКЦИИ ЗА СЪОБЩЕНИЯ И ГРЕШКИ ---
-    function showMessage(message, type = 'info') {
-        if (!messageContent) return;
-        messageContent.textContent = message;
-        messageBox.className = `${type}-box`; // Добавяме основен клас за стилизиране
-    }
-
-    function clearMessage() {
-         if (!messageContent) return;
-         messageContent.textContent = '';
-         messageBox.className = '';
-         progressBarContainer.style.display = 'none';
-    }
-    
-    // --- ВАЛИДАЦИЯ В РЕАЛНО ВРЕМЕ ---
-    const requiredFields = form.querySelectorAll('[required]');
-
-    function validateField(field) {
-        let isValid = true;
-        // Изчистване на стара грешка
-        field.parentElement.classList.remove('error');
-
-        if (field.type === 'file' && field.files.length === 0) {
-            isValid = false;
-        } else if (field.value.trim() === '') {
-            isValid = false;
-        }
-        
-        if (!isValid) {
-            field.parentElement.classList.add('error'); // Може да се добави CSS за това
-        }
-        return isValid;
-    }
-
-    requiredFields.forEach(field => {
-        field.addEventListener('blur', () => validateField(field));
-        field.addEventListener('change', () => validateField(field)); // За select и file
-    });
-    
-    function validateStep(stepNumber) {
-        const stepFields = form.querySelector(`.form-step[data-step="${stepNumber}"]`).querySelectorAll('[required]');
-        let allValid = true;
-        stepFields.forEach(field => {
-            if (!validateField(field)) {
-                allValid = false;
-            }
-        });
-        if(!allValid) showMessage('Моля, попълнете всички задължителни полета.', 'error');
-        else clearMessage();
-        return allValid;
-    }
-
-
-    // --- ПРЕГЛЕД НА КАЧЕНИ ФАЙЛОВЕ ---
-    function setupFileUpload(inputId, previewId) {
-        const input = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        const fileNameEl = preview.parentElement.querySelector('.file-name');
-        
-        if(!input) return;
-
-        preview.addEventListener('click', () => input.click());
-
-        input.addEventListener('change', function() {
-            const file = this.files[0];
-            if (!file) {
-                if (fileNameEl) fileNameEl.textContent = '';
-                return;
-            }
-
-            if (!file.type.startsWith('image/')) {
-                showMessage('Моля, качете изображение.', 'error');
-                input.value = '';
-                return;
-            }
-
-            if (file.size > MAX_IMAGE_BYTES) {
-                 showMessage(`Файлът трябва да е до ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)}MB.`, 'error');
-                input.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            const icon = preview.querySelector('i');
-            const text = preview.querySelector('p');
-            if (icon) icon.style.display = 'none';
-            if (text) text.style.display = 'none';
-
-            reader.onload = e => {
-                preview.style.backgroundImage = `url(${e.target.result})`;
-                preview.style.borderStyle = 'solid';
-            }
-            reader.readAsDataURL(file);
-
-            if (fileNameEl) fileNameEl.textContent = file.name;
-        });
-    }
-
-    setupFileUpload('left-eye-upload', 'left-eye-preview');
-    setupFileUpload('right-eye-upload', 'right-eye-preview');
-
-    // --- ЛОГИКА ЗА КОМПРЕСИЯ НА ИЗОБРАЖЕНИЯ (без промяна) ---
-    async function compressImage(file, maxSize = 1024, quality = 0.8) {
-       // ... съществуващия код за компресия остава същия ...
-    }
-    
-    // --- ОБРАБОТКА НА ИЗПРАЩАНЕТО НА ФОРМАТА (ОСНОВНО ОБНОВЕНА) ---
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Финална валидация на всички полета
-        if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
-
-        const submitBtn = this.querySelector('.submit-btn');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-
-        clearMessage();
-        
-        // Показваме progress bar и започваме симулация на прогреса
-        progressBarContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-
-        const progressSteps = [
-            { percent: 25, message: 'Компресираме вашите изображения...' },
-            { percent: 50, message: 'Изпращаме данните за визуален анализ...' },
-            { percent: 75, message: 'AI извършва холистичен синтез...' },
-            { percent: 95, message: 'Генерираме вашия персонален доклад...' }
-        ];
-
-        let currentProgressStep = 0;
-        const progressInterval = setInterval(() => {
-            if (currentProgressStep < progressSteps.length) {
-                const step = progressSteps[currentProgressStep];
-                progressBar.style.width = `${step.percent}%`;
-                showMessage(step.message, 'info');
-                currentProgressStep++;
-            } else {
-                clearInterval(progressInterval);
-            }
-        }, 2500);
-
-        try {
-            // Събираме данни от формата
-            const formData = new FormData(form);
-
-            // Актуализирана логика за събиране на данни от чекбоксове
-            const digestionValues = [];
-            form.querySelectorAll('input[name="digestion"]:checked').forEach(cb => {
-                digestionValues.push(cb.value);
-            });
-            if (otherCheckbox.checked && otherText.value) {
-                digestionValues.push(otherText.value);
-            }
-            // Премахваме индивидуалните стойности и задаваме масива
-            formData.delete('digestion'); 
-            formData.append('digestion', JSON.stringify(digestionValues));
-
-            // Компресираме файловете
-            const leftInput = document.getElementById('left-eye-upload');
-            const rightInput = document.getElementById('right-eye-upload');
-            if (leftInput.files[0]) {
-                const compressed = await compressImage(leftInput.files[0]);
-                formData.set('left-eye-upload', compressed, compressed.name);
-            }
-            if (rightInput.files[0]) {
-                const compressed = await compressImage(rightInput.files[0]);
-                formData.set('right-eye-upload', compressed, compressed.name);
-            }
-
-            // Изпращаме заявката
-            const response = await fetch(WORKER_URL, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({ error: `Грешка от сървъра: ${response.status}` }));
-                throw new Error(errData.error);
-            }
-
-            const data = await response.json();
-
-            // Успех!
-            clearInterval(progressInterval);
-            progressBar.style.width = '100%';
-            showMessage('Успех! Пренасочваме ви към доклада...', 'success');
-            
-            localStorage.setItem('iridologyReport', JSON.stringify(data));
-            
-            setTimeout(() => {
-                window.location.href = 'report.html';
-            }, 1500);
-
-        } catch (error) {
-            console.error('Критична грешка при изпращане на формуляра:', error);
-            clearInterval(progressInterval);
-            progressBarContainer.style.display = 'none';
-            showMessage('Възникна грешка: ' + error.message, 'error');
-            submitBtn.innerHTML = originalBtnText;
-            submitBtn.disabled = false;
-        }
-    });
-
-});
-
-// Поставете отново функцията compressImage тук, тъй като тя е извън DOMContentLoaded
-async function compressImage(file, maxSize = 1024, quality = 0.8) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        im
+/* =============================================== */
+/* === RESPONSIVE DESIGN === */
+/* =============================================== */
+@media (max-width: 992px) {
+    .hero-section { flex-direction: column; text-align: center; min-height: auto; padding-top: 2rem; }
+    .hero-image { margin-top: 2rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .upload-area-container { flex-direction: column; align-items: center; }
+}
+@media (max-width: 767px) {
+    .container { padding: 1.5rem; }
+    .card { padding: 1.5rem; }
+    .hero-content h1 { font-size: 2.5rem; }
+    .button-group { flex-direction: column-reverse; gap: 1rem; }
+    .button-group .btn { width: 100%; }
+    .form-step .button-group { flex-direction: column; }
+    .form-step .button-group .prev-btn { order: 2; }
+    .form-step .button-group .next-btn, .form-step .button-group .submit-btn { order: 1; }
+}
