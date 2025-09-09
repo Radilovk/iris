@@ -2,7 +2,7 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вашият Ирисологичен Доклад - Iris-Holistica AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -124,7 +124,6 @@
             const container = document.getElementById('report-container');
             container.innerHTML = ''; 
 
-            // 1. Хедър на доклада
             const hero = document.createElement('div');
             hero.className = 'report-hero';
             hero.innerHTML = `
@@ -133,7 +132,6 @@
             `;
             container.appendChild(hero);
 
-            // Ред на секциите, който искаме да спазваме
             const sectionOrder = [
                 "Конституционален анализ",
                 "Приоритетни системи за подкрепа",
@@ -157,7 +155,6 @@
                 }
             });
 
-            // 2. Отказ от отговорност
             if (data['Задължителен отказ от отговорност']) {
                 const disclaimer = document.createElement('footer');
                 disclaimer.className = 'report-disclaimer';
@@ -184,12 +181,10 @@
             return details;
         }
         
-        // --- КЛЮЧОВА ПРОМЯНА: Динамично генериране на препоръките ---
         function createRecommendationsSection(title, recommendationsData) {
             if (!recommendationsData || typeof recommendationsData !== 'object') return document.createElement('div');
 
             let cardsHTML = '';
-            // Обхождаме всички ключове, които AI е върнал в обекта
             for (const key in recommendationsData) {
                 if (Object.prototype.hasOwnProperty.call(recommendationsData, key)) {
                     const value = recommendationsData[key];
@@ -205,7 +200,7 @@
 
             const contentHTML = `<div class="report-grid">${cardsHTML}</div>`;
             const section = createCollapsibleSection(title, contentHTML);
-            section.setAttribute('open', ''); // Оставяме тази секция отворена
+            section.setAttribute('open', '');
             return section;
         }
         
@@ -242,7 +237,6 @@
                     const rawData = localStorage.getItem('iridologyReport');
                     if (!rawData) throw new Error('Няма налични данни за анализ. Моля, върнете се на началната страница.');
                     
-                    // --- Поправка: Проверка за валиден JSON ---
                     let data;
                     try {
                         data = JSON.parse(rawData);
@@ -259,8 +253,83 @@
             }, 500);
 
             if (reAnalyzeBtn) {
-                 // ... кодът за бутона остава същият
-                 reAnalyzeBtn.addEventListener('click', async () => { reAnalyzeBtn.disabled = true; if (messageBox) { messageBox.textContent = ''; messageBox.className = ''; } const stored = localStorage.getItem('iridologyFormData'); if (!stored) { messageBox.textContent = 'Липсват данни за повторен анализ.'; messageBox.className = 'error-box'; reAnalyzeBtn.disabled = false; return; } const formData = new FormData(); const obj = JSON.parse(stored); for (const [key, value] of Object.entries(obj)) { if (typeof value === 'string' && value.startsWith('data:')) { const [header, data] = value.split(','); const mime = header.match(/:(.*?);/)[1]; const binary = atob(data); const array = new Uint8Array(binary.length); for (let i = 0; i < binary.length; i++) { array[i] = binary.charCodeAt(i); } formData.append(key, new Blob([array], { type: mime }), `${key}.png`); } else { formData.append(key, value); } } const progressMessages = ['Обработваме вашите изображения...', 'Идентифицираме ирисови знаци...','Анализираме вашата анамнеза...', 'Генерираме персонален холистичен анализ...']; let msgIndex = 0, interval, spinner, textNode; if (messageBox) { messageBox.className = 'info-box'; spinner = document.createElement('i'); spinner.className = 'loading-spinner fas fa-spinner fa-spin'; textNode = document.createTextNode(progressMessages[msgIndex]); messageBox.textContent = ''; messageBox.appendChild(spinner); messageBox.appendChild(textNode); interval = setInterval(() => { msgIndex = (msgIndex + 1) % progressMessages.length; textNode.textContent = progressMessages[msgIndex]; }, 4000); } try { const response = await fetch(WORKER_URL, { method: 'POST', body: formData }); if (!response.ok) { const errData = await response.json().catch(() => ({ error: `Грешка от сървъра: ${response.status}` })); throw new Error(errData.error); } const data = await response.json(); if (interval) clearInterval(interval); if (spinner) spinner.remove(); localStorage.setItem('iridologyReport', JSON.stringify(data)); reAnalyzeBtn.disabled = false; location.reload(); } catch (err) { if (interval) clearInterval(interval); if (spinner) spinner.remove(); messageBox.textContent = 'Грешка: ' + err.message; messageBox.className = 'error-box'; reAnalyzeBtn.disabled = false; } });
+                reAnalyzeBtn.addEventListener('click', async () => {
+                    reAnalyzeBtn.disabled = true;
+                    if (messageBox) {
+                        messageBox.textContent = '';
+                        messageBox.className = '';
+                    }
+
+                    const stored = localStorage.getItem('iridologyFormData');
+                    if (!stored) {
+                        messageBox.textContent = 'Липсват данни за повторен анализ.';
+                        messageBox.className = 'error-box';
+                        reAnalyzeBtn.disabled = false;
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    const obj = JSON.parse(stored);
+                    for (const [key, value] of Object.entries(obj)) {
+                        if (typeof value === 'string' && value.startsWith('data:')) {
+                            const [header, data] = value.split(',');
+                            const mime = header.match(/:(.*?);/)[1];
+                            const binary = atob(data);
+                            const array = new Uint8Array(binary.length);
+                            for (let i = 0; i < binary.length; i++) {
+                                array[i] = binary.charCodeAt(i);
+                            }
+                            formData.append(key, new Blob([array], { type: mime }), `${key}.png`);
+                        } else {
+                            formData.append(key, value);
+                        }
+                    }
+
+                    const progressMessages = [
+                        'Обработваме вашите изображения...',
+                        'Идентифицираме ирисови знаци...',
+                        'Анализираме вашата анамнеза...',
+                        'Генерираме персонален холистичен анализ...'
+                    ];
+                    let msgIndex = 0;
+                    let interval;
+                    let spinner;
+                    let textNode;
+
+                    if (messageBox) {
+                        messageBox.className = 'info-box';
+                        spinner = document.createElement('i');
+                        spinner.className = 'loading-spinner fas fa-spinner fa-spin';
+                        textNode = document.createTextNode(progressMessages[msgIndex]);
+                        messageBox.textContent = '';
+                        messageBox.appendChild(spinner);
+                        messageBox.appendChild(textNode);
+                        interval = setInterval(() => {
+                            msgIndex = (msgIndex + 1) % progressMessages.length;
+                            textNode.textContent = progressMessages[msgIndex];
+                        }, 4000);
+                    }
+
+                    try {
+                        const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
+                        if (!response.ok) {
+                            const errData = await response.json().catch(() => ({ error: `Грешка от сървъра: ${response.status}` }));
+                            throw new Error(errData.error);
+                        }
+                        const data = await response.json();
+                        if (interval) clearInterval(interval);
+                        if (spinner) spinner.remove();
+                        localStorage.setItem('iridologyReport', JSON.stringify(data));
+                        reAnalyzeBtn.disabled = false;
+                        location.reload();
+                    } catch (err) {
+                        if (interval) clearInterval(interval);
+                        if (spinner) spinner.remove();
+                        messageBox.textContent = 'Грешка: ' + err.message;
+                        messageBox.className = 'error-box';
+                        reAnalyzeBtn.disabled = false;
+                    }
+                });
             }
         });
     </script>
