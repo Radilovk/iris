@@ -5,7 +5,7 @@ compatibility_date = "2024-01-01"
 kv_namespaces = [{ binding = "iris_rag_kv", id = "a7db6bdf8bc94d6d88ec860f4c316fbd" }]
 
 [vars]
-gemini_api_key = ""
+GEMINI_API_KEY = ""
 openai_api_key = ""
 allowed_origin = "*"
 DEBUG = "false" # Set to "true" for detailed logging
