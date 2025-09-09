@@ -9,90 +9,83 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Персонализирани стилове САМО за тази страница -->
+    <!-- Персонализирани стилове за структура на документа -->
     <style>
-        body { background-color: #f7f9fc; }
-        .report-header h2 { font-size: 2.2rem; color: #1a253c; }
-        .report-header p { font-size: 1.1rem; color: #5a647e; }
-        #report-container { background: transparent; box-shadow: none; padding: 0; border: none; }
+        body { background-color: #f4f7fa; }
+        .report-header { text-align: left; margin-bottom: 2rem; }
+        .report-header h2 { font-size: 2.5rem; color: #1a253c; margin-bottom: 0.5rem; }
+        .report-header p { font-size: 1.2rem; color: #5a647e; margin: 0; }
+        #report-container { background-color: #ffffff; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); border-radius: 12px; border: 1px solid #e6eaf1; padding: 2.5rem 3rem; }
         
-        .report-hero {
-            background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
-            border-radius: 12px;
-            padding: 2rem 2.5rem;
-            text-align: center;
+        .report-document-header {
+            border-bottom: 2px solid #e6eaf1;
+            padding-bottom: 1.5rem;
             margin-bottom: 2rem;
-            border: 1px solid #e0e7ff;
         }
-        .report-hero h3 { font-size: 1.5rem; font-weight: 600; color: #1a253c; margin: 0; }
-        .report-hero p { font-size: 1rem; color: #5a647e; margin: 0.25rem 0 0; }
+        .report-document-header h3 { font-size: 1.8rem; font-weight: 700; color: #1a253c; margin: 0; }
+        .report-document-header p { font-size: 1rem; color: #5a647e; margin-top: 0.25rem; }
         
-        .report-section {
-            background-color: #ffffff;
-            border: 1px solid #e8eef7;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 8px 16px rgba(10, 40, 100, 0.05);
-            transition: all 0.3s ease;
+        .report-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            margin-bottom: 2rem;
         }
-        details.report-section { overflow: hidden; }
-        details.report-section[open] { border-color: #cdd9f1; }
+        .report-layout-grid .report-column h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0056b3;
+            border-bottom: 1px solid #e6eaf1;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .report-layout-grid .report-column p { color: #333d52; line-height: 1.7; }
         
-        .report-section summary {
-            padding: 1.25rem 1.75rem;
+        details.report-section {
+            border: 1px solid #e6eaf1;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: #fdfdff;
+        }
+        details.report-section[open] { border-color: #b0c4de; }
+        
+        details.report-section summary {
+            padding: 1rem 1.5rem;
             font-weight: 600;
             font-size: 1.2rem;
             color: #1a253c;
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            list-style: none; /* Премахва маркера */
+            list-style: none;
         }
-        .report-section summary::-webkit-details-marker { display: none; } /* За Chrome/Safari */
+        details.report-section summary::-webkit-details-marker { display: none; }
+        details.report-section summary .icon { margin-right: 1rem; font-size: 1.2rem; color: #0056b3; }
+        .arrow { margin-left: auto; transition: transform 0.2s ease; }
+        details[open] .arrow { transform: rotate(90deg); }
 
-        .report-section summary .summary-title { display: flex; align-items: center; }
-        .report-section summary .icon-circle {
-            min-width: 40px; height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            margin-right: 1rem;
-            font-size: 1rem;
-            color: #fff;
-        }
-        details.report-section summary .arrow { transition: transform 0.3s ease; }
-        details.report-section[open] summary .arrow { transform: rotate(180deg); }
-
-        .report-section .content {
-            padding: 0 1.75rem 1.5rem 1.75rem;
-            border-top: 1px solid #e8eef7;
-            color: #333d52;
-            line-height: 1.7;
-        }
-
-        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-        .info-card { background: #fdfdff; border-radius: 10px; padding: 1.5rem; border: 1px solid #e8eef7; }
-        .info-card h4 { font-weight: 600; margin-bottom: 0.5rem; color: #0056b3; }
-
-        /* Стилизация на "графиките" */
-        .channel-analysis-item .bar { background: #e9ecef; }
-        .channel-analysis-item .bar-fill.low { background: #28a745; }
-        .channel-analysis-item .bar-fill.medium { background: #ffc107; }
-        .channel-analysis-item .bar-fill.high { background: #dc3545; }
+        .report-section .content { padding: 1.5rem; border-top: 1px solid #e6eaf1; text-align: left; }
+        .content ul { padding-left: 2rem; margin: 0; }
+        .content li { margin-bottom: 0.75rem; color: #333d52; }
+        .content li::marker { color: #0056b3; font-weight: bold; }
+        
+        /* Стил за изброяване */
+        .bullet-list { list-style: none; padding: 0; }
+        .bullet-item { display: flex; align-items: flex-start; margin-bottom: 1rem; }
+        .bullet-item .icon { color: #28a745; margin-right: 1rem; margin-top: 0.25rem; }
+        .bullet-item p { margin: 0; color: #333d52; line-height: 1.7; }
     </style>
 </head>
 <body>
     <div class="container">
         <section class="analysis-section">
             <header class="report-header">
-                <h2 class="fade-in-up">Вашият Холистичен Доклад</h2>
-                <p class="fade-in-up delay-1">Вашето пътешествие към баланса започва тук.</p>
+                <h2 class="fade-in-up">Персонален Холистичен Анализ</h2>
+                <p class="fade-in-up delay-1">Структуриран доклад на база ирисова диагностика.</p>
             </header>
 
             <article id="report-container" class="fade-in-up delay-2">
-                <!-- Съдържанието се генерира от JavaScript -->
+                <!-- Съдържанието се генерира тук -->
             </article>
 
             <div id="message-box"></div>
@@ -108,142 +101,148 @@
         import { WORKER_URL } from './config.js';
 
         const ICONS_CONFIG = {
-            "Конституционален анализ": { icon: "fa-shield-halved", color: "#3b82f6" },
-            "Приоритетни системи за подкрепа": { icon: "fa-heart-pulse", color: "#ef4444" },
-            "Анализ на елиминативните канали": { icon: "fa-recycle", color: "#10b981" },
-            "Ключови находки и тяхната връзка": { icon: "fa-project-diagram", color: "#8b5cf6" },
-            "Холистични препоръки": { icon: "fa-seedling", color: "#f59e0b" },
-            // За вътрешните ключове на препоръките
-            "Фундаментални принципи": { icon: "fa-lightbulb", color: "#1d4ed8" },
-            "Целенасочени препоръки": { icon: "fa-bullseye", color: "#c2410c" },
-            "Емоционална подкрепа": { icon: "fa-hand-holding-heart", color: "#be185d" },
-            "default": { icon: "fa-circle-info", color: "#6b7280" }
+            "Конституционален анализ": "fa-shield-halved",
+            "Приоритетни системи за подкрепа": "fa-heart-pulse",
+            "Анализ на елиминативните канали": "fa-recycle",
+            "Ключови находки и тяхната връзка": "fa-project-diagram",
+            "Холистични препоръки": "fa-seedling"
         };
-
+        
         function renderReport(data) {
             const container = document.getElementById('report-container');
             container.innerHTML = ''; 
 
-            const hero = document.createElement('div');
-            hero.className = 'report-hero';
-            hero.innerHTML = `
-                <h3>Персонален анализ за <span style="color: #0056b3;">${DOMPurify.sanitize(data["Име"] || data["Име на пациента"] || 'Клиент')}</span></h3>
-                <p>Дата на генериране: ${new Date().toLocaleDateString('bg-BG')}</p>
+            // 1. ЗАГЛАВНА ЧАСТ НА ДОКУМЕНТА
+            const docHeader = document.createElement('div');
+            docHeader.className = 'report-document-header';
+            docHeader.innerHTML = `
+                <h3>Анализ за: ${DOMPurify.sanitize(data["Име"] || data["Име на пациента"] || 'Клиент')}</h3>
+                <p>Дата на доклада: ${new Date().toLocaleDateString('bg-BG')}</p>
             `;
-            container.appendChild(hero);
+            container.appendChild(docHeader);
 
+            // 2. ГЛАВНА СЕКЦИЯ С ДВЕ КОЛОНИ
+            const mainGrid = document.createElement('div');
+            mainGrid.className = 'report-layout-grid';
+            mainGrid.innerHTML = `
+                <div class="report-column">
+                    <h4><i class="fas fa-shield-halved" style="color:#3b82f6;"></i> Конституционален анализ</h4>
+                    <p>${DOMPurify.sanitize(data["Конституционален анализ"] || 'Няма данни.')}</p>
+                </div>
+                <div class="report-column">
+                    <h4><i class="fas fa-heart-pulse" style="color:#ef4444;"></i> Приоритетни системи за подкрепа</h4>
+                    <p>${DOMPurify.sanitize(data["Приоритетни системи за подкрепа"] || 'Няма данни.')}</p>
+                </div>
+            `;
+            container.appendChild(mainGrid);
+
+            // 3. ПОДРОБНИ СЕКЦИИ
             const sectionOrder = [
-                "Конституционален анализ",
-                "Приоритетни системи за подкрепа",
                 "Анализ на елиминативните канали",
                 "Ключови находки и тяхната връзка",
                 "Холистични препоръки"
             ];
-            
             sectionOrder.forEach(key => {
                 const content = data[key];
                 if (content) {
                     let section;
-                    if (key === 'Холистични препоръки') {
+                    if (key === 'Ключови находки и тяхната връзка') {
+                        section = createBulletedSection(key, content);
+                    } else if (key === 'Холистични препоръки') {
                         section = createRecommendationsSection(key, content);
-                    } else if (key === 'Анализ на елиминативните канали') {
-                        section = createChannelsSection(key, content);
                     } else {
+                        // За всички останали - стандартна разгъваща се секция
                         section = createCollapsibleSection(key, `<p>${DOMPurify.sanitize(content)}</p>`);
                     }
                     container.appendChild(section);
                 }
             });
 
+            // 4. ОТКАЗ ОТ ОТГОВОРНОСТ
             if (data['Задължителен отказ от отговорност']) {
                 const disclaimer = document.createElement('footer');
                 disclaimer.className = 'report-disclaimer';
-                disclaimer.style.marginTop = '2rem';
+                disclaimer.style.marginTop = '2.5rem';
+                disclaimer.style.borderTop = '1px solid #e6eaf1';
+                disclaimer.style.paddingTop = '1.5rem';
                 disclaimer.innerHTML = `<i class="fas fa-info-circle"></i><p>${DOMPurify.sanitize(data['Задължителен отказ от отговорност'])}</p>`;
                 container.appendChild(disclaimer);
             }
         }
-
+        
         function createCollapsibleSection(title, contentHTML) {
-            const config = ICONS_CONFIG[title] || ICONS_CONFIG['default'];
+            const icon = ICONS_CONFIG[title] || 'fa-circle-info';
             const details = document.createElement('details');
             details.className = 'report-section';
             details.innerHTML = `
                 <summary>
-                    <div class="summary-title">
-                        <span class="icon-circle" style="background-color: ${config.color};"><i class="fas ${config.icon}"></i></span>
-                        <span>${DOMPurify.sanitize(title)}</span>
-                    </div>
-                    <i class="fas fa-chevron-down arrow"></i>
+                    <i class="fas ${icon} icon"></i>
+                    <span>${DOMPurify.sanitize(title)}</span>
+                    <i class="fas fa-chevron-right arrow"></i>
                 </summary>
                 <div class="content">${contentHTML}</div>
             `;
             return details;
         }
-        
-        function createRecommendationsSection(title, recommendationsData) {
-            if (!recommendationsData || typeof recommendationsData !== 'object') return document.createElement('div');
 
-            let cardsHTML = '';
-            for (const key in recommendationsData) {
-                if (Object.prototype.hasOwnProperty.call(recommendationsData, key)) {
-                    const value = recommendationsData[key];
-                    const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
-                    cardsHTML += `
-                        <div class="info-card">
-                            <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.5rem;"></i>${DOMPurify.sanitize(key)}</h4>
-                            <p>${DOMPurify.sanitize(value)}</p>
-                        </div>
+        // --- НОВА ФУНКЦИЯ: Превръща текст в точки ---
+        function createBulletedSection(title, content) {
+            // Регулярен израз, който търси цифра с точка, тире или звездичка в началото на ред
+            const items = content.split(/\s*(?:\d\.|-|\*)\s+/).filter(s => s.trim().length > 5);
+            let contentHTML;
+            if (items.length > 1) {
+                contentHTML = '<ul class="bullet-list">';
+                items.forEach(item => {
+                    contentHTML += `
+                        <li class="bullet-item">
+                            <i class="fas fa-check-circle icon"></i>
+                            <p>${DOMPurify.sanitize(item.trim())}</p>
+                        </li>`;
+                });
+                contentHTML += '</ul>';
+            } else {
+                // Ако не намери точки, просто показва текста
+                contentHTML = `<p>${DOMPurify.sanitize(content)}</p>`;
+            }
+            return createCollapsibleSection(title, contentHTML);
+        }
+        
+        // --- Подобрена функция за препоръките ---
+        function createRecommendationsSection(title, data) {
+            if (!data || typeof data !== 'object') return document.createElement('div');
+            
+            let contentHTML = '<ul>';
+             for (const key in data) {
+                if (Object.prototype.hasOwnProperty.call(data, key)) {
+                    contentHTML += `
+                        <li>
+                            <strong>${DOMPurify.sanitize(key)}:</strong> 
+                            ${DOMPurify.sanitize(data[key])}
+                        </li>
                     `;
                 }
             }
-
-            const contentHTML = `<div class="report-grid">${cardsHTML}</div>`;
+            contentHTML += '</ul>';
+            
             const section = createCollapsibleSection(title, contentHTML);
-            section.setAttribute('open', '');
+            section.setAttribute('open', ''); // Отворена по подразбиране
             return section;
         }
-        
-        function createChannelsSection(title, content) {
-            const channels = ['черва', 'бъбреци', 'лимфа', 'кожа', 'бели дробове'];
-            let contentHTML = `<p>${DOMPurify.sanitize(content)}</p><br><h4>Визуална оценка на натовареността:</h4>`;
-            channels.forEach(channel => {
-                let level = 'low';
-                let width = '33%';
-                if (content.toLowerCase().includes(channel) && (content.toLowerCase().includes('най-натоварен') || content.toLowerCase().includes('най-затруднен'))) {
-                    level = 'high'; width = '100%';
-                } else if (content.toLowerCase().includes(channel)) {
-                    level = 'medium'; width = '66%';
-                }
-                contentHTML += `
-                    <div class="channel-analysis-item" style="display: flex; align-items: center; margin-bottom: 0.75rem;">
-                        <span style="width: 120px; font-weight: 500;">${channel.charAt(0).toUpperCase() + channel.slice(1)}</span>
-                        <div class="bar" style="flex-grow: 1; height: 10px; border-radius: 5px; overflow: hidden;"><div class="bar-fill ${level}" style="height: 100%; width: ${width}; transition: width 0.8s ease-out;"></div></div>
-                    </div>
-                `;
-            });
-            return createCollapsibleSection(title, contentHTML);
-        }
 
+        // --- Основна логика при зареждане (остава същата) ---
         document.addEventListener('DOMContentLoaded', function () {
             const reportContainer = document.getElementById('report-container');
             const messageBox = document.getElementById('message-box');
             const reAnalyzeBtn = document.getElementById('re-analyze-btn');
 
-            reportContainer.innerHTML = `<div class="loading-box" style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:1rem;">Генериране на Вашия доклад...</p></div>`;
+            reportContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:1rem;font-size:1.1rem;">Генериране на структуриран анализ...</p></div>`;
 
             setTimeout(() => {
                 try {
                     const rawData = localStorage.getItem('iridologyReport');
-                    if (!rawData) throw new Error('Няма налични данни за анализ. Моля, върнете се на началната страница.');
-                    
+                    if (!rawData) throw new Error('Няма налични данни за анализ.');
                     let data;
-                    try {
-                        data = JSON.parse(rawData);
-                    } catch(e) {
-                         throw new Error('Получените данни за анализ са в невалиден формат. Моля, опитайте отново.');
-                    }
-
+                    try { data = JSON.parse(rawData); } catch(e) { throw new Error('Данните за анализ са в невалиден формат.');}
                     renderReport(data);
                 } catch (err) {
                     reportContainer.style.display = 'none';
@@ -254,81 +253,8 @@
 
             if (reAnalyzeBtn) {
                 reAnalyzeBtn.addEventListener('click', async () => {
-                    reAnalyzeBtn.disabled = true;
-                    if (messageBox) {
-                        messageBox.textContent = '';
-                        messageBox.className = '';
-                    }
-
-                    const stored = localStorage.getItem('iridologyFormData');
-                    if (!stored) {
-                        messageBox.textContent = 'Липсват данни за повторен анализ.';
-                        messageBox.className = 'error-box';
-                        reAnalyzeBtn.disabled = false;
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    const obj = JSON.parse(stored);
-                    for (const [key, value] of Object.entries(obj)) {
-                        if (typeof value === 'string' && value.startsWith('data:')) {
-                            const [header, data] = value.split(',');
-                            const mime = header.match(/:(.*?);/)[1];
-                            const binary = atob(data);
-                            const array = new Uint8Array(binary.length);
-                            for (let i = 0; i < binary.length; i++) {
-                                array[i] = binary.charCodeAt(i);
-                            }
-                            formData.append(key, new Blob([array], { type: mime }), `${key}.png`);
-                        } else {
-                            formData.append(key, value);
-                        }
-                    }
-
-                    const progressMessages = [
-                        'Обработваме вашите изображения...',
-                        'Идентифицираме ирисови знаци...',
-                        'Анализираме вашата анамнеза...',
-                        'Генерираме персонален холистичен анализ...'
-                    ];
-                    let msgIndex = 0;
-                    let interval;
-                    let spinner;
-                    let textNode;
-
-                    if (messageBox) {
-                        messageBox.className = 'info-box';
-                        spinner = document.createElement('i');
-                        spinner.className = 'loading-spinner fas fa-spinner fa-spin';
-                        textNode = document.createTextNode(progressMessages[msgIndex]);
-                        messageBox.textContent = '';
-                        messageBox.appendChild(spinner);
-                        messageBox.appendChild(textNode);
-                        interval = setInterval(() => {
-                            msgIndex = (msgIndex + 1) % progressMessages.length;
-                            textNode.textContent = progressMessages[msgIndex];
-                        }, 4000);
-                    }
-
-                    try {
-                        const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
-                        if (!response.ok) {
-                            const errData = await response.json().catch(() => ({ error: `Грешка от сървъра: ${response.status}` }));
-                            throw new Error(errData.error);
-                        }
-                        const data = await response.json();
-                        if (interval) clearInterval(interval);
-                        if (spinner) spinner.remove();
-                        localStorage.setItem('iridologyReport', JSON.stringify(data));
-                        reAnalyzeBtn.disabled = false;
-                        location.reload();
-                    } catch (err) {
-                        if (interval) clearInterval(interval);
-                        if (spinner) spinner.remove();
-                        messageBox.textContent = 'Грешка: ' + err.message;
-                        messageBox.className = 'error-box';
-                        reAnalyzeBtn.disabled = false;
-                    }
+                    // Кодът за бутона остава непроменен...
+                    reAnalyzeBtn.disabled = true; if (messageBox) { messageBox.textContent = ''; messageBox.className = ''; } const stored = localStorage.getItem('iridologyFormData'); if (!stored) { messageBox.textContent = 'Липсват данни за повторен анализ.'; messageBox.className = 'error-box'; reAnalyzeBtn.disabled = false; return; } const formData = new FormData(); const obj = JSON.parse(stored); for (const [key, value] of Object.entries(obj)) { if (typeof value === 'string' && value.startsWith('data:')) { const [header, data] = value.split(','); const mime = header.match(/:(.*?);/)[1]; const binary = atob(data); const array = new Uint8Array(binary.length); for (let i = 0; i < binary.length; i++) { array[i] = binary.charCodeAt(i); } formData.append(key, new Blob([array], { type: mime }), `${key}.png`); } else { formData.append(key, value); } } const progressMessages = ['Обработваме вашите изображения...', 'Идентифицираме ирисови знаци...','Анализираме вашата анамнеза...', 'Генерираме персонален холистичен анализ...']; let msgIndex = 0, interval, spinner, textNode; if (messageBox) { messageBox.className = 'info-box'; spinner = document.createElement('i'); spinner.className = 'loading-spinner fas fa-spinner fa-spin'; textNode = document.createTextNode(progressMessages[msgIndex]); messageBox.textContent = ''; messageBox.appendChild(spinner); messageBox.appendChild(textNode); interval = setInterval(() => { msgIndex = (msgIndex + 1) % progressMessages.length; textNode.textContent = progressMessages[msgIndex]; }, 4000); } try { const response = await fetch(WORKER_URL, { method: 'POST', body: formData }); if (!response.ok) { const errData = await response.json().catch(() => ({ error: `Грешка от сървъра: ${response.status}` })); throw new Error(errData.error); } const data = await response.json(); if (interval) clearInterval(interval); if (spinner) spinner.remove(); localStorage.setItem('iridologyReport', JSON.stringify(data)); reAnalyzeBtn.disabled = false; location.reload(); } catch (err) { if (interval) clearInterval(interval); if (spinner) spinner.remove(); messageBox.textContent = 'Грешка: ' + err.message; messageBox.className = 'error-box'; reAnalyzeBtn.disabled = false; }
                 });
             }
         });
