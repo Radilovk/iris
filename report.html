@@ -120,6 +120,8 @@
             "default": { icon: "fa-circle-info", color: "#6b7280" }
         };
 
+        const RECOMMENDATION_ORDER = ['Фундаментални принципи', 'Целенасочени препоръки', 'Емоционална подкрепа'];
+
         function formatTextContent(text) {
             const lines = DOMPurify.sanitize(text).split('\n').filter(l => l.trim() !== '');
             if (lines.length > 1) {
@@ -196,8 +198,11 @@
             if (!recommendationsData || typeof recommendationsData !== 'object') return document.createElement('div');
 
             let cardsHTML = '';
-            for (const key in recommendationsData) {
+            const handledKeys = new Set();
+
+            RECOMMENDATION_ORDER.forEach(key => {
                 if (Object.prototype.hasOwnProperty.call(recommendationsData, key)) {
+                    handledKeys.add(key);
                     const value = recommendationsData[key];
                     const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
                     cardsHTML += `
@@ -207,7 +212,20 @@
                         </div>
                     `;
                 }
-            }
+            });
+
+            Object.keys(recommendationsData).forEach(key => {
+                if (!handledKeys.has(key)) {
+                    const value = recommendationsData[key];
+                    const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
+                    cardsHTML += `
+                        <div class="info-card">
+                            <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.5rem;"></i>${DOMPurify.sanitize(key)}</h4>
+                            <p>${DOMPurify.sanitize(value)}</p>
+                        </div>
+                    `;
+                }
+            });
 
             const contentHTML = `<div class="report-grid">${cardsHTML}</div>`;
             const section = createCollapsibleSection(title, contentHTML);
