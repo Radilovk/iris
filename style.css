@@ -94,7 +94,7 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); co
 .report-section p, .report-section ul { font-size: 1rem; line-height: 1.7; color: #555; }
 .report-section ul { list-style: none; padding-left: 0; }
 .report-section ul li { display: flex; align-items: flex-start; margin-bottom: 0.8rem; }
-.report-section ul li i { color: var(--secondary-color); margin-right: 1rem; margin-top: 5px; }
+.report-section ul li i { color: var(--primary-color); margin-right: 0.75rem; font-size: 1rem; margin-top: 0.25rem; }
 .report-disclaimer { display: flex; align-items: flex-start; gap: 1rem; background-color: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border-left: 4px solid var(--primary-color); }
 .report-disclaimer i { color: var(--primary-color); font-size: 1.5rem; margin-top: 3px; }
 .report-disclaimer p { font-size: 0.9rem; margin: 0; }

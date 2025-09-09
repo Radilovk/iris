@@ -120,9 +120,20 @@
             "default": { icon: "fa-circle-info", color: "#6b7280" }
         };
 
+        function formatTextContent(text) {
+            const lines = DOMPurify.sanitize(text).split('\n').filter(l => l.trim() !== '');
+            if (lines.length > 1) {
+                const items = lines
+                    .map(line => `<li><i class="fas fa-check-circle"></i>${line.trim()}</li>`)
+                    .join('');
+                return `<ul>${items}</ul>`;
+            }
+            return `<p>${lines[0] || ''}</p>`;
+        }
+
         function renderReport(data) {
             const container = document.getElementById('report-container');
-            container.innerHTML = ''; 
+            container.innerHTML = '';
 
             const hero = document.createElement('div');
             hero.className = 'report-hero';
@@ -149,7 +160,7 @@
                     } else if (key === 'Анализ на елиминативните канали') {
                         section = createChannelsSection(key, content);
                     } else {
-                        section = createCollapsibleSection(key, `<p>${DOMPurify.sanitize(content)}</p>`);
+                        section = createCollapsibleSection(key, formatTextContent(content));
                     }
                     container.appendChild(section);
                 }
@@ -206,7 +217,7 @@
         
         function createChannelsSection(title, content) {
             const channels = ['черва', 'бъбреци', 'лимфа', 'кожа', 'бели дробове'];
-            let contentHTML = `<p>${DOMPurify.sanitize(content)}</p><br><h4>Визуална оценка на натовареността:</h4>`;
+            let contentHTML = `${formatTextContent(content)}<br><h4>Визуална оценка на натовареността:</h4>`;
             channels.forEach(channel => {
                 let level = 'low';
                 let width = '33%';
