@@ -4,14 +4,14 @@
  * Този worker обработва заявки от фронтенда, като изпълнява следните стъпки:
  * 1.  Приема данни от формуляр, включително снимки на ляв и десен ирис.
  * 2.  Извлича RAG (Retrieval-Augmented Generation) контекста от трите KV ключа.
- * 3.  **Стъпка 1 (Визуален анализ):** Изпраща изображенията към Gemini Pro Vision заедно с Ключ 1 (`iris_diagnostic_map`), за да получи структуриран JSON списък с идентифицирани ирисови знаци.
- * 4.  **Стъпка 2 (Холистичен синтез):** Изпраща данните на потребителя, резултатите от визуалния анализ и Ключове 2 и 3 към Gemini Pro, за да генерира крайния холистичен доклад.
+ * 3.  **Стъпка 1 (Визуален анализ):** Изпраща изображенията към Gemini 1.5 Flash заедно с Ключ 1 (`iris_diagnostic_map`), за да получи структуриран JSON списък с идентифицирани ирисови знаци.
+ * 4.  **Стъпка 2 (Холистичен синтез):** Изпраща данните на потребителя, резултатите от визуалния анализ и Ключове 2 и 3 към Gemini 1.5 Flash, за да генерира крайния холистичен доклад.
  * 5.  Връща финалния доклад като JSON към фронтенда.
  */
 
 // --- Конфигурация и константи ---
 
-// URL на Gemini API. Моделите са 'gemini-pro-vision' за анализ на изображения и 'gemini-pro' за текстов синтез.
+// URL на Gemini API. Моделите са 'gemini-1.5-flash-latest' за анализ на изображения и текстов синтез.
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
 // CORS хедъри, които позволяват на вашия GitHub Pages фронтенд да комуникира с този worker.
@@ -77,7 +77,7 @@ async function handlePostRequest(request, env) {
 
   // 2. Извличане на RAG контекста от KV
   const kvKeys = ['iris_diagnostic_map', 'holistic_interpretation_knowledge', 'remedy_and_recommendation_base'];
-  const kvPromises = kvKeys.map(key => env.KV.get(key, { type: 'json' }));
+  const kvPromises = kvKeys.map(key => env.iris_rag_kv.get(key, { type: 'json' }));
   const [irisMap, interpretationKnowledge, remedyBase] = await Promise.all(kvPromises);
   
   if (!irisMap || !interpretationKnowledge || !remedyBase) {
@@ -114,7 +114,7 @@ async function handlePostRequest(request, env) {
 // --- Помощни функции за комуникация с AI ---
 
 /**
- * Извиква Gemini Vision за анализ на изображение.
+ * Извиква Gemini 1.5 Flash за анализ на изображение.
  * @param {File} file - Файлът с изображението на ириса.
  * @param {string} eyeIdentifier - 'ляво око' или 'дясно око'.
  * @param {object} irisMap - JSON обектът от KV ключ 'iris_diagnostic_map'.
@@ -128,7 +128,7 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
     Ти си експертен асистент по ирисова диагностика. Твоята ЕДИНСТВЕНА задача е да анализираш предоставената снимка на ${eyeIdentifier} и да идентифицираш всички видими знаци.
     Използвай предоставения JSON обект 'iris_diagnostic_map' като твой ЕДИНСТВЕН източник на информация за дефиниции, типове и топография.
     
-    Твоят отговор ТРЯбва да бъде само и единствено валиден JSON обект, без никакво друго обяснение или текст преди или след него.
+    Твоят отговор ТРЯБВА да бъде само и единствено валиден JSON обект, без никакво друго обяснение или текст преди или след него.
     JSON обектът трябва да има следната структура:
     {
       "eye": "${eyeIdentifier}",
@@ -162,8 +162,9 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
         "response_mime_type": "application/json",
     }
   };
-
-  const response = await fetch(`${GEMINI_API_URL}gemini-pro-vision:generateContent?key=${apiKey}`, {
+  
+  const model = 'gemini-1.5-flash-latest';
+  const response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
@@ -171,12 +172,11 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Грешка от Gemini Vision API: ${response.status}`, errorBody);
+    console.error(`Грешка от Gemini API (${model}): ${response.status}`, errorBody);
     throw new Error('Неуспешен визуален анализ на изображението.');
   }
 
   const data = await response.json();
-  // Тъй като Gemini може да върне JSON-а с Markdown обвивка, почистваме го.
   const jsonText = data.candidates[0].content.parts[0].text
     .replace(/```json/g, '')
     .replace(/```/g, '')
@@ -186,7 +186,7 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
 }
 
 /**
- * Генерира крайния холистичен доклад с помощта на Gemini Pro.
+ * Генерира крайния холистичен доклад с помощта на Gemini 1.5 Flash.
  * @param {object} userData - Данните, попълнени от потребителя.
  * @param {object} leftEyeAnalysis - Резултатът от визуалния анализ на лявото око.
  * @param {object} rightEyeAnalysis - Резултатът от визуалния анализ на дясното око.
@@ -212,7 +212,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     
     **ТВОЯТА ЗАДАЧА:**
 
-    Създай финален доклад, който ТРЯбва да бъде единствен валиден JSON обект, без обяснения преди или след него. Използвай предоставените данни и база знания, за да попълниш всяка секция. Бъди съпричастен, ясен и структуриран.
+    Създай финален доклад, който ТРЯБВА да бъде единствен валиден JSON обект, без обяснения преди или след него. Използвай предоставените данни и база знания, за да попълниш всяка секция. Бъди съпричастен, ясен и структуриран.
 
     **СТРУКТУРА НА ИЗХОДНИЯ JSON:**
     {
@@ -237,7 +237,8 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     }
   };
 
-  const response = await fetch(`${GEMINI_API_URL}gemini-pro:generateContent?key=${apiKey}`, {
+  const model = 'gemini-1.5-flash-latest';
+  const response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
@@ -245,7 +246,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Грешка от Gemini Pro API: ${response.status}`, errorBody);
+    console.error(`Грешка от Gemini API (${model}): ${response.status}`, errorBody);
     throw new Error('Неуспешно генериране на холистичен доклад.');
   }
 
