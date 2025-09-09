@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вашият Ирисологичен Доклад - Iris-Holistica AI</title>
+    <title>Вашият Холистичен Доклад - Iris-Holistica AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -11,49 +11,72 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <section class="analysis-section">
-            <header class="report-header">
-                <h2 class="fade-in-up">Вашият Ирисологичен Доклад</h2>
-                <p class="fade-in-up delay-1">Този анализ е генериран на базата на предоставената от вас информация и снимки.</p>
-            </header>
+    <div class="report-container">
+        
+        <header class="report-main-header">
+            <div class="logo">Iris-Holistica AI</div>
+            <h1>Вашият Холистичен Анализ</h1>
+            <p>Генериран на <span id="generation-date"></span></p>
+        </header>
 
-            <!-- Контейнерът за доклада -->
-            <div id="report-card" class="card fade-in-up delay-2">
-                <!-- Скриптът ще попълни съдържанието тук -->
-            </div>
+        <!-- Контейнер за грешки и зареждане -->
+        <div id="message-box" class="card"></div>
 
-            <!-- Контейнер за съобщения (грешки, зареждане) -->
-            <div id="message-box"></div>
+        <main id="report-content">
             
-            <div class="button-group" style="margin-top: 2rem; text-align: center;">
-                <button id="re-analyze-btn" class="cta-button fade-in-up delay-3" style="margin-right:1rem;">Повтори анализа</button>
-                <a href="index.html" class="cta-button fade-in-up delay-3">Връщане към началната страница</a>
+            <!-- Профилната карта е преместена тук за мобилен изглед -->
+            <div id="profile-card" class="card">
+                <h3><i class="fas fa-user-circle"></i> Профил</h3>
+                <!-- JS ще попълни данните тук -->
             </div>
-        </section>
+
+            <!-- Картата с акценти е преместена тук -->
+            <div id="summary-card" class="card">
+                 <h3><i class="fas fa-star"></i> Ключови Акценти</h3>
+                <div id="summary-constitution"></div>
+                <div id="summary-priority"></div>
+            </div>
+
+            <!-- Контейнерът за пълния доклад -->
+            <div id="full-report-container">
+                <!-- JS ще попълни секциите тук -->
+            </div>
+            
+            <!-- Задължителен отказ от отговорност -->
+            <div id="disclaimer-container" class="report-disclaimer">
+                 <!-- JS ще попълни тук -->
+            </div>
+
+        </main>
+
+        <!-- "Залепени" бутони за действие за мобилни устройства -->
+        <footer class="report-actions-footer">
+            <div class="report-actions">
+                <button id="print-btn" class="action-button"><i class="fas fa-print"></i> <span>Принтирай / PDF</span></button>
+                <a href="index.html" class="action-button"><i class="fas fa-home"></i> <span>Нов Анализ</span></a>
+            </div>
+        </footer>
+
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
     <script type="module">
-        import { WORKER_URL } from './config.js';
-
+        // JavaScript кодът остава същият като в предишния отговор,
+        // тъй като той е независим от визуалната подредба.
+        // Просто го копирайте тук.
         document.addEventListener('DOMContentLoaded', function () {
-            const reportCard = document.getElementById('report-card');
+            const reportContent = document.getElementById('report-content');
             const messageBox = document.getElementById('message-box');
-            const reAnalyzeBtn = document.getElementById('re-analyze-btn');
-
-            reportCard.innerHTML = `<div class="loading-box"><i class="fas fa-spinner fa-spin"></i> Генериране на доклада...</div>`;
+            const printBtn = document.getElementById('print-btn');
+            const actionsFooter = document.querySelector('.report-actions-footer');
             
-            // --- ПРОМЯНА СТАРТ: Преименуваме ключа, за да съвпада с JSON-а от AI ---
-            const reportSectionsConfig = {
-                "Име на пациента": { title: "Пациент", icon: "fa-user" },
-                "Конституционален анализ": { title: "Конституционален анализ", icon: "fa-shield-halved" },
-                "Анализ на елиминативните канали": { title: "Анализ на елиминативните канали", icon: "fa-recycle" },
-                "Приоритетни системи за подкрепа": { title: "Приоритетни системи за подкрепа", icon: "fa-heart-pulse" },
-                "Ключови находки и тяхната връзка": { title: "Ключови находки и тяхната връзка", icon: "fa-magnifying-glass-chart" },
-                "Холистични препоръки": { title: "Холистични препоръки", icon: "fa-seedling" },
-                "Задължителен отказ от отговорност": { title: "Отказ от отговорност", icon: "fa-info-circle" }
-            };
-            // --- ПРОМЯНА КРАЙ ---
+            // Скриваме основното съдържание докато не сме готови
+            reportContent.style.display = 'none';
+            actionsFooter.style.display = 'none';
+            messageBox.innerHTML = `<div class="loading-box"><i class="fas fa-spinner fa-spin"></i> Генериране на доклада...</div>`;
+            messageBox.style.display = 'block';
+
+            document.getElementById('generation-date').textContent = new Date().toLocaleDateString('bg-BG', { day: '2-digit', month: 'long', year: 'numeric' });
 
             setTimeout(() => {
                 try {
@@ -62,169 +85,171 @@
                         throw new Error('Няма налични данни за анализ. Моля, върнете се на началната страница и попълнете формата.');
                     }
                     const data = JSON.parse(rawData);
-                    reportCard.innerHTML = '';
 
-                    // --- ПРОМЯНА СТАРТ: Използваме предварително дефиниран ред на секциите ---
-                    const sectionOrder = [
-                        "Име на пациента",
-                        "Конституционален анализ",
-                        "Анализ на елиминативните канали",
-                        "Приоритетни системи за подкрепа",
-                        "Ключови находки и тяхната връзка",
-                        "Холистични препоръки",
-                        "Задължителен отказ от отговорност"
-                    ];
+                    renderProfileCard(data);
+                    renderSummaryCard(data);
+                    renderFullReport(data);
 
-                    sectionOrder.forEach(key => {
-                        const value = data[key];
-                        if (!value) return; // Пропускаме празни секции
-
-                        // Специално третиране за дисклеймъра в края
-                        if (key === "Задължителен отказ от отговорност") {
-                            const disclaimerEl = document.createElement('div');
-                            disclaimerEl.className = 'report-disclaimer';
-                            disclaimerEl.innerHTML = `<i class="fas fa-info-circle"></i><p>${DOMPurify.sanitize(value)}</p>`;
-                            reportCard.appendChild(disclaimerEl);
-                            return;
-                        }
-
-                        const cfg = reportSectionsConfig[key] || { title: key.replace(/_/g, ' '), icon: 'fa-circle-info' };
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'report-section';
-
-                        const titleEl = document.createElement('h3');
-                        titleEl.innerHTML = `<i class="fas ${cfg.icon}"></i> ${DOMPurify.sanitize(cfg.title)}`;
-                        wrapper.appendChild(titleEl);
-
-                        // --- КЛЮЧОВО ПОДОБРЕНИЕ: Логика за обработка на различните типове съдържание ---
-                        if (key === "Холистични препоръки" && typeof value === 'object' && !Array.isArray(value)) {
-                            // Специална обработка за вложения обект с препоръки
-                            Object.keys(value).forEach(subKey => {
-                                const subValue = value[subKey];
-                                if(subValue) {
-                                    const subWrapper = document.createElement('div');
-                                    subWrapper.className = 'recommendation-subsection';
-                                    
-                                    const subTitleEl = document.createElement('h4');
-                                    subTitleEl.textContent = DOMPurify.sanitize(subKey);
-                                    
-                                    const contentEl = document.createElement('p');
-                                    contentEl.textContent = DOMPurify.sanitize(subValue);
-                                    
-                                    subWrapper.appendChild(subTitleEl);
-                                    subWrapper.appendChild(contentEl);
-                                    wrapper.appendChild(subWrapper);
-                                }
-                            });
-                        } else if (Array.isArray(value)) {
-                            // Обработка за масиви (ако има такива)
-                            const listEl = document.createElement('ul');
-                            value.forEach(item => {
-                                const listItemEl = document.createElement('li');
-                                listItemEl.innerHTML = `<span>${DOMPurify.sanitize(item)}</span>`;
-                                listEl.appendChild(listItemEl);
-                            });
-                            wrapper.appendChild(listEl);
-                        } else {
-                            // Обработка за обикновен текст
-                            const contentEl = document.createElement('p');
-                            contentEl.textContent = DOMPurify.sanitize(value);
-                            wrapper.appendChild(contentEl);
-                        }
-                        // --- КРАЙ НА КЛЮЧОВОТО ПОДОБРЕНИЕ ---
-
-                        reportCard.appendChild(wrapper);
-                    });
-                    // --- ПРОМЯНА КРАЙ ---
+                    // Показваме съдържанието и скриваме съобщението
+                    reportContent.style.display = 'block';
+                    actionsFooter.style.display = 'block';
+                    messageBox.style.display = 'none';
 
                 } catch (err) {
-                    reportCard.style.display = 'none';
-                    messageBox.textContent = 'Грешка: ' + err.message;
-                    messageBox.className = 'error-box';
+                    reportContent.style.display = 'none';
+                    actionsFooter.style.display = 'none';
+                    messageBox.innerHTML = `<strong>Грешка:</strong> ${err.message}`;
+                    messageBox.className = 'error-box card';
+                    messageBox.style.display = 'block';
                 }
             }, 500);
 
-            if (reAnalyzeBtn) {
-                // ... (останалата част от кода за reAnalyzeBtn остава същата)
-                 reAnalyzeBtn.addEventListener('click', async () => {
-                    reAnalyzeBtn.disabled = true;
-                    if (messageBox) {
-                        messageBox.textContent = '';
-                        messageBox.className = '';
-                    }
-
-                    const stored = localStorage.getItem('iridologyFormData');
-                    if (!stored) {
-                        messageBox.textContent = 'Липсват данни за повторен анализ.';
-                        messageBox.className = 'error-box';
-                        reAnalyzeBtn.disabled = false;
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    const obj = JSON.parse(stored);
-                    for (const [key, value] of Object.entries(obj)) {
-                        if (typeof value === 'string' && value.startsWith('data:')) {
-                            const [header, data] = value.split(',');
-                            const mime = header.match(/:(.*?);/)[1];
-                            const binary = atob(data);
-                            const array = new Uint8Array(binary.length);
-                            for (let i = 0; i < binary.length; i++) {
-                                array[i] = binary.charCodeAt(i);
-                            }
-                            formData.append(key, new Blob([array], { type: mime }), `${key}.png`);
-                        } else {
-                            formData.append(key, value);
-                        }
-                    }
-
-                    const progressMessages = [
-                        'Обработваме вашите изображения...',
-                        'Идентифицираме ирисови знаци...',
-                        'Анализираме вашата анамнеза...',
-                        'Генерираме персонален холистичен анализ...'
-                    ];
-                    let msgIndex = 0;
-                    let interval;
-                    let spinner;
-                    let textNode;
-
-                    if (messageBox) {
-                        messageBox.className = 'info-box';
-                        spinner = document.createElement('i');
-                        spinner.className = 'loading-spinner fas fa-spinner fa-spin';
-                        textNode = document.createTextNode(progressMessages[msgIndex]);
-                        messageBox.textContent = '';
-                        messageBox.appendChild(spinner);
-                        messageBox.appendChild(textNode);
-                        interval = setInterval(() => {
-                            msgIndex = (msgIndex + 1) % progressMessages.length;
-                            textNode.textContent = progressMessages[msgIndex];
-                        }, 4000);
-                    }
-
-                    try {
-                        const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
-                        if (!response.ok) {
-                             const errData = await response.json().catch(() => ({ error: `Грешка от сървъра: ${response.status}` }));
-                             throw new Error(errData.error);
-                        }
-                        const data = await response.json();
-                        if (interval) clearInterval(interval);
-                        if (spinner) spinner.remove();
-                        localStorage.setItem('iridologyReport', JSON.stringify(data));
-                        reAnalyzeBtn.disabled = false;
-                        location.reload();
-                    } catch (err) {
-                        if (interval) clearInterval(interval);
-                        if (spinner) spinner.remove();
-                        messageBox.textContent = 'Грешка: ' + err.message;
-                        messageBox.className = 'error-box';
-                        reAnalyzeBtn.disabled = false;
-                    }
-                });
+            if (printBtn) {
+                printBtn.addEventListener('click', () => window.print());
             }
         });
+
+        function renderProfileCard(data) {
+            const container = document.getElementById('profile-card');
+            const rawForm = localStorage.getItem('iridologyFormData');
+            if(!rawForm) return;
+
+            const formData = JSON.parse(rawForm);
+            
+            const list = document.createElement('ul');
+            list.innerHTML = `
+                <li><strong>Име:</strong> ${DOMPurify.sanitize(data["Име на пациента"] || 'Няма данни')}</li>
+                <li><strong>Възраст:</strong> ${DOMPurify.sanitize(formData.age || 'Няма данни')}</li>
+                <li><strong>Пол:</strong> ${DOMPurify.sanitize(formData.gender || 'Няма данни')}</li>
+            `;
+            container.appendChild(list);
+        }
+
+        function renderSummaryCard(data){
+            const constitutionContainer = document.getElementById('summary-constitution');
+            const priorityContainer = document.getElementById('summary-priority');
+
+            if(data["Конституционален анализ"]){
+                constitutionContainer.innerHTML = `
+                    <h4>Конституционален анализ</h4>
+                    <p>${DOMPurify.sanitize(data["Конституционален анализ"])}</p>
+                `;
+            }
+            if(data["Приоритетни системи за подкрепа"]){
+                priorityContainer.innerHTML = `
+                    <h4>Приоритетни системи</h4>
+                    <p>${DOMPurify.sanitize(data["Приоритетни системи за подкрепа"])}</p>
+                `;
+            }
+        }
+
+        function renderFullReport(data) {
+            const container = document.getElementById('full-report-container');
+            container.innerHTML = ''; // Изчистваме
+
+            const sectionOrder = [
+                "Анализ на елиминативните канали",
+                "Ключови находки и тяхната връзка",
+                "Холистични препоръки",
+            ];
+
+            const icons = {
+                "Анализ на елиминативните канали": "fa-recycle",
+                "Ключови находки и тяхната връзка": "fa-magnifying-glass-chart",
+                "Холистични препоръки": "fa-seedling",
+            };
+
+            sectionOrder.forEach(key => {
+                const value = data[key];
+                if (!value) return;
+
+                const details = document.createElement('details');
+                details.className = 'card report-section';
+                if (key === sectionOrder[0]) {
+                    details.open = true;
+                }
+
+                const summary = document.createElement('summary');
+                summary.innerHTML = `<h3><i class="fas ${icons[key] || 'fa-circle-info'}"></i> ${DOMPurify.sanitize(key)}</h3>`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'section-content';
+
+                if (key === "Анализ на елиминативните канали") {
+                    contentDiv.appendChild(createChannelsGraphic(value));
+                } else if (key === "Холистични препоръки" && typeof value === 'object') {
+                    Object.keys(value).forEach(subKey => {
+                        const subValue = value[subKey];
+                        if(subValue) {
+                            const subWrapper = document.createElement('div');
+                            subWrapper.className = 'recommendation-subsection';
+                            subWrapper.innerHTML = `
+                                <h4>${DOMPurify.sanitize(subKey)}</h4>
+                                <p>${DOMPurify.sanitize(subValue)}</p>
+                            `;
+                            contentDiv.appendChild(subWrapper);
+                        }
+                    });
+                } else {
+                    contentDiv.innerHTML = `<p>${DOMPurify.sanitize(value)}</p>`;
+                }
+
+                details.appendChild(summary);
+                details.appendChild(contentDiv);
+                container.appendChild(details);
+            });
+
+            const disclaimerContainer = document.getElementById('disclaimer-container');
+            if (data["Задължителен отказ от отговорност"]) {
+                disclaimerContainer.innerHTML = `<i class="fas fa-info-circle"></i><p>${DOMPurify.sanitize(data["Задължителен отказ от отговорност"])}</p>`;
+            }
+        }
+
+        function createChannelsGraphic(textValue) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'channels-visual-container';
+            
+            const intro = document.createElement('p');
+            intro.textContent = DOMPurify.sanitize(textValue);
+            wrapper.appendChild(intro);
+
+            const grid = document.createElement('div');
+            grid.className = 'channels-grid';
+
+            const channels = ["Черва", "Бъбреци", "Лимфа", "Кожа", "Бели дробове"];
+            const keywords = {
+                high: ['най-натоварени', 'силно натоварени', 'сериозно затруднени', 'значително натоварване'],
+                medium: ['натоварени', 'затруднени', 'показват натоварване', 'умерено натоварване'],
+                low: ['балансирани', 'в добро състояние', 'без особени признаци', 'слабо натоварване']
+            };
+
+            channels.forEach(channel => {
+                let loadLevel = 'unknown';
+                const lowerText = textValue.toLowerCase();
+                const lowerChannel = channel.toLowerCase();
+
+                if (keywords.high.some(k => lowerText.includes(k) && lowerText.includes(lowerChannel))) {
+                    loadLevel = 'high';
+                } else if (keywords.medium.some(k => lowerText.includes(k) && lowerText.includes(lowerChannel))) {
+                    loadLevel = 'medium';
+                } else if (keywords.low.some(k => lowerText.includes(k) && lowerText.includes(lowerChannel))) {
+                    loadLevel = 'low';
+                }
+                
+                const item = document.createElement('div');
+                item.className = 'channel-item';
+                item.innerHTML = `
+                    <span class="channel-name">${channel}</span>
+                    <div class="channel-bar-container">
+                        <div class="channel-bar load-${loadLevel}"></div>
+                    </div>
+                `;
+                grid.appendChild(item);
+            });
+            
+            wrapper.appendChild(grid);
+            return wrapper;
+        }
     </script>
 </body>
 </html>
