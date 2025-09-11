@@ -14,11 +14,6 @@
   <div id="loading" class="loading"><i class="fas fa-spinner fa-spin"></i></div>
     <div class="container admin-container">
       <h1>Администрация</h1>
-      <div class="admin-actions">
-        <button id="sync-btn" class="cta-button">Синхронизирай директно</button>
-        <button id="upload-btn" class="cta-button">Качи всички KV</button>
-        <button id="reload-worker" class="cta-button">Презареди worker</button>
-      </div>
       <h2>Настройки на бота</h2>
       <div class="kv-editor">
         <h3>Системен промпт</h3>
@@ -30,17 +25,11 @@
           <select id="provider-select"></select>
           <select id="model-select"></select>
           <button id="save-model" class="cta-button">Запази модел</button>
-          <div class="model-manager">
-            <input id="new-model" type="text" placeholder="Нов модел">
-            <button id="add-model" class="cta-button">Добави модел</button>
-            <ul id="model-list"></ul>
-          </div>
         </div>
-      <h2>Ключове в KV</h2>
-      <ul id="kv-list"></ul>
-      <pre id="kv-viewer" class="admin-viewer" style="display:none;"></pre>
-      <div id="message-box"></div>
-    </div>
+        <h2>Ключове в KV</h2>
+        <pre id="kv-viewer" class="admin-viewer"></pre>
+        <div id="message-box"></div>
+      </div>
   <script type="module" src="admin.js"></script>
 </body>
 </html>

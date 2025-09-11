@@ -1,11 +1,6 @@
-import { KV_DATA } from './kv-data.js';
 import { WORKER_BASE_URL } from './config.js';
-import { validateRagKeys } from './validate-rag-keys.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const syncBtn = document.getElementById('sync-btn');
-  const uploadBtn = document.getElementById('upload-btn');
-  const listEl = document.getElementById('kv-list');
   const viewer = document.getElementById('kv-viewer');
   const loadingEl = document.getElementById('loading');
   const messageBox = document.getElementById('message-box');
@@ -14,10 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const providerSelect = document.getElementById('provider-select');
   const modelSelect = document.getElementById('model-select');
   const saveModelBtn = document.getElementById('save-model');
-  const newModelInput = document.getElementById('new-model');
-  const addModelBtn = document.getElementById('add-model');
-  const modelListEl = document.getElementById('model-list');
-  const reloadWorkerBtn = document.getElementById('reload-worker');
 
   const DEFAULT_MODEL_OPTIONS = {
     gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
@@ -55,30 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : first || '';
   }
 
-  function renderModelList(provider) {
-    modelListEl.innerHTML = '';
-    (MODEL_OPTIONS[provider] || []).forEach(m => {
-      const li = document.createElement('li');
-      li.textContent = m + ' ';
-      const btn = document.createElement('button');
-      btn.textContent = 'Изтрий';
-      btn.className = 'delete-model';
-      btn.dataset.model = m;
-      li.appendChild(btn);
-      modelListEl.appendChild(li);
-    });
-  }
-
-  async function saveModelOptions() {
-    const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ key: 'MODEL_OPTIONS', value: JSON.stringify(MODEL_OPTIONS) })
-    });
-    if (!res.ok) throw new Error(await res.text());
-  }
+  // управление на списъка с модели е премахнато
 
   async function hasOpenAIKey() {
     try {
@@ -248,143 +216,45 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       populateModelOptions(provider, model);
-      renderModelList(provider);
     } catch (err) {
       showMessage('Грешка при зареждане на модела: ' + err.message);
     } finally {
       hideLoading();
     }
   }
-
-  async function loadKeys() {
-    listEl.innerHTML = '';
+  async function loadConfigKV() {
     showLoading();
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+      const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      data.keys.forEach(k => {
-        const li = document.createElement('li');
-        li.textContent = k;
-        li.addEventListener('click', () => showKey(k));
-        listEl.appendChild(li);
-      });
+      const all = {};
+      for (const k of data.keys) {
+        const vRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(k)}`, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          try {
+            all[k] = JSON.parse(vData.value);
+          } catch {
+            all[k] = vData.value;
+          }
+        }
+      }
+      viewer.textContent = JSON.stringify(all, null, 2);
     } catch (err) {
       showMessage('Грешка при извличането: ' + err.message);
     } finally {
       hideLoading();
     }
   }
-
-  async function showKey(key) {
-    showLoading();
-    try {
-        const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(key)}`, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      let val = data.value || '';
-      try { val = JSON.stringify(JSON.parse(val), null, 2); } catch {}
-      viewer.textContent = val;
-      viewer.style.display = 'block';
-    } catch (err) {
-      showMessage('Грешка: ' + err.message);
-    } finally {
-      hideLoading();
-    }
-  }
-
-  syncBtn.addEventListener('click', async () => {
-    try {
-      validateRagKeys();
-    } catch (err) {
-      showMessage(err.message);
-      return;
-    }
-    syncBtn.disabled = true;
-    showLoading();
-    try {
-      const diffRes = await fetch(`${WORKER_BASE_URL}/admin/diff`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(KV_DATA)
-      });
-      if (!diffRes.ok) throw new Error(await diffRes.text());
-      const diff = await diffRes.json();
-      showMessage(
-        `Разлики - нови: ${diff.added.length}, промени: ${diff.changed.length}, изтрити: ${diff.deleted.length}`,
-        'warn'
-      );
-
-      const syncRes = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(KV_DATA)
-      });
-      if (!syncRes.ok) throw new Error(await syncRes.text());
-      const result = await syncRes.json();
-      showMessage(
-        `Синхронизирано. Обновени: ${result.updated.length}, изтрити: ${result.deleted.length}`,
-        'success'
-      );
-      await fetch(`${WORKER_BASE_URL}/admin/cleanup`, { method: 'POST' });
-      await loadKeys();
-      showMessage('Worker и промптът са актуализирани', 'success');
-    } catch (err) {
-      showMessage('Грешка: ' + err.message);
-    } finally {
-      hideLoading();
-      syncBtn.disabled = false;
-    }
-  });
-
-  uploadBtn.addEventListener('click', async () => {
-    uploadBtn.disabled = true;
-    showLoading();
-    try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(KV_DATA)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      showMessage('Ключовете са качени успешно', 'success');
-      await loadKeys();
-    } catch (err) {
-      showMessage('Грешка: ' + err.message);
-    } finally {
-      hideLoading();
-      uploadBtn.disabled = false;
-    }
-  });
-
-  reloadWorkerBtn.addEventListener('click', async () => {
-    reloadWorkerBtn.disabled = true;
-    showLoading();
-    try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/cleanup`, { method: 'POST' });
-      if (!res.ok) throw new Error(await res.text());
-      showMessage('Worker презареден', 'success');
-    } catch (err) {
-      showMessage('Грешка: ' + err.message);
-    } finally {
-      hideLoading();
-      reloadWorkerBtn.disabled = false;
-    }
-  });
 
   savePromptBtn.addEventListener('click', async () => {
     const prompt = promptEditor.value;
@@ -445,61 +315,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  addModelBtn.addEventListener('click', async () => {
-    const provider = providerSelect.value.trim();
-    if (!provider) {
-      showMessage('Моля, изберете доставчик');
-      return;
-    }
-    const model = newModelInput.value.trim();
-    if (!model) {
-      showMessage('Въведете име на модел');
-      return;
-    }
-    if (!MODEL_OPTIONS[provider]) MODEL_OPTIONS[provider] = [];
-    if (MODEL_OPTIONS[provider].includes(model)) return;
-    showLoading();
-    try {
-      MODEL_OPTIONS[provider].push(model);
-      await saveModelOptions();
-      showMessage('Моделът е добавен', 'success');
-      populateModelOptions(provider, model);
-      renderModelList(provider);
-      newModelInput.value = '';
-    } catch (err) {
-      showMessage('Грешка: ' + err.message);
-    } finally {
-      hideLoading();
-    }
-  });
-
-  modelListEl.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('delete-model')) {
-      const provider = providerSelect.value;
-      const model = e.target.dataset.model;
-      showLoading();
-      try {
-        MODEL_OPTIONS[provider] = (MODEL_OPTIONS[provider] || []).filter(m => m !== model);
-        await saveModelOptions();
-        showMessage('Моделът е изтрит', 'success');
-        populateModelOptions(provider);
-        renderModelList(provider);
-      } catch (err) {
-        showMessage('Грешка: ' + err.message);
-      } finally {
-        hideLoading();
-      }
-    }
-  });
-
   providerSelect.addEventListener('change', () => {
     populateModelOptions(providerSelect.value);
-    renderModelList(providerSelect.value);
   });
 
   loadPrompt();
   loadModel();
-  loadKeys();
+  loadConfigKV();
   checkAnalysisKeys();
 });
 
