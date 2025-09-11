@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openai: ['gpt-4o', 'gpt-4o-mini']
   };
   let MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
+  let currentConfig = {};
 
   function populateProviderOptions(selected) {
     providerSelect.innerHTML = '';
@@ -101,14 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'warn-box';
   }
 
-  function normalizeValue(val) {
-    val = val.trim();
-    if (val.startsWith('{') || val.startsWith('[')) {
-      return JSON.stringify(JSON.parse(val));
-    }
-    return JSON.stringify(val);
-  }
-
   async function checkAnalysisKeys() {
     try {
       const headers = {
@@ -130,97 +123,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  async function loadPrompt() {
-    showLoading();
-    try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=ROLE_PROMPT`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      const obj = JSON.parse(data.value || '{}');
-      promptEditor.value = obj.prompt || '';
-    } catch (err) {
-      showMessage('Грешка при зареждане на промпта: ' + err.message);
-    } finally {
-      hideLoading();
-    }
-  }
-
-  async function loadModel() {
+  async function loadActiveConfig() {
     showLoading();
     try {
       const headers = {
         'Content-Type': 'application/json'
       };
-      const [optionsRes, providerRes, modelRes, keySet] = await Promise.all([
-        fetch(`${WORKER_BASE_URL}/admin/get?key=MODEL_OPTIONS`, { headers }),
-        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_PROVIDER`, { headers }),
-        fetch(`${WORKER_BASE_URL}/admin/get?key=AI_MODEL`, { headers }),
-        hasOpenAIKey()
-      ]);
-
       await hasGeminiKey();
-
-      if (optionsRes.status === 404) {
-        MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
-        showMessage('MODEL_OPTIONS не е намерен. Използвам стойности по подразбиране.', 'error');
-      } else {
-        if (!optionsRes.ok) throw new Error(await optionsRes.text());
-        const optionsData = await optionsRes.json();
-        MODEL_OPTIONS = JSON.parse(optionsData.value || '{}');
-        if (!Object.keys(MODEL_OPTIONS).length) {
-          MODEL_OPTIONS = JSON.parse(JSON.stringify(DEFAULT_MODEL_OPTIONS));
-        }
+      await hasOpenAIKey();
+      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=iris_config_kv`, { headers });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      currentConfig = JSON.parse(data.value || '{}');
+      promptEditor.value = currentConfig.report_prompt || '';
+      populateProviderOptions(currentConfig.provider);
+      populateModelOptions(currentConfig.provider, currentConfig.analysis_model || currentConfig.report_model);
+      if (currentConfig.name) {
+        configNameInput.value = currentConfig.name;
+        configSelect.value = currentConfig.name;
       }
-
-      if (!providerRes.ok) throw new Error(await providerRes.text());
-      const providerData = await providerRes.json();
-
-      let provider;
-      const defaultProvider = Object.keys(DEFAULT_MODEL_OPTIONS)[0];
-      try {
-        provider = JSON.parse(providerData.value);
-      } catch (err) {
-        provider = providerData.value?.trim() || defaultProvider;
-        showMessage('Невалиден формат за AI_PROVIDER: ' + err.message + '. Използвам "' + provider + '".', 'error');
-      }
-      if (!provider || !MODEL_OPTIONS[provider]) provider = defaultProvider;
-
-      let model;
-      if (modelRes.status === 404) {
-        model = (MODEL_OPTIONS[provider] || [])[0];
-        showMessage('AI_MODEL не е намерен. Използвам резервен модел "' + model + '".', 'error');
-      } else {
-        if (!modelRes.ok) throw new Error(await modelRes.text());
-        const modelData = await modelRes.json();
-        try {
-          model = JSON.parse(modelData.value);
-        } catch (err) {
-          model = modelData.value?.trim() || (MODEL_OPTIONS[provider] || [])[0];
-          showMessage('Невалиден формат за AI_MODEL: ' + err.message + '. Използвам "' + model + '".', 'error');
-        }
-      }
-      if (!model) model = (MODEL_OPTIONS[provider] || [])[0];
-
-      populateProviderOptions(provider);
-      const hasKey = keySet;
-      if (!hasKey) {
-        const opt = providerSelect.querySelector('option[value="openai"]');
-        if (opt) opt.disabled = true;
-        if (provider === 'openai') {
-          provider = Object.keys(MODEL_OPTIONS)[0];
-          model = (MODEL_OPTIONS[provider] || [])[0];
-          showMessage('OpenAI API ключ липсва. Задайте го чрез `wrangler secret put openai_api_key`.', 'error');
-          providerSelect.value = provider;
-        }
-      }
-
-      populateModelOptions(provider, model);
     } catch (err) {
-      showMessage('Грешка при зареждане на модела: ' + err.message);
+      showMessage('Грешка при зареждане на конфигурация: ' + err.message);
     } finally {
       hideLoading();
     }
@@ -237,13 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       const cfg = JSON.parse(data.value || '{}');
-      promptEditor.value = cfg.prompt || '';
-      if (cfg.provider) {
-        populateProviderOptions(cfg.provider);
-        populateModelOptions(cfg.provider, cfg.model);
-      } else {
-        populateModelOptions(providerSelect.value, cfg.model);
-      }
+      currentConfig = { ...cfg, name };
+      promptEditor.value = cfg.report_prompt || '';
+      populateProviderOptions(cfg.provider);
+      populateModelOptions(cfg.provider, cfg.analysis_model || cfg.report_model);
     } catch (err) {
       showMessage('Грешка при зареждане на конфигурация: ' + err.message);
     } finally {
@@ -270,21 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         opt.textContent = name;
         configSelect.appendChild(opt);
       });
-      const activeRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=ACTIVE_CONFIG`, { headers });
-      if (activeRes.ok) {
-        const activeData = await activeRes.json();
-        let active;
-        try {
-          active = JSON.parse(activeData.value);
-        } catch {
-          active = activeData.value;
-        }
-        if (active && configs.includes(active)) {
-          configSelect.value = active;
-          configNameInput.value = active;
-          await loadConfig(active);
-        }
-      }
+      await loadActiveConfig();
     } catch (err) {
       showMessage('Грешка при зареждане на конфигурациите: ' + err.message);
     } finally {
@@ -303,13 +209,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!res.ok) throw new Error(await res.text());
   }
 
-  async function setActiveConfig(name) {
+  async function setActiveConfig(cfg) {
     const res = await fetch(`${WORKER_BASE_URL}/admin/set`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ key: 'ACTIVE_CONFIG', value: normalizeValue(name) })
+      body: JSON.stringify({ key: 'iris_config_kv', value: JSON.stringify(cfg) })
     });
     if (!res.ok) throw new Error(await res.text());
   }
@@ -348,17 +254,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   savePromptBtn.addEventListener('click', async () => {
-    const prompt = promptEditor.value;
+    currentConfig.report_prompt = promptEditor.value;
     showLoading();
     try {
-      const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key: 'ROLE_PROMPT', value: JSON.stringify({ prompt }) })
-      });
-      if (!res.ok) throw new Error(await res.text());
+      await saveConfig(currentConfig.name || 'default', currentConfig);
+      await setActiveConfig(currentConfig);
       showMessage('Промптът е записан успешно', 'success');
     } catch (err) {
       showMessage('Грешка: ' + err.message);
@@ -368,36 +268,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   saveModelBtn.addEventListener('click', async () => {
-    const provider = providerSelect.value;
-    const model = modelSelect.value;
+    currentConfig.provider = providerSelect.value;
+    currentConfig.analysis_model = currentConfig.report_model = modelSelect.value;
     showLoading();
-    let providerVal, modelVal;
     try {
-      providerVal = normalizeValue(provider);
-      modelVal = normalizeValue(model);
-    } catch (err) {
-      hideLoading();
-      showMessage('Невалиден JSON: ' + err.message);
-      return;
-    }
-    try {
-      const res1 = await fetch(`${WORKER_BASE_URL}/admin/set`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key: 'AI_PROVIDER', value: providerVal })
-      });
-      if (!res1.ok) throw new Error(await res1.text());
-
-      const res2 = await fetch(`${WORKER_BASE_URL}/admin/set`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key: 'AI_MODEL', value: modelVal })
-      });
-      if (!res2.ok) throw new Error(await res2.text());
+      await saveConfig(currentConfig.name || 'default', currentConfig);
+      await setActiveConfig(currentConfig);
       showMessage('Моделът е записан успешно', 'success');
     } catch (err) {
       showMessage('Грешка: ' + err.message);
@@ -412,10 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   configSelect.addEventListener('change', async () => {
     const name = configSelect.value;
-    configNameInput.value = name;
+    if (!name) return;
     await loadConfig(name);
+    configNameInput.value = name;
     try {
-      await setActiveConfig(name);
+      await setActiveConfig(currentConfig);
     } catch (err) {
       showMessage('Грешка: ' + err.message);
     }
@@ -428,14 +305,17 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const data = {
-      prompt: promptEditor.value,
+      name,
+      analysis_prompt: currentConfig.analysis_prompt || '',
+      report_prompt: promptEditor.value,
       provider: providerSelect.value,
-      model: modelSelect.value
+      analysis_model: modelSelect.value,
+      report_model: modelSelect.value
     };
     showLoading();
     try {
       await saveConfig(name, data);
-      await setActiveConfig(name);
+      await setActiveConfig(data);
       await loadConfigList();
       showMessage('Конфигурацията е записана успешно', 'success');
     } catch (err) {
@@ -445,8 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  loadPrompt();
-  loadModel();
   loadConfigKV();
   checkAnalysisKeys();
   loadConfigList();
