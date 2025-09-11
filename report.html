@@ -8,13 +8,40 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Връзката към вече обновения style.css -->
     <link rel="stylesheet" href="style.css">
+    
     <!-- Персонализирани стилове САМО за тази страница -->
     <style>
-        body { background-color: #f7f9fc; }
-        .report-header h2 { font-size: 2.2rem; color: #1a253c; }
-        .report-header p { font-size: 1.1rem; color: #5a647e; }
-        #report-container { background: transparent; box-shadow: none; padding: 0; border: none; }
+        /* ПРОМЯНА: Прилагаме градиентния фон и тук */
+        body { 
+            background: var(--gradient);
+        }
+
+        /* ПРОМЯНА: Стилизираме заглавието да е като на analysis.html */
+        .report-header {
+             text-align: center; 
+             margin-bottom: 2rem; 
+        }
+        .report-header h2 {
+            font-size: 2.5rem;
+            color: var(--white);
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            margin-bottom: 0.5rem;
+        }
+        .report-header p {
+            font-size: 1.1rem;
+            color: var(--white);
+            opacity: 0.9;
+        }
+
+        /* Запазваме контейнера за доклада прозрачен */
+        #report-container { 
+            background: transparent; 
+            box-shadow: none; 
+            padding: 0; 
+            border: none; 
+        }
         
         .report-hero {
             background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
@@ -47,9 +74,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            list-style: none; /* Премахва маркера */
+            list-style: none;
         }
-        .report-section summary::-webkit-details-marker { display: none; } /* За Chrome/Safari */
+        .report-section summary::-webkit-details-marker { display: none; }
 
         .report-section summary .summary-title { display: flex; align-items: center; }
         .report-section summary .icon-circle {
@@ -81,13 +108,24 @@
         .channel-analysis-item .bar-fill.low { background: #28a745; }
         .channel-analysis-item .bar-fill.medium { background: #ffc107; }
         .channel-analysis-item .bar-fill.high { background: #dc3545; }
+
+        /* Подравняване на бутоните */
+        .button-group-report {
+            margin-top: 2rem;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
-        <section class="analysis-section">
+        <section class="analysis-section" style="padding-top: 2rem;">
             <header class="report-header">
-                <h2 class="fade-in-up"> Иридиологичен Доклад</h2>
+                <h2 class="fade-in-up">Иридиологичен Доклад</h2>
                 <p class="fade-in-up delay-1">Пътят към вашето здраве започва тук.</p>
             </header>
 
@@ -97,14 +135,16 @@
 
             <div id="message-box"></div>
             
-            <div class="button-group" style="margin-top: 2rem; text-align: center;">
-                <button id="re-analyze-btn" class="cta-button fade-in-up delay-3" style="margin-right:1rem;">Повтори анализа</button>
-                <a href="index.html" class="cta-button fade-in-up delay-3">Нов анализ</a>
+            <!-- ПРОМЯНА: Актуализираме класовете на бутоните и контейнера им -->
+            <div class="button-group-report">
+                <button id="re-analyze-btn" class="btn btn-secondary fade-in-up delay-3">Повтори анализа</button>
+                <a href="index.html" class="btn btn-primary fade-in-up delay-3">Нов анализ</a>
             </div>
         </section>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
     <script type="module">
+        // JavaScript кодът остава непроменен
         import { WORKER_URL } from './config.js';
 
         const ICONS_CONFIG = {
@@ -113,7 +153,6 @@
             "Анализ на елиминативните канали": { icon: "fa-recycle", color: "#10b981" },
             "Ключови находки и тяхната връзка": { icon: "fa-project-diagram", color: "#8b5cf6" },
             "Холистични препоръки": { icon: "fa-seedling", color: "#f59e0b" },
-            // За вътрешните ключове на препоръките
             "Фундаментални принципи": { icon: "fa-lightbulb", color: "#1d4ed8" },
             "Целенасочени препоръки": { icon: "fa-bullseye", color: "#c2410c" },
             "Емоционална подкрепа": { icon: "fa-hand-holding-heart", color: "#be185d" },
