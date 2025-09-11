@@ -3,49 +3,50 @@
  *
  * Този worker обработва заявки от фронтенда, като изпълнява следните стъпки:
  * 1.  Приема данни от формуляр, включително снимки на ляв и десен ирис.
- * 2.  Извлича RAG (Retrieval-Augmented Generation) контекста от трите KV ключа.
- * 3.  **Стъпка 1 (Визуален анализ):** Изпраща изображенията към Gemini 1.5 Flash заедно с Ключ 1 (`iris_diagnostic_map`), за да получи структуриран JSON списък с идентифицирани ирисови знаци.
- * 4.  **Стъпка 2 (Холистичен синтез):** Изпраща данните на потребителя, резултатите от визуалния анализ и Ключове 2 и 3 към Gemini 1.5 Flash, за да генерира крайния холистичен доклад.
- * 5.  Връща финалния доклад като JSON към фронтенда.
+ * 2.  **Извлича активната конфигурация (модел и промпти) от KV ключа `iris_config_kv`.**
+ * 3.  Извлича RAG (Retrieval-Augmented Generation) контекста от другите KV ключове.
+ * 4.  **Стъпка 1 (Визуален анализ):** Изпраща изображенията към конфигурирания AI модел за визия (`analysis_model`) с промпт от конфигурацията (`analysis_prompt_template`).
+ * 5.  **Стъпка 2 (Холистичен синтез):** Изпраща данните на потребителя и резултатите от анализа към конфигурирания AI модел за текст (`report_model`) с промпт от конфигурацията (`report_prompt_template`).
+ * 6.  Връща финалния доклад като JSON към фронтенда.
  */
 
 // --- Конфигурация и константи ---
 
-// URL на Gemini API. Моделите са 'gemini-1.5-flash-latest' за анализ на изображения и текстов синтез.
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
-const OPENAI_API_URL = 'https://api.openai.com/v1/responses';
-
-// CORS хедъри, които позволяват на вашия GitHub Pages фронтенд да комуникира с този worker.
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': 'https://radilovk.github.io', // **ВАЖНО**: Променете, ако фронтендът е на друг домейн!
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+// Базови URL адреси за AI доставчици.
+const API_BASE_URLS = {
+  gemini: 'https://generativelanguage.googleapis.com/v1beta/models/'
+  // 'openai': 'https://api.openai.com/v1/chat/completions' // Пример за бъдещо разширение
 };
 
-let aiConfigPromise;
-async function loadAIConfig(env) {
-  if (!aiConfigPromise) {
-    aiConfigPromise = env.iris_config_kv.get('iris_config_kv', { type: 'json' });
-  }
-  return aiConfigPromise;
-}
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': 'https://radilovk.github.io',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET, PUT',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 // --- Основен Handler на Worker-а ---
 
 export default {
   async fetch(request, env, ctx) {
-    // Справяне с CORS pre-flight заявки
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
     }
+    
+    // Добавяне на прост рутер за административни функции
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/admin/')) {
+        // Логиката за админ панела ще бъде тук, за да се избегне втори worker
+        // Засега връщаме 404, тъй като основният фокус е върху POST заявката
+        // Тази част ще се изгради с административния панел
+        return new Response(JSON.stringify({ error: 'Admin endpoint not fully implemented in this version.' }), {
+            status: 404,
+            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        });
+    }
 
-    // Обработка само на POST заявки
     if (request.method === 'POST') {
       try {
-        const configPromise = loadAIConfig(env);
-        ctx.waitUntil(configPromise);
-        const config = await configPromise;
-        return await handlePostRequest(request, env, config);
+        return await handlePostRequest(request, env);
       } catch (error) {
         console.error('Критична грешка в worker-а:', error);
         return new Response(JSON.stringify({ error: 'Вътрешна грешка на сървъра: ' + error.message }), {
@@ -55,23 +56,21 @@ export default {
       }
     }
 
-    // Връщане на грешка за всички други методи
     return new Response(JSON.stringify({ error: 'Методът не е разрешен' }), {
       status: 405,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     });
   },
-}; 
+};
 
 // --- Логика за обработка на POST заявка ---
 
-async function handlePostRequest(request, env, config) {
+async function handlePostRequest(request, env) {
   // 1. Извличане на данни от формуляра
   const formData = await request.formData();
   const leftEyeFile = formData.get('left-eye-upload');
   const rightEyeFile = formData.get('right-eye-upload');
   
-  // Валидация: Проверка дали са качени и двете снимки
   if (!leftEyeFile || !rightEyeFile || !(leftEyeFile instanceof File) || !(rightEyeFile instanceof File)) {
     return new Response(JSON.stringify({ error: 'Моля, качете снимки и на двете очи.' }), {
       status: 400,
@@ -79,7 +78,6 @@ async function handlePostRequest(request, env, config) {
     });
   }
 
-  // Събиране на потребителските данни в един обект
   const userData = {};
   for (const [key, value] of formData.entries()) {
     if (typeof value === 'string') {
@@ -87,34 +85,39 @@ async function handlePostRequest(request, env, config) {
     }
   }
 
-  // 2. Извличане на RAG контекста от KV
-  const kvKeys = ['iris_diagnostic_map', 'holistic_interpretation_knowledge', 'remedy_and_recommendation_base'];
-  const kvPromises = kvKeys.map(key => env.iris_rag_kv.get(key, { type: 'json' }));
-  const [irisMap, interpretationKnowledge, remedyBase] = await Promise.all(kvPromises);
-  
-  if (!irisMap || !interpretationKnowledge || !remedyBase) {
-      return new Response(JSON.stringify({ error: 'Не можахме да заредим базата данни за анализ. Моля, опитайте по-късно.' }), {
+  // 2. Извличане на активната конфигурация и RAG контекста от KV
+  const kvKeys = ['iris_config_kv', 'iris_diagnostic_map', 'holistic_interpretation_knowledge', 'remedy_and_recommendation_base'];
+  const kvPromises = kvKeys.map(key => env.KV.get(key, { type: 'json' }));
+  const [config, irisMap, interpretationKnowledge, remedyBase] = await Promise.all(kvPromises);
+
+  if (!config) {
+      return new Response(JSON.stringify({ error: 'Липсва конфигурация на AI асистента (iris_config_kv). Моля, конфигурирайте го от административния панел.' }), {
           status: 503, // Service Unavailable
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       });
   }
+   if (!irisMap || !interpretationKnowledge || !remedyBase) {
+      return new Response(JSON.stringify({ error: 'Не можахме да заредим базата данни за анализ. Моля, опитайте по-късно.' }), {
+          status: 503, 
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+  }
 
-
-  // 3. Стъпка 1: Визуален анализ с Gemini Vision
+  // 3. Стъпка 1: Визуален анализ с конфигурирания модел
   const [leftEyeAnalysisResult, rightEyeAnalysisResult] = await Promise.all([
-    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, env, config),
-    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, env, config)
+    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, config, env),
+    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, config, env)
   ]);
 
-  // 4. Стъпка 2: Холистичен синтез с Gemini Pro
+  // 4. Стъпка 2: Холистичен синтез с конфигурирания модел
   const finalReport = await generateHolisticReport(
     userData,
     leftEyeAnalysisResult,
     rightEyeAnalysisResult,
     interpretationKnowledge,
     remedyBase,
-    env,
-    config
+    config,
+    env
   );
 
   // 5. Връщане на финалния доклад
@@ -127,152 +130,116 @@ async function handlePostRequest(request, env, config) {
 // --- Помощни функции за комуникация с AI ---
 
 /**
- * Извиква Gemini 1.5 Flash за анализ на изображение.
+ * Извиква AI модел за анализ на изображение.
  * @param {File} file - Файлът с изображението на ириса.
  * @param {string} eyeIdentifier - 'ляво око' или 'дясно око'.
  * @param {object} irisMap - JSON обектът от KV ключ 'iris_diagnostic_map'.
- * @param {string} apiKey - API ключът за Gemini.
+ * @param {object} config - Активната конфигурация от 'iris_config_kv'.
+ * @param {object} env - Worker средата, съдържаща API ключовете.
  * @returns {Promise<object>} - JSON обект с резултатите от визуалния анализ.
  */
-async function analyzeImageWithVision(file, eyeIdentifier, irisMap, env, config) {
+async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, env) {
   const base64Image = await arrayBufferToBase64(await file.arrayBuffer());
+  
+  // Попълване на шаблона за промпт от конфигурацията
+  const prompt = config.analysis_prompt_template
+    .replace('{{EYE_IDENTIFIER}}', eyeIdentifier)
+    .replace('{{IRIS_MAP}}', JSON.stringify(irisMap, null, 2));
 
-  const prompt = (config.analysis_prompt || '')
-    .replace('{{EYE}}', eyeIdentifier)
-    .replace('{{IRIS_MAP}}', JSON.stringify(irisMap));
-  const model = config.analysis_model;
-
-  let response;
-  if (config.provider === 'openai') {
-    const requestBody = {
-      model,
-      input: [
-        {
-          role: 'user',
-          content: [
-            { type: 'input_text', text: prompt },
-            { type: 'input_image', image_base64: base64Image, mime_type: file.type }
-          ]
-        }
-      ],
-      response_format: { type: 'json_object' }
-    };
-    response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.openai_api_key}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-  } else {
-    const requestBody = {
-      contents: [{
-        parts: [
-          { text: prompt },
-          { inline_data: { mime_type: file.type, data: base64Image } }
-        ]
-      }],
-      generationConfig: {
-        response_mime_type: 'application/json',
-      },
-    };
-    response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
-    });
+  // Избор на API ключ и URL според доставчика
+  const apiKey = config.provider === 'gemini' ? env.GEMINI_API_KEY : null; // Добавете други доставчици при нужда
+  if (!apiKey) {
+      throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
   }
+  const apiUrl = `${API_BASE_URLS[config.provider]}${config.analysis_model}:generateContent?key=${apiKey}`;
+
+  const requestBody = {
+    contents: [{
+      parts: [
+        { text: prompt },
+        { inline_data: { mime_type: file.type, data: base64Image } }
+      ]
+    }],
+    "generationConfig": {
+        "response_mime_type": "application/json",
+    }
+  };
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Грешка от ${config.provider} API (${model}): ${response.status}`, errorBody);
+    console.error(`Грешка от Vision API (${config.provider}): ${response.status}`, errorBody);
     throw new Error('Неуспешен визуален анализ на изображението.');
   }
 
   const data = await response.json();
-  const jsonText = config.provider === 'openai'
-    ? data.output?.[0]?.content?.[0]?.text || '{}'
-    : data.candidates[0].content.parts[0].text
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
-
+  const jsonText = data.candidates[0].content.parts[0].text
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
+    
   return JSON.parse(jsonText);
 }
 
 /**
- * Генерира крайния холистичен доклад с помощта на Gemini 1.5 Flash.
+ * Генерира крайния холистичен доклад с помощта на конфигурирания AI модел.
  * @param {object} userData - Данните, попълнени от потребителя.
  * @param {object} leftEyeAnalysis - Резултатът от визуалния анализ на лявото око.
  * @param {object} rightEyeAnalysis - Резултатът от визуалния анализ на дясното око.
  * @param {object} interpretationKnowledge - JSON обектът от KV ключ 'holistic_interpretation_knowledge'.
  * @param {object} remedyBase - JSON обектът от KV ключ 'remedy_and_recommendation_base'.
- * @param {string} apiKey - API ключът за Gemini.
+ * @param {object} config - Активната конфигурация от 'iris_config_kv'.
+ * @param {object} env - Worker средата, съдържаща API ключовете.
  * @returns {Promise<object>} - Финалният JSON доклад за потребителя.
  */
-async function generateHolisticReport(
-  userData,
-  leftEyeAnalysis,
-  rightEyeAnalysis,
-  interpretationKnowledge,
-  remedyBase,
-  env,
-  config
-) {
-  const promptTemplate = config.report_prompt || '';
-  const prompt = promptTemplate
+async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, env) {
+  
+  // Попълване на шаблона за промпт от конфигурацията
+  const prompt = config.report_prompt_template
     .replace('{{USER_DATA}}', JSON.stringify(userData, null, 2))
     .replace('{{LEFT_EYE_ANALYSIS}}', JSON.stringify(leftEyeAnalysis, null, 2))
     .replace('{{RIGHT_EYE_ANALYSIS}}', JSON.stringify(rightEyeAnalysis, null, 2))
     .replace('{{INTERPRETATION_KNOWLEDGE}}', JSON.stringify(interpretationKnowledge, null, 2))
-    .replace('{{REMEDY_BASE}}', JSON.stringify(remedyBase, null, 2));
-  const model = config.report_model;
+    .replace('{{REMEDY_BASE}}', JSON.stringify(remedyBase, null, 2))
+    .replace('{{PATIENT_NAME}}', userData.name || 'Не е посочено')
+    .replace('{{DISCLAIMER}}', remedyBase.mandatory_disclaimer.text);
 
-  let response;
-  if (config.provider === 'openai') {
-    const requestBody = {
-      model,
-      input: [
-        { role: 'user', content: [{ type: 'input_text', text: prompt }] }
-      ],
-      response_format: { type: 'json_object' }
-    };
-    response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.openai_api_key}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-  } else {
-    const requestBody = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        response_mime_type: 'application/json',
-      },
-    };
-    response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
-    });
+  // Избор на API ключ и URL според доставчика
+  const apiKey = config.provider === 'gemini' ? env.GEMINI_API_KEY : null; // Добавете други доставчици при нужда
+  if (!apiKey) {
+      throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
   }
+  const apiUrl = `${API_BASE_URLS[config.provider]}${config.report_model}:generateContent?key=${apiKey}`;
+
+  const requestBody = {
+    contents: [{ parts: [{ text: prompt }] }],
+    "generationConfig": {
+        "response_mime_type": "application/json",
+    }
+  };
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Грешка от ${config.provider} API (${model}): ${response.status}`, errorBody);
+    console.error(`Грешка от Text Generation API (${config.provider}): ${response.status}`, errorBody);
     throw new Error('Неуспешно генериране на холистичен доклад.');
   }
 
   const data = await response.json();
-  const jsonText = config.provider === 'openai'
-    ? data.output?.[0]?.content?.[0]?.text || '{}'
-    : data.candidates[0].content.parts[0].text
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
+  const jsonText = data.candidates[0].content.parts[0].text
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
 
   return JSON.parse(jsonText);
 }
@@ -283,7 +250,7 @@ async function generateHolisticReport(
 /**
  * Преобразува ArrayBuffer в Base64 низ.
  * @param {ArrayBuffer} buffer - Буферът с данни от файла.
- * @returns {Promise<string>} - Base64 кодиран низ.
+ * @returns {string} - Base64 кодиран низ.
  */
 async function arrayBufferToBase64(buffer) {
   let binary = '';
