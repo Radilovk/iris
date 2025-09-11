@@ -25,7 +25,7 @@ const CORS_HEADERS = {
 let aiConfigPromise;
 async function loadAIConfig(env) {
   if (!aiConfigPromise) {
-    aiConfigPromise = env.iris_config_kv.get('ACTIVE_CONFIG', { type: 'json' });
+    aiConfigPromise = env.iris_config_kv.get('iris_config_kv', { type: 'json' });
   }
   return aiConfigPromise;
 }
