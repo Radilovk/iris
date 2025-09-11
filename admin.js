@@ -196,18 +196,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         const all = {};
-        // КОРЕКЦИЯТА Е ТУК:
-        for (const k of data.keys) {
-            const vRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(k.name)}`);
-            if (vRes.ok) {
-                const vData = await vRes.json();
-                try {
-                    all[k.name] = JSON.parse(vData.value);
-                } catch {
-                    all[k.name] = vData.value;
-                }
+        // Събиране на всички заявки към /admin/get в масив
+        const fetchPromises = data.keys.map(k =>
+            fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(k.name)}`)
+              .then(vRes => vRes.ok ? vRes.json().then(vData => ({ name: k.name, value: vData.value })) : null)
+              .catch(() => null)
+        );
+
+        // Паралелно извличане на резултатите
+        const results = await Promise.all(fetchPromises);
+
+        // Обединяване на стойностите след като всички са извлечени
+        results.forEach(item => {
+            if (!item) return;
+            try {
+                all[item.name] = JSON.parse(item.value);
+            } catch {
+                all[item.name] = item.value;
             }
-        }
+        });
+
         viewer.textContent = JSON.stringify(all, null, 2);
     } catch (err) {
         showMessage('Грешка при извличане на KV данните: ' + err.message, 'error');
