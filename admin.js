@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const providerSelect = document.getElementById('provider-select');
   const modelSelect = document.getElementById('model-select');
   const saveModelBtn = document.getElementById('save-model');
+  const configNameInput = document.getElementById('config-name');
+  const configSelect = document.getElementById('config-select');
+  const saveConfigBtn = document.getElementById('save-config');
 
   const DEFAULT_MODEL_OPTIONS = {
     gemini: ['gemini-1.5-pro', 'gemini-1.5-flash'],
@@ -222,6 +225,94 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
     }
   }
+
+  async function loadConfig(name) {
+    showLoading();
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=CONFIG:${encodeURIComponent(name)}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      const cfg = JSON.parse(data.value || '{}');
+      promptEditor.value = cfg.prompt || '';
+      if (cfg.provider) {
+        populateProviderOptions(cfg.provider);
+        populateModelOptions(cfg.provider, cfg.model);
+      } else {
+        populateModelOptions(providerSelect.value, cfg.model);
+      }
+    } catch (err) {
+      showMessage('Грешка при зареждане на конфигурация: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function loadConfigList() {
+    showLoading();
+    try {
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      const res = await fetch(`${WORKER_BASE_URL}/admin/keys`, { headers });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      const configs = data.keys
+        .filter(k => k.startsWith('CONFIG:'))
+        .map(k => k.slice(7));
+      configSelect.innerHTML = '';
+      configs.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        configSelect.appendChild(opt);
+      });
+      const activeRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=ACTIVE_CONFIG`, { headers });
+      if (activeRes.ok) {
+        const activeData = await activeRes.json();
+        let active;
+        try {
+          active = JSON.parse(activeData.value);
+        } catch {
+          active = activeData.value;
+        }
+        if (active && configs.includes(active)) {
+          configSelect.value = active;
+          configNameInput.value = active;
+          await loadConfig(active);
+        }
+      }
+    } catch (err) {
+      showMessage('Грешка при зареждане на конфигурациите: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function saveConfig(name, data) {
+    const res = await fetch(`${WORKER_BASE_URL}/admin/put`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ key: `CONFIG:${name}`, value: JSON.stringify(data) })
+    });
+    if (!res.ok) throw new Error(await res.text());
+  }
+
+  async function setActiveConfig(name) {
+    const res = await fetch(`${WORKER_BASE_URL}/admin/set`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ key: 'ACTIVE_CONFIG', value: normalizeValue(name) })
+    });
+    if (!res.ok) throw new Error(await res.text());
+  }
   async function loadConfigKV() {
     showLoading();
     try {
@@ -319,9 +410,45 @@ document.addEventListener('DOMContentLoaded', () => {
     populateModelOptions(providerSelect.value);
   });
 
+  configSelect.addEventListener('change', async () => {
+    const name = configSelect.value;
+    configNameInput.value = name;
+    await loadConfig(name);
+    try {
+      await setActiveConfig(name);
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
+    }
+  });
+
+  saveConfigBtn.addEventListener('click', async () => {
+    const name = configNameInput.value.trim();
+    if (!name) {
+      showMessage('Въведете име на конфигурация');
+      return;
+    }
+    const data = {
+      prompt: promptEditor.value,
+      provider: providerSelect.value,
+      model: modelSelect.value
+    };
+    showLoading();
+    try {
+      await saveConfig(name, data);
+      await setActiveConfig(name);
+      await loadConfigList();
+      showMessage('Конфигурацията е записана успешно', 'success');
+    } catch (err) {
+      showMessage('Грешка: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+
   loadPrompt();
   loadModel();
   loadConfigKV();
   checkAnalysisKeys();
+  loadConfigList();
 });
 
