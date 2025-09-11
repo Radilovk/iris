@@ -24,6 +24,28 @@ npm install
 3. Деплой чрез `wrangler publish`.
 4. Хоствайте статичните файлове (например GitHub Pages на `https://radilovk.github.io`).
 
+### Пример: задаване на AI модел и промпт
+
+Админ панелът записва стойности в `iris_config_kv`:
+
+```js
+// смяна на модела
+fetch('https://<worker-url>/admin/set', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ key: 'AI_MODEL', value: 'gemini-1.5-flash-latest' })
+});
+
+// задаване на ROLE_PROMPT
+fetch('https://<worker-url>/admin/put', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ key: 'ROLE_PROMPT', value: JSON.stringify({ prompt: 'Ти си холистичен консултант...' }) })
+});
+```
+
+Подобно се задава и `AI_PROVIDER`.
+
 ## Примерна заявка
 
 ```bash
