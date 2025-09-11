@@ -13,6 +13,7 @@
 
 // URL на Gemini API. Моделите са 'gemini-1.5-flash-latest' за анализ на изображения и текстов синтез.
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+const OPENAI_API_URL = 'https://api.openai.com/v1/responses';
 
 // CORS хедъри, които позволяват на вашия GitHub Pages фронтенд да комуникира с този worker.
 const CORS_HEADERS = {
@@ -20,6 +21,14 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
+
+let aiConfigPromise;
+async function loadAIConfig(env) {
+  if (!aiConfigPromise) {
+    aiConfigPromise = env.iris_config_kv.get('ACTIVE_CONFIG', { type: 'json' });
+  }
+  return aiConfigPromise;
+}
 
 // --- Основен Handler на Worker-а ---
 
@@ -33,7 +42,10 @@ export default {
     // Обработка само на POST заявки
     if (request.method === 'POST') {
       try {
-        return await handlePostRequest(request, env);
+        const configPromise = loadAIConfig(env);
+        ctx.waitUntil(configPromise);
+        const config = await configPromise;
+        return await handlePostRequest(request, env, config);
       } catch (error) {
         console.error('Критична грешка в worker-а:', error);
         return new Response(JSON.stringify({ error: 'Вътрешна грешка на сървъра: ' + error.message }), {
@@ -49,11 +61,11 @@ export default {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     });
   },
-};
+}; 
 
 // --- Логика за обработка на POST заявка ---
 
-async function handlePostRequest(request, env) {
+async function handlePostRequest(request, env, config) {
   // 1. Извличане на данни от формуляра
   const formData = await request.formData();
   const leftEyeFile = formData.get('left-eye-upload');
@@ -90,8 +102,8 @@ async function handlePostRequest(request, env) {
 
   // 3. Стъпка 1: Визуален анализ с Gemini Vision
   const [leftEyeAnalysisResult, rightEyeAnalysisResult] = await Promise.all([
-    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, env.GEMINI_API_KEY),
-    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, env.GEMINI_API_KEY)
+    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, env, config),
+    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, env, config)
   ]);
 
   // 4. Стъпка 2: Холистичен синтез с Gemini Pro
@@ -101,7 +113,8 @@ async function handlePostRequest(request, env) {
     rightEyeAnalysisResult,
     interpretationKnowledge,
     remedyBase,
-    env.GEMINI_API_KEY
+    env,
+    config
   );
 
   // 5. Връщане на финалния доклад
@@ -121,67 +134,70 @@ async function handlePostRequest(request, env) {
  * @param {string} apiKey - API ключът за Gemini.
  * @returns {Promise<object>} - JSON обект с резултатите от визуалния анализ.
  */
-async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
+async function analyzeImageWithVision(file, eyeIdentifier, irisMap, env, config) {
   const base64Image = await arrayBufferToBase64(await file.arrayBuffer());
-  
-  const prompt = `
-    Ти си експертен асистент по ирисова диагностика. Твоята ЕДИНСТВЕНА задача е да анализираш предоставената снимка на ${eyeIdentifier} и да идентифицираш всички видими знаци.
-    Използвай предоставения JSON обект 'iris_diagnostic_map' като твой ЕДИНСТВЕН източник на информация за дефиниции, типове и топография.
-    
-    Твоят отговор ТРЯБВА да бъде само и единствено валиден JSON обект, без никакво друго обяснение или текст преди или след него.
-    JSON обектът трябва да има следната структура:
-    {
-      "eye": "${eyeIdentifier}",
-      "constitutional_analysis": {
-        "color_type_guess": "Твоята преценка за цветния тип (напр. 'Лимфатична')",
-        "structural_type_guess": "Твоята преценка за структурния тип (напр. 'Гъвкаво-адаптивен')"
-      },
-      "identified_signs": [
+
+  const prompt = (config.analysis_prompt || '')
+    .replace('{{EYE}}', eyeIdentifier)
+    .replace('{{IRIS_MAP}}', JSON.stringify(irisMap));
+  const model = config.analysis_model;
+
+  let response;
+  if (config.provider === 'openai') {
+    const requestBody = {
+      model,
+      input: [
         {
-          "sign_name": "Името на знака от irisMap (напр. 'Нервни пръстени')",
-          "location": "Зона и/или сектор (напр. 'Зона 7, по цялата периферия')",
-          "description": "Кратко описание на това, което виждаш (напр. 'Наличие на 3 дълбоки концентрични пръстена')"
+          role: 'user',
+          content: [
+            { type: 'input_text', text: prompt },
+            { type: 'input_image', image_base64: base64Image, mime_type: file.type }
+          ]
         }
-      ]
-    }
-
-    Ако не намериш знаци, върни празен масив за "identified_signs".
-
-    Ето 'iris_diagnostic_map', който трябва да използваш:
-    ${JSON.stringify(irisMap)}
-  `;
-
-  const requestBody = {
-    contents: [{
-      parts: [
-        { text: prompt },
-        { inline_data: { mime_type: file.type, data: base64Image } }
-      ]
-    }],
-    "generationConfig": {
-        "response_mime_type": "application/json",
-    }
-  };
-  
-  const model = 'gemini-1.5-flash-latest';
-  const response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody),
-  });
+      ],
+      response_format: { type: 'json_object' }
+    };
+    response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.openai_api_key}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } else {
+    const requestBody = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: file.type, data: base64Image } }
+        ]
+      }],
+      generationConfig: {
+        response_mime_type: 'application/json',
+      },
+    };
+    response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+  }
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Грешка от Gemini API (${model}): ${response.status}`, errorBody);
+    console.error(`Грешка от ${config.provider} API (${model}): ${response.status}`, errorBody);
     throw new Error('Неуспешен визуален анализ на изображението.');
   }
 
   const data = await response.json();
-  const jsonText = data.candidates[0].content.parts[0].text
-    .replace(/```json/g, '')
-    .replace(/```/g, '')
-    .trim();
-    
+  const jsonText = config.provider === 'openai'
+    ? data.output?.[0]?.content?.[0]?.text || '{}'
+    : data.candidates[0].content.parts[0].text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
   return JSON.parse(jsonText);
 }
 
@@ -195,66 +211,68 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
  * @param {string} apiKey - API ключът за Gemini.
  * @returns {Promise<object>} - Финалният JSON доклад за потребителя.
  */
-async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, apiKey) {
-  const prompt = `
-    Ти си холистичен здравен консултант, специализиран в ирисова диагностика. Твоята задача е да синтезираш цялата предоставена информация в лесен за разбиране, структуриран и полезен доклад за потребителя на български език.
+async function generateHolisticReport(
+  userData,
+  leftEyeAnalysis,
+  rightEyeAnalysis,
+  interpretationKnowledge,
+  remedyBase,
+  env,
+  config
+) {
+  const promptTemplate = config.report_prompt || '';
+  const prompt = promptTemplate
+    .replace('{{USER_DATA}}', JSON.stringify(userData, null, 2))
+    .replace('{{LEFT_EYE_ANALYSIS}}', JSON.stringify(leftEyeAnalysis, null, 2))
+    .replace('{{RIGHT_EYE_ANALYSIS}}', JSON.stringify(rightEyeAnalysis, null, 2))
+    .replace('{{INTERPRETATION_KNOWLEDGE}}', JSON.stringify(interpretationKnowledge, null, 2))
+    .replace('{{REMEDY_BASE}}', JSON.stringify(remedyBase, null, 2));
+  const model = config.report_model;
 
-    **ВХОДНИ ДАННИ:**
-
-    1.  **Потребителски данни:** ${JSON.stringify(userData, null, 2)}
-    2.  **Визуален анализ на ляво око:** ${JSON.stringify(leftEyeAnalysis, null, 2)}
-    3.  **Визуален анализ на дясно око:** ${JSON.stringify(rightEyeAnalysis, null, 2)}
-
-    **БАЗА ЗНАНИЯ (RAG):**
-
-    1.  **Знания за холистична интерпретация:** ${JSON.stringify(interpretationKnowledge, null, 2)}
-    2.  **База с препоръки:** ${JSON.stringify(remedyBase, null, 2)}
-    
-    **ТВОЯТА ЗАДАЧА:**
-
-    Създай финален доклад, който ТРЯБВА да бъде единствен валиден JSON обект, без обяснения преди или след него. Използвай предоставените данни и база знания, за да попълниш всяка секция. Бъди съпричастен, ясен и структуриран.
-
-    **СТРУКТУРА НА ИЗХОДНИЯ JSON:**
-    {
-      "Име на пациента": "${userData.name || 'Не е посочено'}",
-      "Конституционален анализ": "Напиши кратко резюме (2-3 изречения) за основния конституционален тип на база двата анализа (цвят и структура). Обясни какви са основните генетични предразположения.",
-      "Анализ на елиминативните канали": "На база 'elimination_channels' от базата знания и намерените знаци, оцени състоянието на 5-те канала (черва, бъбреци, лимфа, кожа, бели дробове). Кои изглеждат най-натоварени?",
-      "Приоритетни системи за подкрепа": "Идентифицирай 2-3 основни системи (напр. Нервна, Храносмилателна), които се нуждаят от най-голямо внимание според знаците и оплакванията на потребителя. Обоснови се кратко.",
-      "Ключови находки и тяхната връзка": "Изброй 3-5 от най-значимите находки от двата ириса и обясни как те се свързват помежду си и с основните оплаквания на потребителя. Например, 'Наличието на нервни пръстени (стрес) е пряко свързано със спастичното състояние на червата, което виждаме в АНВ'.",
-      "Холистични препоръки": {
-        "Фундаментални принципи": "Започни с 2-3 от най-важните фундаментални принципи от 'foundational_principles', които са най-релевантни за този човек.",
-        "Целенасочени препоръки": "Дай 3-4 конкретни, практически съвета от 'support_by_system_or_goal' или 'holistic_practices_library', които са насочени към 'Приоритетни системи за подкрепа'.",
-        "Емоционална подкрепа": "На база 'psycho_emotional_links' и намерените знаци, предложи кратък коментар за възможна емоционална връзка, ако има такава. Бъди деликатен."
+  let response;
+  if (config.provider === 'openai') {
+    const requestBody = {
+      model,
+      input: [
+        { role: 'user', content: [{ type: 'input_text', text: prompt }] }
+      ],
+      response_format: { type: 'json_object' }
+    };
+    response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.openai_api_key}`,
       },
-      "Задължителен отказ от отговорност": "${remedyBase.mandatory_disclaimer.text}"
-    }
-  `;
-
-  const requestBody = {
-    contents: [{ parts: [{ text: prompt }] }],
-    "generationConfig": {
-        "response_mime_type": "application/json",
-    }
-  };
-
-  const model = 'gemini-1.5-flash-latest';
-  const response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody),
-  });
+      body: JSON.stringify(requestBody),
+    });
+  } else {
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        response_mime_type: 'application/json',
+      },
+    };
+    response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+  }
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Грешка от Gemini API (${model}): ${response.status}`, errorBody);
+    console.error(`Грешка от ${config.provider} API (${model}): ${response.status}`, errorBody);
     throw new Error('Неуспешно генериране на холистичен доклад.');
   }
 
   const data = await response.json();
-  const jsonText = data.candidates[0].content.parts[0].text
-    .replace(/```json/g, '')
-    .replace(/```/g, '')
-    .trim();
+  const jsonText = config.provider === 'openai'
+    ? data.output?.[0]?.content?.[0]?.text || '{}'
+    : data.candidates[0].content.parts[0].text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
 
   return JSON.parse(jsonText);
 }
