@@ -58,6 +58,22 @@ async function handlePostRequest(request, env) {
   const formData = await request.formData();
   const leftEyeFile = formData.get('left-eye-upload');
   const rightEyeFile = formData.get('right-eye-upload');
+
+  // 1.1 Зареждане на конфигурация от KV
+  const configKeys = ['AI_PROVIDER', 'AI_MODEL', 'ROLE_PROMPT'];
+  let providerRaw, modelRaw, rolePromptRaw;
+  if (env.iris_config_kv && typeof env.iris_config_kv.get === 'function') {
+    [providerRaw, modelRaw, rolePromptRaw] = await Promise.all(
+      configKeys.map(key => env.iris_config_kv.get(key))
+    );
+  }
+  const provider = providerRaw || 'google';
+  const model = modelRaw || 'gemini-1.5-flash-latest';
+  let rolePrompt;
+  try {
+    rolePrompt = JSON.parse(rolePromptRaw || '{}').prompt;
+  } catch (err) {}
+  rolePrompt = rolePrompt || 'Ти си холистичен здравен консултант, специализиран в ирисова диагностика.';
   
   // Валидация: Проверка дали са качени и двете снимки
   if (!leftEyeFile || !rightEyeFile || !(leftEyeFile instanceof File) || !(rightEyeFile instanceof File)) {
@@ -90,8 +106,8 @@ async function handlePostRequest(request, env) {
 
   // 3. Стъпка 1: Визуален анализ с Gemini Vision
   const [leftEyeAnalysisResult, rightEyeAnalysisResult] = await Promise.all([
-    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, env.GEMINI_API_KEY),
-    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, env.GEMINI_API_KEY)
+    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, env.GEMINI_API_KEY, model, rolePrompt, provider),
+    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, env.GEMINI_API_KEY, model, rolePrompt, provider)
   ]);
 
   // 4. Стъпка 2: Холистичен синтез с Gemini Pro
@@ -101,7 +117,10 @@ async function handlePostRequest(request, env) {
     rightEyeAnalysisResult,
     interpretationKnowledge,
     remedyBase,
-    env.GEMINI_API_KEY
+    env.GEMINI_API_KEY,
+    model,
+    rolePrompt,
+    provider
   );
 
   // 5. Връщане на финалния доклад
@@ -121,13 +140,17 @@ async function handlePostRequest(request, env) {
  * @param {string} apiKey - API ключът за Gemini.
  * @returns {Promise<object>} - JSON обект с резултатите от визуалния анализ.
  */
-async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
+async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey, model, rolePrompt, provider = 'google') {
+  if (provider !== 'google') {
+    throw new Error('Неподдържан AI_PROVIDER: ' + provider);
+  }
   const base64Image = await arrayBufferToBase64(await file.arrayBuffer());
-  
+
   const prompt = `
-    Ти си експертен асистент по ирисова диагностика. Твоята ЕДИНСТВЕНА задача е да анализираш предоставената снимка на ${eyeIdentifier} и да идентифицираш всички видими знаци.
+    ${rolePrompt}
+    Твоята ЕДИНСТВЕНА задача е да анализираш предоставената снимка на ${eyeIdentifier} и да идентифицираш всички видими знаци.
     Използвай предоставения JSON обект 'iris_diagnostic_map' като твой ЕДИНСТВЕН източник на информация за дефиниции, типове и топография.
-    
+
     Твоят отговор ТРЯБВА да бъде само и единствено валиден JSON обект, без никакво друго обяснение или текст преди или след него.
     JSON обектът трябва да има следната структура:
     {
@@ -163,7 +186,6 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
     }
   };
   
-  const model = 'gemini-1.5-flash-latest';
   const response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -195,9 +217,13 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, apiKey) {
  * @param {string} apiKey - API ключът за Gemini.
  * @returns {Promise<object>} - Финалният JSON доклад за потребителя.
  */
-async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, apiKey) {
+async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, apiKey, model, rolePrompt, provider = 'google') {
+  if (provider !== 'google') {
+    throw new Error('Неподдържан AI_PROVIDER: ' + provider);
+  }
   const prompt = `
-    Ти си холистичен здравен консултант, специализиран в ирисова диагностика. Твоята задача е да синтезираш цялата предоставена информация в лесен за разбиране, структуриран и полезен доклад за потребителя на български език.
+    ${rolePrompt}
+    Твоята задача е да синтезираш цялата предоставена информация в лесен за разбиране, структуриран и полезен доклад за потребителя на български език.
 
     **ВХОДНИ ДАННИ:**
 
@@ -237,7 +263,6 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     }
   };
 
-  const model = 'gemini-1.5-flash-latest';
   const response = await fetch(`${GEMINI_API_URL}${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
