@@ -3,8 +3,7 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 kv_namespaces = [
-  { binding = "iris_rag_kv", id = "a7db6bdf8bc94d6d88ec860f4c316fbd" },
-  { binding = "iris_config_kv", id = "" } # задайте ID на вашия KV
+  { binding = "iris_rag_kv", id = "a7db6bdf8bc94d6d88ec860f4c316fbd" }
 ]
 
 [vars]

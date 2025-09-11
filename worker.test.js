@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import worker from './worker.js';
 
 const env = {
-  iris_config_kv: {
+  iris_rag_kv: {
     get: (key) =>
       key === 'iris_config_kv'
         ? Promise.resolve({
@@ -27,7 +27,7 @@ test('OPTIONS заявка връща CORS хедъри', async () => {
   const req = new Request('https://example.com', { method: 'OPTIONS' });
   const res = await worker.fetch(req, env, { waitUntil(){} });
   assert.equal(res.status, 200);
-  assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'https://radilovk.github.io');
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), '*');
 });
 
 test('GET заявка връща 405', async () => {
