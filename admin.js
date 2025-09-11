@@ -66,30 +66,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Функции за комуникация с Worker (API) ---
 
-  /**
-   * (НОВО) Зарежда списъка с налични модели от KV ключа `iris_models_list`.
-   */
   async function loadModelsList() {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/models`);
       if (!res.ok) throw new Error(`[${res.status}] ${await res.text()}`);
       const data = await res.json();
-      MODEL_OPTIONS = data.models || {}; // Запазваме в глобалната променлива
-      // Показваме в текстовото поле за редакция
+      MODEL_OPTIONS = data.models || {};
       modelsListEditor.value = JSON.stringify(MODEL_OPTIONS, null, 2);
     } catch (err) {
       showMessage('Грешка при зареждане на списъка с модели: ' + err.message, 'error');
-      modelsListEditor.value = "{}"; // Показваме празен обект при грешка
+      modelsListEditor.value = "{}";
     }
   }
 
-  /**
-   * (НОВО) Запазва списъка с модели в KV ключа `iris_models_list`.
-   */
   async function saveModelsList() {
     let modelsJson;
     try {
-      // Валидираме дали текстът е валиден JSON
       modelsJson = JSON.parse(modelsListEditor.value);
     } catch (e) {
       showMessage('Грешка: Въведеният текст не е валиден JSON.', 'error');
@@ -106,9 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!res.ok) throw new Error(`[${res.status}] ${await res.text()}`);
       
-      // При успех, обновяваме локалната променлива и UI елементите
       MODEL_OPTIONS = modelsJson;
-      updateUIFromConfig(currentConfig); // Обновяваме падащите менюта
+      updateUIFromConfig(currentConfig);
       showMessage('Списъкът с модели е запазен успешно!', 'success');
 
     } catch (err) {
@@ -157,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showMessage(`Заредена е активната конфигурация: '${currentConfig.name || 'N/A'}'`, 'info');
     } catch (err) {
       showMessage('Грешка при зареждане на активна конфигурация: ' + err.message, 'error');
-      currentConfig = {}; // Нулираме при грешка
-      updateUIFromConfig({}); // Почистваме UI
+      currentConfig = {};
+      updateUIFromConfig({});
     }
   }
 
@@ -205,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         const all = {};
+        // КОРЕКЦИЯТА Е ТУК:
         for (const k of data.keys) {
             const vRes = await fetch(`${WORKER_BASE_URL}/admin/get?key=${encodeURIComponent(k.name)}`);
             if (vRes.ok) {
@@ -308,32 +300,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // (НОВО) Event listener за бутона за запазване на списъка с модели
   saveModelsListBtn.addEventListener('click', saveModelsList);
 
   // --- Първоначално зареждане на страницата ---
 
   async function initialLoad() {
     showLoading();
-    // Зареждаме първо списъка с модели, тъй като конфигурациите зависят от него
     await loadModelsList(); 
-    // След това зареждаме списъка с конфигурации и активната конфигурация
     await loadConfigList();
-    // Накрая зареждаме прегледа на цялото KV хранилище
     await loadAllKV();
     hideLoading();
   }
 
   initialLoad();
-});```
-
-### Обобщение на промените:
-
-1.  **Премахната константа:** `const MODEL_OPTIONS` е премахната. На нейно място е `let MODEL_OPTIONS = {}`, която се попълва при зареждане.
-2.  **Нови селектори:** Добавени са променливи за достъп до `models-list-editor` и `save-models-list`.
-3.  **Нови функции (`loadModelsList`, `saveModelsList`):** Имплементирани са две нови асинхронни функции, които комуникират с worker-а, за да четат и записват `iris_models_list`.
-4.  **Нов Event Listener:** `saveModelsListBtn` вече има закачен `event listener`, който извиква `saveModelsList`.
-5.  **Променен ред на зареждане:** Създадена е нова функция `initialLoad()`, която се изпълнява при зареждане на страницата. Тя гарантира, че списъкът с модели се зарежда **преди** списъка с конфигурации, което е критично за правилното функциониране на падащите менюта.
-6.  **Обработка на грешки:** Добавена е проверка за валидност на JSON-а в `saveModelsList` и по-добра обработка на грешки при зареждане, за да не "крашва" панелът.
-
-Следващата и последна стъпка е да актуализираме `worker.js`, за да добавим двата нови маршрута (`/admin/models`), които този скрипт вече се опитва да използва.
+});
