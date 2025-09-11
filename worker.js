@@ -65,7 +65,7 @@ async function handleAdminRequest(request, env) {
   if (pathname.endsWith('/admin/models')) {
     if (method === 'GET') {
       try {
-        const modelsListJson = await env.KV.get('iris_models_list') || '{}';
+        const modelsListJson = await env.iris_rag_kv.get('iris_models_list') || '{}';
         const models = JSON.parse(modelsListJson);
         return new Response(JSON.stringify({ models }), { // admin.js очаква { models: ... }
           status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
@@ -181,7 +181,7 @@ async function handlePostRequest(request, env) {
   }
 
   const kvKeys = ['iris_config_kv', 'iris_diagnostic_map', 'holistic_interpretation_knowledge', 'remedy_and_recommendation_base'];
-  const kvPromises = kvKeys.map(key => env.KV.get(key, { type: 'json' }));
+  const kvPromises = kvKeys.map(key => env.iris_rag_kv.get(key, { type: 'json' }));
   const [config, irisMap, interpretationKnowledge, remedyBase] = await Promise.all(kvPromises);
 
   if (!config) {
