@@ -14,28 +14,34 @@
   <div id="loading" class="loading"><i class="fas fa-spinner fa-spin"></i></div>
     <div class="container admin-container">
       <h1>Администрация</h1>
-      <h2>Настройки на бота</h2>
+      <div id="message-box"></div>
+
+      <h2>Управление на конфигурации</h2>
+
       <div class="kv-editor">
-        <h3>Системен промпт</h3>
-        <textarea id="role-prompt"></textarea>
-        <button id="save-prompt" class="cta-button">Запази промпт</button>
+        <h3>Конфигурации</h3>
+        <p>Изберете конфигурация, за да я заредите и активирате, или въведете ново име, за да създадете нова.</p>
+        <select id="config-select"></select>
+        <input id="config-name" placeholder="Име на конфигурация">
+        <button id="save-config" class="cta-button">Запази като нова / Актуализирай</button>
       </div>
-        <div class="kv-editor">
-          <h3>Модел за анализ</h3>
-          <select id="provider-select"></select>
-          <select id="model-select"></select>
-          <button id="save-model" class="cta-button">Запази модел</button>
-        </div>
-        <div class="kv-editor">
-          <h3>Конфигурации</h3>
-          <input id="config-name" placeholder="Име на конфигурация">
-          <select id="config-select"></select>
-          <button id="save-config" class="cta-button">Запази конфигурация</button>
-        </div>
-        <h2>Ключове в KV</h2>
-        <pre id="kv-viewer" class="admin-viewer"></pre>
-        <div id="message-box"></div>
+
+      <div class="kv-editor">
+        <h3>Системен промпт (за доклади)</h3>
+        <textarea id="role-prompt" placeholder="Въведете системния промпт за генериране на холистичния доклад..."></textarea>
+        <button id="save-prompt" class="cta-button">Запази промпт в текущата конфигурация</button>
       </div>
+
+      <div class="kv-editor">
+        <h3>Модел за анализ и доклади</h3>
+        <select id="provider-select"></select>
+        <select id="model-select"></select>
+        <button id="save-model" class="cta-button">Запази модел в текущата конфигурация</button>
+      </div>
+      
+      <h2>KV Хранилище (Всички ключове)</h2>
+      <pre id="kv-viewer" class="admin-viewer"></pre>
+    </div>
   <script type="module" src="admin.js"></script>
 </body>
 </html>
