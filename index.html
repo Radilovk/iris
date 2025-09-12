@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iris-Holistica AI | Вашият код към здраве, младост и идеално тегло</title>
+    <title>Iris-Holistica AI | Вашият Био-индивидуален Анализ</title>
     
     <!-- Fonts and Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,29 +72,21 @@
             overflow: hidden;
         }
 
+        /* --- MODIFIED HERO BACKGROUND --- */
         .hero-bg {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--gradient);
-            z-index: -2;
-        }
-        
-        .hero-bg::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/hLqJ3w7/wave-pattern.png');
+            /* The new image is set as the background, with a semi-transparent gradient on top for text readability */
+            background: linear-gradient(120deg, rgba(58, 123, 213, 0.85), rgba(58, 172, 237, 0.85)), url('https://radilovk.github.io/iris/res/iris-biometrics.jpg');
             background-size: cover;
-            opacity: 0.05;
+            background-position: center;
             z-index: -1;
         }
-
+        /* The old ::after pseudo-element is no longer needed */
+        
 
         .hero-content {
             max-width: 800px;
@@ -362,28 +354,7 @@
         .step p {
             color: var(--text-light);
         }
-
-        /* --- Quote Section --- */
-        .quote-section {
-            background-color: var(--white);
-            text-align: center;
-        }
         
-        .quote-content i {
-            font-size: 3rem;
-            color: var(--secondary-color);
-            opacity: 0.3;
-        }
-
-        .quote-content blockquote {
-            font-size: 1.5rem;
-            font-weight: 300;
-            font-style: italic;
-            max-width: 800px;
-            margin: 20px auto;
-            border: none;
-        }
-
         /* --- Footer --- */
         footer {
             background-color: #2c3e50;
@@ -471,11 +442,11 @@
     <header class="hero">
         <div class="hero-bg"></div>
         <div class="container hero-content">
-            <h1 class="fade-in">Отключете кода към вашето здраве, младост и идеално тегло.</h1>
+            <h1 class="fade-in">Персонален Здравен Анализ чрез Ириса.</h1>
             <p class="fade-in" style="transition-delay: 0.2s;">
-                Iris-Holistica AI анализира вашия уникален ирисов отпечатък, за да създаде персонализирана пътна карта, която работи за вас, а не срещу вас.
+                Iris-Holistica AI анализира очите ви, за да създаде био-индивидуален план за хранене, метаболизъм и виталност.
             </p>
-            <a href="analysis.html" class="cta-button fade-in" style="transition-delay: 0.4s;">Започнете своя анализ сега <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="analysis.html" class="cta-button fade-in" style="transition-delay: 0.4s;">Започнете своя анализ <i class="fa-solid fa-arrow-right"></i></a>
         </div>
         <a href="#problem-section" class="scroll-down" aria-label="Scroll down">
              <i class="fa-solid fa-chevron-down"></i>
@@ -488,25 +459,25 @@
         <section id="problem-section" class="section">
             <div class="container">
                 <div class="section-header fade-in">
-                    <h2>Универсалните съвети не работят за вас.</h2>
-                    <p>Вашето тяло има собствен език. Стандартните диети го игнорират, а вие се чувствате изтощени и разочаровани.</p>
+                    <h2>Универсалните съвети не работят.</h2>
+                    <p>Вашето тяло изисква персонален подход. Стандартните диети и решения игнорират вашата уникална биохимия.</p>
                 </div>
                 <div class="problem-grid">
                     <div class="problem-item fade-in">
                         <i class="fa-solid fa-scale-unbalanced-flip"></i>
-                        <h3>Диети с йо-йо ефект, които ви оставят изтощени.</h3>
+                        <h3>Циклични диети без траен резултат.</h3>
                     </div>
                     <div class="problem-item fade-in" style="transition-delay: 0.1s;">
                         <i class="fa-solid fa-puzzle-piece"></i>
-                        <h3>Объркващи симптоми, които не можете да свържете.</h3>
+                        <h3>Неясни симптоми и липса на връзка.</h3>
                     </div>
                     <div class="problem-item fade-in" style="transition-delay: 0.2s;">
                          <i class="fa-solid fa-hourglass-half"></i>
-                        <h3>Признаци на преждевременно стареене.</h3>
+                        <h3>Признаци на ускорено стареене.</h3>
                     </div>
                      <div class="problem-item fade-in" style="transition-delay: 0.3s;">
                         <i class="fa-solid fa-battery-quarter"></i>
-                        <h3>Постоянна липса на енергия и фокус.</h3>
+                        <h3>Хронична умора и липса на фокус.</h3>
                     </div>
                 </div>
             </div>
@@ -516,19 +487,19 @@
         <section class="section solution-section">
             <div class="container">
                 <div class="section-header fade-in">
-                    <h2>Вашите очи държат отговора.</h2>
-                    <p>Разграничаваме вашия генетичен код от моментното ви състояние, за да ви дадем безпрецедентна яснота.</p>
+                    <h2>Отговорът е във вашите очи.</h2>
+                    <p>Ние разграничаваме генетичните предразположения от моментното състояние на организма ви за пълен здравен профил.</p>
                 </div>
                 <div class="solution-grid">
                     <div class="solution-card fade-in" style="transition-delay: 0.1s;">
                         <i class="fa-solid fa-dna"></i>
-                        <h3>Ирисът: Вашият Генетичен Отпечатък</h3>
-                        <p>Ирисът разкрива вашата вродена конституция – силните ви страни и наследствените предразположения. Това е картата, която не се променя.</p>
+                        <h3>Ирис: Генетичен Код</h3>
+                        <p>Ирисът разкрива вродената ви конституция – генетичните силни страни и наследствени предразположения. Това е вашата основа.</p>
                     </div>
                     <div class="solution-card fade-in" style="transition-delay: 0.3s;">
                         <i class="fa-solid fa-stopwatch"></i>
-                        <h3>Склерата: Карта на Текущия Стрес</h3>
-                        <p>Бялото на окото (склерата) показва моментното състояние – възпаление, натоварване и ефектите от начина ви на живот. Това е картата, която МОЖЕТЕ да промените.</p>
+                        <h3>Склера: Моментно Състояние</h3>
+                        <p>Склерата (бялото на окото) показва текущи процеси – възпаление, стрес и натоварване на органи. Това е състоянието, което можете да промените.</p>
                     </div>
                 </div>
             </div>
@@ -538,8 +509,8 @@
         <section class="section">
             <div class="container">
                 <div class="section-header fade-in">
-                    <h2>Какво ще научите за себе си?</h2>
-                    <p>Преведете сигналите на тялото си в конкретен план за действие, фокусиран върху вашите цели.</p>
+                    <h2>Вашият План за Действие.</h2>
+                    <p>Получете конкретни, базирани на данни насоки, за да постигнете целите си.</p>
                 </div>
                 <div class="benefits-grid">
                     <div class="benefit-card fade-in">
@@ -547,8 +518,8 @@
                             <i class="fa-solid fa-person-running"></i>
                         </div>
                         <div class="benefit-content">
-                            <h3>Метаболизъм и Отслабване</h3>
-                            <p>Разберете защо трупате килограми. Идентифицирайте метаболитни блокажи, които саботират усилията ви, и получете план за тяхното преодоляване.</p>
+                            <h3>Оптимизиране на Метаболизма</h3>
+                            <p>Идентифицирайте метаболитните блокажи и получете хранителен план за ефективно регулиране на теглото.</p>
                         </div>
                     </div>
                     <div class="benefit-card fade-in" style="transition-delay: 0.2s;">
@@ -556,8 +527,8 @@
                             <i class="fa-solid fa-seedling"></i>
                         </div>
                         <div class="benefit-content">
-                            <h3>Виталност и Анти-ейджинг</h3>
-                            <p>Вижте реалното ниво на възпаление и оксидативен стрес в тялото си. Получете насоки как да подкрепите клетките си и да забавите стареенето.</p>
+                            <h3>Повишаване на Виталността</h3>
+                            <p>Оценете нивата на оксидативен стрес и възпаление. Научете как да подкрепите клетъчното здраве и да забавите стареенето.</p>
                         </div>
                     </div>
                     <div class="benefit-card fade-in" style="transition-delay: 0.4s;">
@@ -565,8 +536,8 @@
                             <i class="fa-solid fa-bolt"></i>
                         </div>
                         <div class="benefit-content">
-                            <h3>Енергия и Устойчивост</h3>
-                            <p>Открийте кои системи са най-изтощени от хроничния стрес. Научете как да подкрепите своята нервна система, за да възвърнете енергията си.</p>
+                            <h3>Възстановяване на Енергията</h3>
+                            <p>Открийте кои системи са най-засегнати от хроничния стрес и получете насоки за подкрепа на нервната система.</p>
                         </div>
                     </div>
                 </div>
@@ -577,35 +548,25 @@
         <section class="section" style="background-color: var(--white);">
             <div class="container">
                 <div class="section-header fade-in">
-                    <h2>Процесът е лесен и бърз</h2>
-                    <p>Отключете своите прозрения в три лесни стъпки.</p>
+                    <h2>Процес в 3 стъпки</h2>
+                    <p>Получете своя AI анализ бързо и лесно.</p>
                 </div>
                 <div class="how-it-works-steps">
                     <div class="step fade-in">
                         <div class="step-number">1</div>
-                        <h3>Снимай</h3>
-                        <p>Качете ясни снимки на очите си.</p>
+                        <h3>Снимайте</h3>
+                        <p>Качете ясни снимки на ириса и склерата на двете очи.</p>
                     </div>
                     <div class="step fade-in" style="transition-delay: 0.2s;">
                         <div class="step-number">2</div>
-                        <h3>Отговори</h3>
-                        <p>Споделете вашите цели и начин на живот.</p>
+                        <h3>Отговорете</h3>
+                        <p>Попълнете въпросник за вашите цели и начин на живот.</p>
                     </div>
                     <div class="step fade-in" style="transition-delay: 0.4s;">
                         <div class="step-number">3</div>
-                        <h3>Получи</h3>
-                        <p>Получете своя персонален AI доклад.</p>
+                        <h3>Получете</h3>
+                        <p>Получете своя персонален доклад с конкретни препоръки.</p>
                     </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- QUOTE SECTION -->
-        <section class="section quote-section">
-            <div class="container">
-                <div class="quote-content fade-in">
-                    <i class="fa-solid fa-quote-left"></i>
-                    <blockquote>Това не е диагноза. Това е персонализирана пътна карта, създадена от вашето собствено тяло.</blockquote>
                 </div>
             </div>
         </section>
@@ -615,11 +576,11 @@
     <!-- FOOTER / FINAL CTA -->
     <footer>
         <div class="container fade-in">
-            <h3>Готови ли сте да видите разликата?</h3>
-            <p>Спрете да гадаете. Започнете да разбирате. Вашият уникален път към здравето започва с един поглед в огледалото.</p>
-            <a href="analysis.html" class="cta-button">Получете своя персонален анализ <i class="fa-solid fa-arrow-right"></i></a>
+            <h3>Готови ли сте за яснота?</h3>
+            <p>Спрете да гадаете. Получете персонален план за здраве, базиран на вашите уникални био-маркери.</p>
+            <a href="analysis.html" class="cta-button">Искам своя персонален анализ <i class="fa-solid fa-arrow-right"></i></a>
             <div class="copyright">
-                &copy; 2025 Iris-Holistica AI. Всички права запазени.
+                &copy; 2025 Iris-Holistica AI. Всички права запазени. Анализът не представлява медицинска диагноза.
             </div>
         </div>
     </footer>
