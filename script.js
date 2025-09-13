@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // --- ИЗПРАЩАНЕ НА ФОРМАТА (С ВЪЗСТАНОВЕН PROGRESS BAR) ---
+    // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         if (!validateCurrentStep()) return;
@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBarContainer.style.display = 'block';
         progressBar.style.width = '0%';
         
-        // **ВЪЗСТАНОВЕНА ФУНКЦИОНАЛНОСТ:** Динамични съобщения и progress bar
         const progressSteps = [
             { percent: 25, message: 'Оптимизираме вашите изображения...' },
             { percent: 50, message: 'Изпращаме данните за визуален анализ...' },
@@ -173,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 clearInterval(progressInterval);
             }
-        }, 2000); // Малко по-бавно за по-добър ефект
+        }, 2000);
 
         try {
             const formData = new FormData(form);
@@ -186,6 +185,11 @@ document.addEventListener('DOMContentLoaded', function() {
             ]);
             if (leftOptimized) formData.set('left-eye-upload', leftOptimized, leftOptimized.name);
             if (rightOptimized) formData.set('right-eye-upload', rightOptimized, rightOptimized.name);
+
+            // *** НАЙ-ВАЖНАТА ПРОМЯНА ЗАПОЧВА ТУК ***
+            // Тази функция запазва данните от формуляра, за да може "Повтори анализа" да работи.
+            await saveFormDataForReanalysis(formData);
+            // *** КРАЙ НА ПРОМЯНАТА ***
 
             const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
             if (!response.ok) {
@@ -208,6 +212,42 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = 'Изпрати за анализ <i class="fas fa-paper-plane"></i>';
         }
     });
+
+    /**
+     * *** НОВА ФУНКЦИЯ ***
+     * Преобразува FormData в JSON-съвместим обект, включително файловете като base64 низове,
+     * и го запазва в localStorage.
+     * @param {FormData} formData - Обектът с данни от формуляра.
+     */
+    async function saveFormDataForReanalysis(formData) {
+        const object = {};
+        const filePromises = [];
+
+        formData.forEach((value, key) => {
+            if (value instanceof File) {
+                // За файлове, създаваме Promise, който ще ги прочете като base64
+                const readerPromise = new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve({ key, value: reader.result });
+                    reader.readAsDataURL(value);
+                });
+                filePromises.push(readerPromise);
+            } else {
+                // За текстови полета, директно ги добавяме
+                object[key] = value;
+            }
+        });
+
+        // Изчакваме всички файлове да бъдат прочетени
+        const fileResults = await Promise.all(filePromises);
+        fileResults.forEach(result => {
+            object[result.key] = result.value;
+        });
+        
+        // Запазваме целия обект като JSON низ в localStorage
+        localStorage.setItem('iridologyFormData', JSON.stringify(object));
+    }
+
 
     async function optimizeImage(file, maxSize = 1024) {
         return new Promise((resolve, reject) => {
