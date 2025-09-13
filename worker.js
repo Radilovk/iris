@@ -11,11 +11,11 @@
 
 const API_BASE_URLS = {
   gemini: 'https://generativelanguage.googleapis.com/v1beta/models/',
-  openai: 'https://api.openai.com/v1/chat/completions' // Базов URL за OpenAI
+  openai: 'https://api.openai.com/v1/chat/completions'
 };
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*', // По-добре е да се смени с конкретния домейн на фронтенда
+  'Access-Control-Allow-Origin': '*', // За продукция: сменете с конкретния домейн
   'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
@@ -53,21 +53,19 @@ export default {
   },
 };
 
-// --- Логика за обработка на АДМИН заявки ---
+// --- Логика за обработка на АДМИН заявки (без промяна) ---
 
 async function handleAdminRequest(request, env) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const method = request.method;
 
-  // --- (НОВО) Рутер за управление на списъка с модели (използва директен достъп до KV) ---
-  // Този подход е по-ефективен за четене/запис на единични, известни ключове.
   if (pathname.endsWith('/admin/models')) {
     if (method === 'GET') {
       try {
         const modelsListJson = await env.iris_rag_kv.get('iris_models_list') || '{}';
         const models = JSON.parse(modelsListJson);
-        return new Response(JSON.stringify({ models }), { // admin.js очаква { models: ... }
+        return new Response(JSON.stringify({ models }), { 
           status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
         });
       } catch (err) {
@@ -92,8 +90,6 @@ async function handleAdminRequest(request, env) {
     }
   }
 
-  // --- Рутер-прокси към Cloudflare API за управление на конфигурации ---
-  // Този подход е необходим за функции като изброяване на всички ключове (`/keys`).
   const { CF_ACCOUNT_ID, CF_API_TOKEN, CF_KV_NAMESPACE_ID } = env;
   if (!CF_ACCOUNT_ID || !CF_API_TOKEN || !CF_KV_NAMESPACE_ID) {
     return new Response(JSON.stringify({ error: 'Cloudflare API credentials не са конфигурирани.' }), {
@@ -161,7 +157,6 @@ async function handleAdminRequest(request, env) {
 // --- Логика за обработка на POST заявка (AI Анализ) ---
 
 async function handlePostRequest(request, env) {
-  // ... (Тази функция остава непроменена) ...
   const formData = await request.formData();
   const leftEyeFile = formData.get('left-eye-upload');
   const rightEyeFile = formData.get('right-eye-upload');
@@ -217,37 +212,82 @@ async function handlePostRequest(request, env) {
 
 // --- Помощни функции за комуникация с AI ---
 
+/**
+ * *** КЛЮЧОВА ПРОМЯНА ***
+ * Тази функция е напълно преработена, за да поддържа както Gemini, така и OpenAI за визуален анализ.
+ * Вече няма да пропуска анализа на снимките, ако е избран OpenAI.
+ */
 async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiKey) {
-  if (config.provider !== 'gemini') {
-    // OpenAI и други модели могат да изискват различна логика. Засега връщаме празен резултат.
-    // TODO: Имплементирайте заявка към Vision модел на OpenAI, ако е необходимо.
-    console.warn(`Визуален анализ за доставчик '${config.provider}' не е имплементиран. Пропускам стъпка 1.`);
-    return { eye: eyeIdentifier, constitutional_analysis: {}, identified_signs: [] };
-  }
-
-  const base64Image = await arrayBufferToBase64(await file.arrayBuffer());
   const prompt = config.analysis_prompt_template
     .replace('{{EYE_IDENTIFIER}}', eyeIdentifier)
     .replace('{{IRIS_MAP}}', JSON.stringify(irisMap, null, 2));
 
-  if (!apiKey) throw new Error(`API ключ за доставчик 'gemini' не е намерен.`);
-  const apiUrl = `${API_BASE_URLS.gemini}${config.analysis_model}:generateContent?key=${apiKey}`;
+  const base64Image = await arrayBufferToBase64(await file.arrayBuffer());
 
-  const requestBody = {
-    contents: [{ parts: [ { text: prompt }, { inline_data: { mime_type: file.type, data: base64Image } } ] }],
-    generationConfig: { "response_mime_type": "application/json" }
-  };
+  if (!apiKey) throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
 
-  const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+  let apiUrl, requestBody, headers;
+
+  if (config.provider === 'gemini') {
+    apiUrl = `${API_BASE_URLS.gemini}${config.analysis_model}:generateContent?key=${apiKey}`;
+    headers = { 'Content-Type': 'application/json' };
+    requestBody = {
+      contents: [{ parts: [ { text: prompt }, { inline_data: { mime_type: file.type, data: base64Image } } ] }],
+      generationConfig: { "response_mime_type": "application/json" }
+    };
+  } else if (config.provider === 'openai') {
+    // НОВА ЛОГИКА: Конструиране на заявка за OpenAI Vision API
+    apiUrl = API_BASE_URLS.openai;
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    };
+    requestBody = {
+      model: config.analysis_model,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          {
+            type: "image_url",
+            image_url: { "url": `data:${file.type};base64,${base64Image}` }
+          }
+        ]
+      }],
+      max_tokens: 2048,
+      response_format: { type: "json_object" }
+    };
+  } else {
+    // Fallback за неподдържан доставчик
+    console.warn(`Визуален анализ за доставчик '${config.provider}' не е имплементиран. Пропускам стъпка 1.`);
+    return { eye: eyeIdentifier, constitutional_analysis: {}, identified_signs: [] };
+  }
+
+  const response = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(requestBody) });
+
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Грешка от Vision API (gemini): ${response.status}`, errorBody);
-    throw new Error('Неуспешен визуален анализ на изображението.');
+    console.error(`Грешка от Vision API (${config.provider}): ${response.status}`, errorBody);
+    throw new Error(`Неуспешен визуален анализ на изображението с ${config.provider}.`);
   }
 
   const data = await response.json();
-  const jsonText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-  return JSON.parse(jsonText);
+  let jsonText;
+
+  if (config.provider === 'gemini') {
+    jsonText = data.candidates[0].content.parts[0].text;
+  } else if (config.provider === 'openai') {
+    jsonText = data.choices[0].message.content;
+  }
+  
+  jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+  
+  try {
+      return JSON.parse(jsonText);
+  } catch (e) {
+      console.error("Грешка при парсване на JSON от AI (визуален анализ):", jsonText);
+      throw new Error("AI моделът върна невалиден JSON формат за визуалния анализ.");
+  }
 }
 
 async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey) {
@@ -262,17 +302,21 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
 
   if (!apiKey) throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
   
-  // Логика за избор на API и тяло на заявката според доставчика
-  let apiUrl, requestBody;
+  let apiUrl, requestBody, headers;
+
   if (config.provider === 'gemini') {
     apiUrl = `${API_BASE_URLS.gemini}${config.report_model}:generateContent?key=${apiKey}`;
+    headers = { 'Content-Type': 'application/json' };
     requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { "response_mime_type": "application/json" }
     };
   } else if (config.provider === 'openai') {
     apiUrl = API_BASE_URLS.openai;
-    // OpenAI очаква различна структура на тялото на заявката
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    };
     requestBody = {
       model: config.report_model,
       messages: [{ role: "system", content: prompt }],
@@ -281,11 +325,6 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   } else {
     throw new Error(`Доставчик '${config.provider}' не се поддържа.`);
   }
-
-  const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': config.provider === 'openai' ? `Bearer ${apiKey}` : undefined
-  };
 
   const response = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(requestBody) });
 
@@ -305,10 +344,16 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   }
   
   jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-  return JSON.parse(jsonText);
+
+  try {
+      return JSON.parse(jsonText);
+  } catch(e) {
+      console.error("Грешка при парсване на JSON от AI (финален доклад):", jsonText);
+      throw new Error("AI моделът върна невалиден JSON формат за финалния доклад.");
+  }
 }
 
-// --- Други помощни функции ---
+// --- Други помощни функции (без промяна) ---
 
 /**
  * @returns {Promise<string>}
