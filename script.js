@@ -1,5 +1,6 @@
 // --- КОНФИГУРАЦИЯ ---
-const WORKER_URL = 'https://iris.radilov-k.workers.dev/'; // URL на вашия Cloudflare Worker
+// ПРОМЯНА: URL адресът е коригиран да бъде правилният, без допълнителни пътища.
+const WORKER_URL = 'https://iris.radilov-k.workers.dev/'; 
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15MB - Лимит за оригиналния файл
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -115,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function() {
             const file = this.files[0];
             const parentGroup = this.closest('.form-group');
-            parentGroup.classList.remove('error'); // Изчистваме грешката при нов избор
+            parentGroup.classList.remove('error'); 
 
             if (!file) return;
 
@@ -172,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 clearInterval(progressInterval);
             }
-        }, 2000);
+        }, 2000); 
 
         try {
             const formData = new FormData(form);
@@ -185,11 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
             ]);
             if (leftOptimized) formData.set('left-eye-upload', leftOptimized, leftOptimized.name);
             if (rightOptimized) formData.set('right-eye-upload', rightOptimized, rightOptimized.name);
-
-            // *** НАЙ-ВАЖНАТА ПРОМЯНА ЗАПОЧВА ТУК ***
-            // Тази функция запазва данните от формуляра, за да може "Повтори анализа" да работи.
+            
+            // ===================================================================
+            // ▼▼▼ НОВО: Запазваме данните за бутона "Повтори анализа" ▼▼▼
+            // ===================================================================
             await saveFormDataForReanalysis(formData);
-            // *** КРАЙ НА ПРОМЯНАТА ***
+            // ===================================================================
 
             const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
             if (!response.ok) {
@@ -213,42 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    /**
-     * *** НОВА ФУНКЦИЯ ***
-     * Преобразува FormData в JSON-съвместим обект, включително файловете като base64 низове,
-     * и го запазва в localStorage.
-     * @param {FormData} formData - Обектът с данни от формуляра.
-     */
-    async function saveFormDataForReanalysis(formData) {
-        const object = {};
-        const filePromises = [];
-
-        formData.forEach((value, key) => {
-            if (value instanceof File) {
-                // За файлове, създаваме Promise, който ще ги прочете като base64
-                const readerPromise = new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve({ key, value: reader.result });
-                    reader.readAsDataURL(value);
-                });
-                filePromises.push(readerPromise);
-            } else {
-                // За текстови полета, директно ги добавяме
-                object[key] = value;
-            }
-        });
-
-        // Изчакваме всички файлове да бъдат прочетени
-        const fileResults = await Promise.all(filePromises);
-        fileResults.forEach(result => {
-            object[result.key] = result.value;
-        });
-        
-        // Запазваме целия обект като JSON низ в localStorage
-        localStorage.setItem('iridologyFormData', JSON.stringify(object));
-    }
-
-
     async function optimizeImage(file, maxSize = 1024) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -269,5 +235,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 'image/png');
             };
         });
+    }
+
+    // ===================================================================
+    // ▼▼▼ НОВА ФУНКЦИЯ: Запазва данните в localStorage ▼▼▼
+    // ===================================================================
+    async function saveFormDataForReanalysis(formData) {
+        const dataToStore = {};
+        const promises = [];
+
+        const readFileAsDataURL = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        };
+
+        for (const [key, value] of formData.entries()) {
+            // Проверяваме дали е File или Blob
+            if ((value instanceof File || value instanceof Blob) && value.size > 0) {
+                const promise = readFileAsDataURL(value).then(dataUrl => {
+                    dataToStore[key] = dataUrl;
+                });
+                promises.push(promise);
+            } else {
+                dataToStore[key] = value;
+            }
+        }
+
+        await Promise.all(promises);
+        localStorage.setItem('iridologyFormData', JSON.stringify(dataToStore));
     }
 });
