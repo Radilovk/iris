@@ -98,10 +98,24 @@
             color: #333d52;
             line-height: 1.7;
         }
+        
+        /* НОВО: Стилизация за по-добре изглеждащи списъци */
+        .report-section .content ul,
+        .report-section .content ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .report-section .content li {
+            margin-bottom: 0.5rem;
+        }
+        .report-section .content p:last-child {
+            margin-bottom: 0;
+        }
+
 
         .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
         .info-card { background: #fdfdff; border-radius: 10px; padding: 1.5rem; border: 1px solid #e8eef7; }
-        .info-card h4 { font-weight: 600; margin-bottom: 0.5rem; color: #0056b3; }
+        .info-card h4 { font-weight: 600; margin-bottom: 0.5rem; color: #0056b3; display: flex; align-items: center; }
 
         /* Стилизация на "графиките" */
         .channel-analysis-item .bar { background: #e9ecef; }
@@ -144,7 +158,6 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
     <script type="module">
-        // JavaScript кодът остава непроменен
         import { WORKER_URL } from './config.js';
 
         const ICONS_CONFIG = {
@@ -159,17 +172,45 @@
             "default": { icon: "fa-circle-info", color: "#6b7280" }
         };
 
-        const RECOMMENDATION_ORDER = ['Основни принципи', 'Конкретни препоръки', 'Психология '];
-
+        /**
+         * ПРОМЯНА: Нова, по-мощна функция за форматиране.
+         * Превръща прост Markdown (абзаци, списъци с *, номерирани списъци, **удебеляване**) в HTML.
+         */
         function formatTextContent(text) {
-            const lines = DOMPurify.sanitize(text).split('\n').filter(l => l.trim() !== '');
-            if (lines.length > 1) {
-                const items = lines
-                    .map(line => `<li><i class="fas fa-check-circle"></i>${line.trim()}</li>`)
-                    .join('');
-                return `<ul>${items}</ul>`;
-            }
-            return `<p>${lines[0] || ''}</p>`;
+            if (!text) return '';
+            
+            // 1. Почистваме текста от потенциално опасен HTML
+            let sanitizedText = DOMPurify.sanitize(text, { USE_PROFILES: { html: false } });
+
+            // 2. Превръщаме **bold** в <strong>bold</strong>
+            let html = sanitizedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            // 3. Разделяме на абзаци/блокове по два нови реда
+            const blocks = html.split(/\n\s*\n/);
+
+            // 4. Обработваме всеки блок
+            const processedBlocks = blocks.map(block => {
+                block = block.trim();
+                if (!block) return '';
+                
+                // Проверяваме дали блокът е списък с точки (*)
+                const isUnorderedList = /^\*/.test(block);
+                // Проверяваме дали блокът е номериран списък (1.)
+                const isOrderedList = /^\d+\./.test(block);
+
+                if (isUnorderedList) {
+                    const items = block.split('\n').map(line => `<li>${line.replace(/^\*\s*/, '').trim()}</li>`).join('');
+                    return `<ul>${items}</ul>`;
+                } else if (isOrderedList) {
+                    const items = block.split('\n').map(line => `<li>${line.replace(/^\d+\.\s*/, '').trim()}</li>`).join('');
+                    return `<ol>${items}</ol>`;
+                } else {
+                    // Всичко останало е параграф, като заменяме единичните нови редове с <br> за запазване на редовете
+                    return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+                }
+            });
+
+            return processedBlocks.join('');
         }
 
         function renderReport(data) {
@@ -179,7 +220,7 @@
             const hero = document.createElement('div');
             hero.className = 'report-hero';
             hero.innerHTML = `
-                <h3>Персонален анализ за <span style="color: #0056b3;">${DOMPurify.sanitize(data["Име"] || data["Име на пациента"] || 'Клиент')}</span></h3>
+                <h3>Персонален анализ за <span style="color: #0056b3;">${DOMPurify.sanitize(data["Име"] || 'Клиент')}</span></h3>
                 <p>Дата на генериране: ${new Date().toLocaleDateString('bg-BG')}</p>
             `;
             container.appendChild(hero);
@@ -198,7 +239,7 @@
                     let section;
                     if (key === 'Холистични препоръки') {
                         section = createRecommendationsSection(key, content);
-                    } else if (key === 'Анализ на елиминативните канали') {
+                    } else if (key === 'Анализ на елиминативните канали' && typeof content === 'string') {
                         section = createChannelsSection(key, content);
                     } else {
                         section = createCollapsibleSection(key, formatTextContent(content));
@@ -211,7 +252,7 @@
                 const disclaimer = document.createElement('footer');
                 disclaimer.className = 'report-disclaimer';
                 disclaimer.style.marginTop = '2rem';
-                disclaimer.innerHTML = `<i class="fas fa-info-circle"></i><p>${DOMPurify.sanitize(data['Задължителен отказ от отговорност'])}</p>`;
+                disclaimer.innerHTML = `<i class="fas fa-info-circle"></i>${formatTextContent(data['Задължителен отказ от отговорност'])}`;
                 container.appendChild(disclaimer);
             }
         }
@@ -220,6 +261,7 @@
             const config = ICONS_CONFIG[title] || ICONS_CONFIG['default'];
             const details = document.createElement('details');
             details.className = 'report-section';
+            details.setAttribute('open', ''); // Секциите са отворени по подразбиране
             details.innerHTML = `
                 <summary>
                     <div class="summary-title">
@@ -236,61 +278,51 @@
         function createRecommendationsSection(title, recommendationsData) {
             if (!recommendationsData || typeof recommendationsData !== 'object') return document.createElement('div');
 
-            let cardsHTML = '';
-            const handledKeys = new Set();
-
-            RECOMMENDATION_ORDER.forEach(key => {
-                if (Object.prototype.hasOwnProperty.call(recommendationsData, key)) {
-                    handledKeys.add(key);
-                    const value = recommendationsData[key];
-                    const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
-                    cardsHTML += `
-                        <div class="info-card">
-                            <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.5rem;"></i>${DOMPurify.sanitize(key)}</h4>
-                            <p>${DOMPurify.sanitize(value)}</p>
-                        </div>
-                    `;
-                }
-            });
-
+            let subSectionsHTML = '';
+            
             Object.keys(recommendationsData).forEach(key => {
-                if (!handledKeys.has(key)) {
-                    const value = recommendationsData[key];
-                    const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
-                    cardsHTML += `
-                        <div class="info-card">
-                            <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.5rem;"></i>${DOMPurify.sanitize(key)}</h4>
-                            <p>${DOMPurify.sanitize(value)}</p>
-                        </div>
-                    `;
-                }
+                const value = recommendationsData[key];
+                const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
+                const formattedValue = formatTextContent(value); 
+                
+                subSectionsHTML += `
+                    <div class="info-card">
+                        <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.5rem;"></i>${DOMPurify.sanitize(key)}</h4>
+                        <div class="recommendation-content">${formattedValue}</div>
+                    </div>
+                `;
             });
 
-            const contentHTML = `<div class="report-grid">${cardsHTML}</div>`;
-            const section = createCollapsibleSection(title, contentHTML);
-            section.setAttribute('open', '');
-            return section;
+            const contentHTML = `<div class="report-grid">${subSectionsHTML}</div>`;
+            return createCollapsibleSection(title, contentHTML);
         }
         
         function createChannelsSection(title, content) {
+            const textContentHTML = formatTextContent(content);
+            
             const channels = ['черва', 'бъбреци', 'лимфа', 'кожа', 'бели дробове'];
-            let contentHTML = `${formatTextContent(content)}<br><h4>Визуална оценка на натовареността:</h4>`;
+            let barsHTML = '<br><h4>Визуална оценка на натовареността:</h4>';
             channels.forEach(channel => {
                 let level = 'low';
                 let width = '33%';
-                if (content.toLowerCase().includes(channel) && (content.toLowerCase().includes('най-натоварен') || content.toLowerCase().includes('най-затруднен'))) {
-                    level = 'high'; width = '100%';
-                } else if (content.toLowerCase().includes(channel)) {
+                const lowerCaseContent = content.toLowerCase();
+                
+                if (lowerCaseContent.includes(channel) && (lowerCaseContent.includes('най-натоварен') || lowerCaseContent.includes('силно натоварени') || lowerCaseContent.includes('значително натоварване'))) {
+                    level = 'high'; width = '90%';
+                } else if (lowerCaseContent.includes(channel)) {
                     level = 'medium'; width = '66%';
                 }
-                contentHTML += `
+                
+                barsHTML += `
                     <div class="channel-analysis-item" style="display: flex; align-items: center; margin-bottom: 0.75rem;">
                         <span style="width: 120px; font-weight: 500;">${channel.charAt(0).toUpperCase() + channel.slice(1)}</span>
                         <div class="bar" style="flex-grow: 1; height: 10px; border-radius: 5px; overflow: hidden;"><div class="bar-fill ${level}" style="height: 100%; width: ${width}; transition: width 0.8s ease-out;"></div></div>
                     </div>
                 `;
             });
-            return createCollapsibleSection(title, contentHTML);
+
+            const finalContentHTML = textContentHTML + barsHTML;
+            return createCollapsibleSection(title, finalContentHTML);
         }
 
         document.addEventListener('DOMContentLoaded', function () {
