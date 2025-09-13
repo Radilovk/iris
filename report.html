@@ -204,8 +204,16 @@
 
         // Функция за форматиране на Markdown към HTML
         function formatTextContent(text) {
-            if (!text) return '';
-            let sanitizedText = DOMPurify.sanitize(text, { USE_PROFILES: { html: false } });
+            if (text == null) return '';
+            if (Array.isArray(text)) {
+                return `<ul>${text.map(item => `<li>${formatTextContent(item)}</li>`).join('')}</ul>`;
+            }
+            if (typeof text === 'object') {
+                const main = formatTextContent(text.text || Object.values(text).join(' '));
+                const source = text.source ? `<p><em>Източник: ${DOMPurify.sanitize(text.source)}</em></p>` : '';
+                return main + source;
+            }
+            let sanitizedText = DOMPurify.sanitize(String(text), { USE_PROFILES: { html: false } });
             let html = sanitizedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             const blocks = html.split(/\n\s*\n/);
             const processedBlocks = blocks.map(block => {
