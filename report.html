@@ -34,7 +34,6 @@
     <script type="module">
         import { WORKER_URL } from './config.js';
 
-        // ПРОМЯНА: Актуализиран ключ от "Емоционална подкрепа" на "Психология и емоции"
         const ICONS_CONFIG = {
             "Конституционален анализ": { icon: "fa-shield-halved", color: "#3b82f6" },
             "Приоритетни системи за подкрепа": { icon: "fa-heart-pulse", color: "#ef4444" },
@@ -47,7 +46,6 @@
             "default": { icon: "fa-circle-info", color: "#6b7280" }
         };
         
-        // Функцията за форматиране остава същата, тя е мощна и работи добре.
         function formatTextContent(text) {
             if (!text) return '';
             let sanitizedText = DOMPurify.sanitize(text, { USE_PROFILES: { html: false } });
@@ -75,7 +73,6 @@
             const container = document.getElementById('report-container');
             container.innerHTML = '';
 
-            // ПРОМЯНА: Обновен HTML за хедъра на доклада за по-добра визия
             const hero = document.createElement('div');
             hero.className = 'report-hero';
             hero.innerHTML = `
@@ -205,8 +202,6 @@
                     messageBox.textContent = '';
                     messageBox.className = '';
 
-                    // Този код е коректен. За да работи, е КЛЮЧОВО на страницата с формата
-                    // данните да се записват в localStorage под ключ 'iridologyFormData'.
                     const stored = localStorage.getItem('iridologyFormData');
                     if (!stored) {
                         messageBox.textContent = 'Липсват данни за повторен анализ. Моля, стартирайте нов анализ.';
@@ -220,6 +215,7 @@
                     const obj = JSON.parse(stored);
                     for (const [key, value] of Object.entries(obj)) {
                         if (typeof value === 'string' && value.startsWith('data:')) {
+                            // По-надежден начин за преобразуване на base64 към Blob
                             const res = await fetch(value);
                             const blob = await res.blob();
                             formData.append(key, blob, `${key}.png`);
