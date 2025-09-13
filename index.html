@@ -244,13 +244,11 @@
         }
 
         .solution-card {
-            background: linear-gradient(135deg, rgba(58, 123, 213, 0.15), rgba(58, 172, 237, 0.15));
-            border: 1px solid rgba(58, 123, 213, 0.3);
+            background: var(--white);
+            border: 1px solid rgba(58, 123, 213, 0.2);
             border-radius: 20px;
             padding: 30px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
             text-align: center;
         }
 
@@ -258,15 +256,18 @@
             font-size: 3rem;
             margin-bottom: 20px;
             display: block;
+            color: var(--primary-color);
         }
-        
+
         .solution-card h3 {
             font-size: 1.5rem;
             margin-bottom: 10px;
+            color: var(--text-color);
         }
-        
+
         .solution-card p {
             font-weight: 300;
+            color: var(--text-light);
         }
 
         /* --- Benefits Section --- */
