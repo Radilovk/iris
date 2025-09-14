@@ -5,7 +5,12 @@
     "moduleResolution": "node16",
     "allowJs": true,
     "checkJs": true,
-    "lib": ["ES2022", "DOM", "WebWorker"]
+    "lib": [
+      "ES2022",
+      "WebWorker"
+    ]
   },
-  "include": ["worker.js"]
+  "include": [
+    "worker.js"
+  ]
 }

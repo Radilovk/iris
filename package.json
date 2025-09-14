@@ -4,22 +4,13 @@
   "description": "Този проект съдържа Cloudflare Worker, който изпълнява многостъпков RAG анализ на ирисови изображения.",
   "main": "worker.js",
   "scripts": {
-    "test": "node worker.test.js",
-    "upload-kv": "node upload-kv.js",
-    "test:kv": "node scripts/validate-kv.js",
-    "validate-kv": "node scripts/validate-kv-summary.js",
-    "build:kv": "node scripts/generate-kv-data.js",
-    "sync:kv": "node scripts/sync-kv.js",
-    "watch:kv": "node scripts/sync-kv.js",
-    "books:sync": "node scripts/books-to-kv.js && node upload-kv.js"
+    "test": "node worker.test.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
-  "dependencies": {
-    "dotenv": "^16.6.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^24.3.0"
   }
