@@ -291,14 +291,29 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
 }
 
 async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey) {
+  const identifiedSigns = [
+    ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
+    ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
+  ];
+
+  const keywordSet = buildKeywordSet(identifiedSigns);
+  const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
+  const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
+
+  const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
+  const remedyPayload = JSON.stringify(relevantRemedyBase, null, 2);
+  const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
+    ? remedyBase.mandatory_disclaimer.text
+    : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
+
   const prompt = config.report_prompt_template
     .replace('{{USER_DATA}}', JSON.stringify(userData, null, 2))
     .replace('{{LEFT_EYE_ANALYSIS}}', JSON.stringify(leftEyeAnalysis, null, 2))
     .replace('{{RIGHT_EYE_ANALYSIS}}', JSON.stringify(rightEyeAnalysis, null, 2))
-    .replace('{{INTERPRETATION_KNOWLEDGE}}', JSON.stringify(interpretationKnowledge, null, 2))
-    .replace('{{REMEDY_BASE}}', JSON.stringify(remedyBase, null, 2))
+    .replace('{{INTERPRETATION_KNOWLEDGE}}', interpretationPayload)
+    .replace('{{REMEDY_BASE}}', remedyPayload)
     .replace('{{PATIENT_NAME}}', userData.name || 'Не е посочено')
-    .replace('{{DISCLAIMER}}', remedyBase.mandatory_disclaimer.text);
+    .replace('{{DISCLAIMER}}', disclaimerText);
 
   if (!apiKey) throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
   
@@ -353,6 +368,265 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   }
 }
 
+function buildKeywordSet(identifiedSigns) {
+  const keywords = new Set();
+  if (!Array.isArray(identifiedSigns)) return keywords;
+
+  for (const sign of identifiedSigns) {
+    if (!sign || typeof sign !== 'object') continue;
+    ['sign_name', 'description', 'location'].forEach((field) => {
+      if (sign[field]) {
+        addKeywordVariants(keywords, String(sign[field]));
+      }
+    });
+  }
+
+  return keywords;
+}
+
+function addKeywordVariants(set, value) {
+  const normalized = value.toLowerCase();
+  if (normalized) set.add(normalized);
+  const slug = slugify(value);
+  if (slug) set.add(slug);
+  const words = normalized.split(/[^a-zа-я0-9]+/i).filter(word => word && word.length >= 4);
+  for (const word of words) {
+    set.add(word);
+  }
+}
+
+function selectRelevantInterpretationKnowledge(knowledge, keywords) {
+  const ALWAYS_INCLUDE_KEYS = ['scientific_validation_summary', 'analysis_flow', 'elimination_channels'];
+  const filteredKnowledge = {};
+  const matchedRemedyLinks = new Set();
+
+  if (!knowledge || typeof knowledge !== 'object') {
+    return { filteredKnowledge, matchedRemedyLinks };
+  }
+
+  for (const [key, value] of Object.entries(knowledge)) {
+    if (ALWAYS_INCLUDE_KEYS.includes(key)) {
+      filteredKnowledge[key] = value;
+      continue;
+    }
+
+    const { included, filteredValue, remedyLinks } = filterKnowledgeValue(value, keywords);
+    if (included) {
+      filteredKnowledge[key] = filteredValue;
+      remedyLinks.forEach(link => matchedRemedyLinks.add(link));
+    }
+  }
+
+  if (!Object.keys(filteredKnowledge).length) {
+    filteredKnowledge.summary = 'Няма директно открити секции в базата; използвай експертна преценка за интерпретация.';
+  }
+
+  return { filteredKnowledge, matchedRemedyLinks };
+}
+
+function filterKnowledgeValue(value, keywords) {
+  const remedyLinks = new Set();
+
+  if (value == null) {
+    return { included: false, filteredValue: value, remedyLinks };
+  }
+
+  if (typeof value === 'string') {
+    return { included: matchesKeywords(value, keywords), filteredValue: value, remedyLinks };
+  }
+
+  if (Array.isArray(value)) {
+    const filteredArray = [];
+    for (const item of value) {
+      const result = filterKnowledgeValue(item, keywords);
+      if (result.included) {
+        filteredArray.push(result.filteredValue);
+        result.remedyLinks.forEach(link => remedyLinks.add(link));
+      }
+    }
+    return { included: filteredArray.length > 0, filteredValue: filteredArray, remedyLinks };
+  }
+
+  if (typeof value === 'object') {
+    const result = {};
+    let included = false;
+    const ownRemedyLinks = [];
+
+    for (const [key, child] of Object.entries(value)) {
+      if (key === 'remedy_link' && typeof child === 'string') {
+        const slug = slugify(child);
+        if (keywords.has(slug) || keywords.has(child.toLowerCase())) {
+          included = true;
+        }
+        ownRemedyLinks.push(child);
+        result[key] = child;
+        continue;
+      }
+
+      const childResult = filterKnowledgeValue(child, keywords);
+      if (childResult.included) {
+        result[key] = childResult.filteredValue;
+        included = true;
+        childResult.remedyLinks.forEach(link => remedyLinks.add(link));
+      } else if (typeof child === 'string' && matchesKeywords(child, keywords)) {
+        result[key] = child;
+        included = true;
+      }
+    }
+
+    const descriptiveKeys = ['name', 'title', 'summary', 'description'];
+    for (const key of descriptiveKeys) {
+      if (value[key] && matchesKeywords(String(value[key]), keywords)) {
+        result[key] = value[key];
+        included = true;
+      }
+    }
+
+    if (included) {
+      ownRemedyLinks.forEach(link => remedyLinks.add(link));
+      const filteredObject = { ...result };
+      for (const key of ['name', 'title', 'summary', 'description']) {
+        if (value[key] !== undefined && filteredObject[key] === undefined) {
+          filteredObject[key] = value[key];
+        }
+      }
+      return { included: true, filteredValue: filteredObject, remedyLinks };
+    }
+
+    return { included: false, filteredValue: result, remedyLinks };
+  }
+
+  return { included: false, filteredValue: value, remedyLinks };
+}
+
+function selectRelevantRemedyBase(remedyBase, remedyLinks, keywords) {
+  const ALWAYS_INCLUDE_KEYS = ['foundational_principles'];
+  const filteredBase = {};
+  if (!remedyBase || typeof remedyBase !== 'object') {
+    return filteredBase;
+  }
+
+  const normalizedLinks = new Set(Array.from(remedyLinks || []).map(slugify));
+
+  for (const [key, value] of Object.entries(remedyBase)) {
+    if (key === 'mandatory_disclaimer') {
+      continue;
+    }
+
+    if (ALWAYS_INCLUDE_KEYS.includes(key)) {
+      filteredBase[key] = value;
+      continue;
+    }
+
+    const { included, filteredValue } = filterRemedyValue(key, value, normalizedLinks, keywords);
+    if (included) {
+      filteredBase[key] = filteredValue;
+    }
+  }
+
+  if (remedyBase.mandatory_disclaimer) {
+    filteredBase.mandatory_disclaimer = remedyBase.mandatory_disclaimer;
+  }
+
+  if (!Object.keys(filteredBase).length) {
+    filteredBase.summary = 'Няма директно съвпадащи препоръки; използвай професионална преценка.';
+  }
+
+  return filteredBase;
+}
+
+function filterRemedyValue(keyName, value, normalizedLinks, keywords) {
+  if (value == null) {
+    return { included: false, filteredValue: value };
+  }
+
+  const keySlug = slugify(keyName);
+  if (keySlug && normalizedLinks.has(keySlug)) {
+    return { included: true, filteredValue: value };
+  }
+
+  if (typeof value === 'string') {
+    return { included: matchesKeywords(value, keywords), filteredValue: value };
+  }
+
+  if (Array.isArray(value)) {
+    const filteredArray = [];
+    for (const item of value) {
+      const result = filterRemedyValue('', item, normalizedLinks, keywords);
+      if (result.included) {
+        filteredArray.push(result.filteredValue);
+      }
+    }
+    return { included: filteredArray.length > 0, filteredValue: filteredArray };
+  }
+
+  if (typeof value === 'object') {
+    const descriptor = value.id || value.key || value.remedy_link || value.name || value.title;
+    const descriptorSlug = typeof descriptor === 'string' ? slugify(descriptor) : '';
+    if (descriptorSlug && normalizedLinks.has(descriptorSlug)) {
+      return { included: true, filteredValue: value };
+    }
+
+    const result = {};
+    let included = false;
+
+    for (const [childKey, childValue] of Object.entries(value)) {
+      const childResult = filterRemedyValue(childKey, childValue, normalizedLinks, keywords);
+      if (childResult.included) {
+        result[childKey] = childResult.filteredValue;
+        included = true;
+      }
+    }
+
+    if (!included) {
+      const descriptiveKeys = ['name', 'title', 'description', 'details', 'application', 'summary', 'context'];
+      for (const key of descriptiveKeys) {
+        if (typeof value[key] === 'string' && matchesKeywords(value[key], keywords)) {
+          result[key] = value[key];
+          included = true;
+        }
+      }
+    }
+
+    if (included) {
+      const filteredObject = { ...result };
+      for (const key of ['name', 'title', 'description', 'details', 'application', 'summary', 'context']) {
+        if (value[key] !== undefined && filteredObject[key] === undefined) {
+          filteredObject[key] = value[key];
+        }
+      }
+      return { included: true, filteredValue: filteredObject };
+    }
+
+    return { included: false, filteredValue: result };
+  }
+
+  return { included: false, filteredValue: value };
+}
+
+function matchesKeywords(text, keywords) {
+  if (!text || !keywords || !keywords.size) return false;
+  const normalized = text.toLowerCase();
+  for (const keyword of keywords) {
+    if (!keyword) continue;
+    if (normalized.includes(keyword)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function slugify(text) {
+  if (!text) return '';
+  return String(text)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9а-я]+/giu, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
 // --- Други помощни функции (без промяна) ---
 
 /**
@@ -367,3 +641,10 @@ async function arrayBufferToBase64(buffer) {
   }
   return btoa(binary);
 }
+
+export const __testables__ = {
+  generateHolisticReport,
+  buildKeywordSet,
+  selectRelevantInterpretationKnowledge,
+  selectRelevantRemedyBase
+};
