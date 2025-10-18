@@ -171,4 +171,4 @@
       "source": "Синтезирано по Джон Андрюс; Functional Medicine Matrix 2022; J Am Holist Vet Med Assoc. 2023;70:21-29"
     }
   ]
-}```
+}
