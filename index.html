@@ -41,6 +41,29 @@
             overflow-x: hidden;
         }
 
+        .intro-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            overflow: hidden;
+        }
+
+        .intro-overlay.active {
+            display: flex;
+        }
+
+        .intro-video {
+            width: 100%;
+            height: 100%;
+            flex: 1;
+            object-fit: cover;
+            display: block;
+        }
+
         .container {
             max-width: 1100px;
             margin: 0 auto;
@@ -439,6 +462,13 @@
 </head>
 <body>
 
+    <div class="intro-overlay" id="introOverlay" aria-hidden="true">
+        <video class="intro-video" id="introVideo" playsinline preload="auto" tabindex="-1">
+            <source src="res/petal_20250912_043530.mp4" type="video/mp4">
+            Вашият браузър не поддържа възпроизвеждане на видео.
+        </video>
+    </div>
+
     <!-- HERO SECTION -->
     <header class="hero">
         <div class="hero-bg"></div>
@@ -603,6 +633,58 @@
 
             const elementsToAnimate = document.querySelectorAll('.fade-in');
             elementsToAnimate.forEach(el => observer.observe(el));
+
+            const introOverlay = document.getElementById('introOverlay');
+            const introVideo = document.getElementById('introVideo');
+            const INTRO_KEY = 'irisIntroPlayed';
+
+            if (introOverlay && introVideo) {
+                const hideIntro = () => {
+                    introOverlay.classList.remove('active');
+                    introOverlay.setAttribute('aria-hidden', 'true');
+                };
+
+                const finishIntro = () => {
+                    localStorage.setItem(INTRO_KEY, '1');
+                    introVideo.pause();
+                    hideIntro();
+                    introVideo.removeEventListener('ended', finishIntro);
+                };
+
+                const tryPlayWithSound = () => {
+                    introVideo.removeAttribute('controls');
+                    introVideo.muted = false;
+                    introVideo.volume = 1;
+                    const playAttempt = introVideo.play();
+                    if (playAttempt && typeof playAttempt.then === 'function') {
+                        playAttempt.catch(() => {
+                            introVideo.muted = true;
+                            introVideo.play().then(() => {
+                                setTimeout(() => {
+                                    introVideo.muted = false;
+                                    introVideo.volume = 1;
+                                }, 250);
+                            }).catch(() => {
+                                console.warn('Интро видеото не може да се стартира автоматично.');
+                            });
+                        });
+                    }
+                };
+
+                const hasSeenIntro = localStorage.getItem(INTRO_KEY);
+
+                if (!hasSeenIntro) {
+                    introOverlay.classList.add('active');
+                    introOverlay.setAttribute('aria-hidden', 'false');
+                    introVideo.autoplay = true;
+                    introVideo.loop = false;
+                    introVideo.currentTime = 0;
+                    tryPlayWithSound();
+                    introVideo.addEventListener('ended', finishIntro);
+                } else {
+                    hideIntro();
+                }
+            }
         });
     </script>
 
