@@ -41,48 +41,6 @@
             overflow-x: hidden;
         }
 
-        .intro-overlay {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            flex-direction: column;
-            gap: 20px;
-            padding: 30px;
-        }
-
-        .intro-overlay.active {
-            display: flex;
-        }
-
-        .intro-video {
-            width: min(900px, 90vw);
-            max-height: 90vh;
-            border-radius: 16px;
-            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
-        }
-
-        .intro-skip {
-            padding: 12px 28px;
-            border-radius: 999px;
-            border: none;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            background: var(--gradient);
-            color: var(--white);
-            box-shadow: 0 15px 30px rgba(58, 123, 213, 0.35);
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
-
-        .intro-skip:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 35px rgba(58, 123, 213, 0.45);
-        }
-
         .container {
             max-width: 1100px;
             margin: 0 auto;
@@ -481,14 +439,6 @@
 </head>
 <body>
 
-    <div class="intro-overlay" id="introOverlay" aria-hidden="true">
-        <video class="intro-video" id="introVideo" playsinline preload="auto">
-            <source src="res/petal_20250912_043530.mp4" type="video/mp4">
-            Вашият браузър не поддържа възпроизвеждане на видео.
-        </video>
-        <button class="intro-skip" id="introSkip" type="button">Пропусни интрото</button>
-    </div>
-
     <!-- HERO SECTION -->
     <header class="hero">
         <div class="hero-bg"></div>
@@ -653,48 +603,6 @@
 
             const elementsToAnimate = document.querySelectorAll('.fade-in');
             elementsToAnimate.forEach(el => observer.observe(el));
-
-            const introOverlay = document.getElementById('introOverlay');
-            const introVideo = document.getElementById('introVideo');
-            const introSkip = document.getElementById('introSkip');
-            const INTRO_KEY = 'irisIntroPlayed';
-
-            if (introOverlay && introVideo && introSkip) {
-                const hideIntro = () => {
-                    introOverlay.classList.remove('active');
-                    introOverlay.setAttribute('aria-hidden', 'true');
-                };
-
-                const finishIntro = () => {
-                    localStorage.setItem(INTRO_KEY, '1');
-                    introVideo.pause();
-                    hideIntro();
-                    introVideo.removeEventListener('ended', finishIntro);
-                };
-
-                const hasSeenIntro = localStorage.getItem(INTRO_KEY);
-
-                if (!hasSeenIntro) {
-                    introOverlay.classList.add('active');
-                    introOverlay.setAttribute('aria-hidden', 'false');
-                    introVideo.muted = true;
-                    const playPromise = introVideo.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(() => {
-                            introVideo.setAttribute('controls', '');
-                        });
-                    }
-
-                    introVideo.addEventListener('ended', finishIntro);
-
-                    introSkip.addEventListener('click', () => {
-                        introVideo.removeEventListener('ended', finishIntro);
-                        finishIntro();
-                    });
-                } else {
-                    hideIntro();
-                }
-            }
         });
     </script>
 
