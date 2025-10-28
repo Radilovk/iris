@@ -463,7 +463,7 @@
 <body>
 
     <div class="intro-overlay" id="introOverlay" aria-hidden="true">
-        <video class="intro-video" id="introVideo" playsinline preload="auto" tabindex="-1">
+        <video class="intro-video" id="introVideo" playsinline preload="auto" muted tabindex="-1">
             <source src="res/petal_20250912_043530.mp4" type="video/mp4">
             Вашият браузър не поддържа възпроизвеждане на видео.
         </video>
@@ -651,23 +651,37 @@
                     introVideo.removeEventListener('ended', finishIntro);
                 };
 
-                const tryPlayWithSound = () => {
+                const autoplayIntroVideo = () => {
+                    introVideo.setAttribute('muted', '');
+                    introVideo.muted = true;
+                    introVideo.volume = 0;
                     introVideo.removeAttribute('controls');
-                    introVideo.muted = false;
-                    introVideo.volume = 1;
+
+                    const restoreSound = () => {
+                        introVideo.muted = false;
+                        introVideo.volume = 1;
+                    };
+
                     const playAttempt = introVideo.play();
                     if (playAttempt && typeof playAttempt.then === 'function') {
-                        playAttempt.catch(() => {
-                            introVideo.muted = true;
-                            introVideo.play().then(() => {
-                                setTimeout(() => {
-                                    introVideo.muted = false;
-                                    introVideo.volume = 1;
-                                }, 250);
-                            }).catch(() => {
-                                console.warn('Интро видеото не може да се стартира автоматично.');
-                            });
+                        playAttempt.then(() => {
+                            const onFirstProgress = () => {
+                                if (introVideo.currentTime > 0.5) {
+                                    restoreSound();
+                                    introVideo.removeEventListener('timeupdate', onFirstProgress);
+                                }
+                            };
+
+                            introVideo.addEventListener('timeupdate', onFirstProgress);
+                            setTimeout(restoreSound, 1200);
+                        }).catch(() => {
+                            console.warn('Интро видеото не можа да се стартира автоматично. Очаква се интеракция от потребителя.');
+                            introVideo.setAttribute('controls', 'controls');
+                            introOverlay.classList.add('active');
+                            introOverlay.setAttribute('aria-hidden', 'false');
                         });
+                    } else {
+                        setTimeout(restoreSound, 1200);
                     }
                 };
 
@@ -679,7 +693,7 @@
                     introVideo.autoplay = true;
                     introVideo.loop = false;
                     introVideo.currentTime = 0;
-                    tryPlayWithSound();
+                    autoplayIntroVideo();
                     introVideo.addEventListener('ended', finishIntro);
                 } else {
                     hideIntro();
