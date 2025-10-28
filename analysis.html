@@ -57,26 +57,40 @@
                             </select>
                         </div>
                         <div class="form-group full-width">
-                            <label for="main-complaint">Основна причина за консултацията / Основни оплаквания:</label>
-                            <textarea id="main-complaint" name="main-complaint" rows="3" required></textarea>
+                            <label>Вашата основна цел:</label>
+                            <p class="form-hint">Изберете всички направления, които искате да развием заедно.</p>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item"><input type="checkbox" name="main-goals" value="Отслабване"> Отслабване</label>
+                                <label class="checkbox-item"><input type="checkbox" name="main-goals" value="Антиейджинг"> Антиейджинг</label>
+                                <label class="checkbox-item"><input type="checkbox" name="main-goals" value="Възстановяване"> Възстановяване</label>
+                            </div>
                         </div>
-                        <div class="form-group full-width">
-                             <label>Претърпявали ли сте операции или сериозни травми?</label>
-                            <input type="text" id="surgeries" name="surgeries" placeholder="Ако да, опишете (напр. апендектомия)">
-                        </div>
+                        <details class="form-details full-width">
+                            <summary>Здравословно състояние</summary>
+                            <div class="details-content">
+                                <p class="form-hint">Отбележете актуалните за вас състояния, за да адаптираме анализа.</p>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Инсулинова резистентност"> Инсулинова резистентност</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Диабет тип 2"> Диабет тип 2</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хашимото"> Хашимото</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хипертония"> Хипертония</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Повишен холестерол"> Повишен холестерол</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Автоимунно заболяване"> Автоимунно заболяване</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Храносмилателни проблеми"> Храносмилателни проблеми</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Интоксикация на черен дроб"> Интоксикация на черен дроб</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хормонален дисбаланс"> Хормонален дисбаланс</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Бременност"> Бременност</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хронична умора"> Хронична умора</label>
+                                </div>
+                                <div class="form-group other-health">
+                                    <label for="health-other">Друго:</label>
+                                    <input type="text" id="health-other" name="health-other" placeholder="Опишете друго важно състояние">
+                                </div>
+                            </div>
+                        </details>
                         <div class="form-group full-width">
                             <label>Фамилна анамнеза (сърдечни проблеми, диабет и др.):</label>
                             <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'">
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Оплаквания, свързани с храносмилането:</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Запек"> Запек</label>
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Подуване"> Подуване</label>
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Киселини"> Киселини</label>
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Газове"> Газове</label>
-                                <label class="checkbox-item"><input type="checkbox" name="digestion" value="Диария"> Диария</label>
-                            </div>
                         </div>
                     </div>
                     <button type="button" class="btn btn-primary next-btn">Продължи <i class="fas fa-arrow-right"></i></button>
