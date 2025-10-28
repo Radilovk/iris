@@ -41,40 +41,6 @@
             overflow-x: hidden;
         }
 
-        .intro-overlay {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            flex-direction: column;
-            gap: 24px;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .intro-overlay.active {
-            display: flex;
-        }
-
-        .intro-video {
-            width: min(900px, 90vw);
-            max-height: 90vh;
-            border-radius: 16px;
-            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
-        }
-
-        .intro-message {
-            color: var(--white);
-            font-size: 1rem;
-            font-weight: 500;
-            max-width: 480px;
-            line-height: 1.5;
-            opacity: 0.85;
-        }
-
         .container {
             max-width: 1100px;
             margin: 0 auto;
@@ -473,14 +439,6 @@
 </head>
 <body>
 
-    <div class="intro-overlay" id="introOverlay" aria-hidden="true">
-        <video class="intro-video" id="introVideo" playsinline preload="auto" tabindex="-1">
-            <source src="res/petal_20250912_043530.mp4" type="video/mp4">
-            Вашият браузър не поддържа възпроизвеждане на видео.
-        </video>
-        <p class="intro-message" id="introMessage">Първото зареждане на Iris-Holistica AI започва с бранд интро със звук. Моля, уверете се, че звукът на устройството е активен.</p>
-    </div>
-
     <!-- HERO SECTION -->
     <header class="hero">
         <div class="hero-bg"></div>
@@ -645,49 +603,6 @@
 
             const elementsToAnimate = document.querySelectorAll('.fade-in');
             elementsToAnimate.forEach(el => observer.observe(el));
-
-            const introOverlay = document.getElementById('introOverlay');
-            const introVideo = document.getElementById('introVideo');
-            const introMessage = document.getElementById('introMessage');
-            const INTRO_KEY = 'irisIntroPlayed';
-
-            if (introOverlay && introVideo) {
-                const hideIntro = () => {
-                    introOverlay.classList.remove('active');
-                    introOverlay.setAttribute('aria-hidden', 'true');
-                };
-
-                const finishIntro = () => {
-                    localStorage.setItem(INTRO_KEY, '1');
-                    introVideo.pause();
-                    hideIntro();
-                    introVideo.removeEventListener('ended', finishIntro);
-                };
-
-                const hasSeenIntro = localStorage.getItem(INTRO_KEY);
-
-                if (!hasSeenIntro) {
-                    introOverlay.classList.add('active');
-                    introOverlay.setAttribute('aria-hidden', 'false');
-                    introVideo.autoplay = true;
-                    introVideo.loop = false;
-                    introVideo.muted = false;
-                    introVideo.volume = 1;
-                    const playPromise = introVideo.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(() => {
-                            introVideo.setAttribute('controls', '');
-                            if (introMessage) {
-                                introMessage.textContent = 'Докоснете видеото, за да стартирате интрото със звук.';
-                            }
-                        });
-                    }
-
-                    introVideo.addEventListener('ended', finishIntro);
-                } else {
-                    hideIntro();
-                }
-            }
         });
     </script>
 
