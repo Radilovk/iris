@@ -304,7 +304,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
   ];
 
-  const keywordSet = buildKeywordSet(identifiedSigns);
+  const keywordSet = buildKeywordSet(identifiedSigns, userData);
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
@@ -376,17 +376,35 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   }
 }
 
-function buildKeywordSet(identifiedSigns) {
+function buildKeywordSet(identifiedSigns, userData = {}) {
   const keywords = new Set();
-  if (!Array.isArray(identifiedSigns)) return keywords;
+  if (Array.isArray(identifiedSigns)) {
+    for (const sign of identifiedSigns) {
+      if (!sign || typeof sign !== 'object') continue;
+      ['sign_name', 'description', 'location'].forEach((field) => {
+        addValueToKeywords(keywords, sign[field]);
+      });
+    }
+  }
 
-  for (const sign of identifiedSigns) {
-    if (!sign || typeof sign !== 'object') continue;
-    ['sign_name', 'description', 'location'].forEach((field) => {
-      if (sign[field]) {
-        addKeywordVariants(keywords, String(sign[field]));
+  if (userData && typeof userData === 'object') {
+    const arrayLikeFields = ['main-goals', 'health-status'];
+    for (const field of arrayLikeFields) {
+      addValueToKeywords(keywords, userData[field]);
+    }
+
+    addValueToKeywords(keywords, userData['health-other']);
+    addValueToKeywords(keywords, userData['family-history']);
+
+    const stressValue = Number(userData.stress ?? userData['stress-level']);
+    if (!Number.isNaN(stressValue)) {
+      addValueToKeywords(keywords, `стрес ${stressValue}`);
+      addValueToKeywords(keywords, `stress level ${stressValue}`);
+      if (stressValue >= 7) {
+        addValueToKeywords(keywords, 'високо ниво на стрес');
+        addValueToKeywords(keywords, 'висок стрес');
       }
-    });
+    }
   }
 
   return keywords;
@@ -400,6 +418,23 @@ function addKeywordVariants(set, value) {
   const words = normalized.split(/[^a-zа-я0-9]+/i).filter(word => word && word.length >= 4);
   for (const word of words) {
     set.add(word);
+  }
+}
+
+function addValueToKeywords(set, value) {
+  if (value == null) return;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      addValueToKeywords(set, item);
+    }
+    return;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    const text = String(value).trim();
+    if (text) {
+      addKeywordVariants(set, text);
+    }
   }
 }
 
