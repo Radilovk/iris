@@ -58,9 +58,9 @@ test('generateHolisticReport подава релевантни секции и �
           message: {
             content: JSON.stringify({
               summary: 'Обобщение за Мария',
-              references: ['nervine_support'],
+              references: ['nervine_support', 'stress_resilience', 'longevity_protocol'],
               sections: {
-                recommendations: 'Препоръките стъпват върху nervine_support и включват нервно балансиране.'
+                recommendations: 'Препоръките стъпват върху nervine_support, stress_resilience и longevity_protocol.'
               }
             })
           }
@@ -105,11 +105,29 @@ test('generateHolisticReport подава релевантни секции и �
     ]
   };
 
+  interpretationKnowledge.goal_alignment = [
+    {
+      name: 'Антиейджинг фокус',
+      summary: 'Антиейджинг програмите са приоритет при антиейджинг цел.',
+      remedy_link: 'longevity_protocol'
+    }
+  ];
+
+  interpretationKnowledge.stress_patterns = [
+    {
+      name: 'Високо ниво на стрес',
+      summary: 'Високо ниво на стрес изисква адаптогенна подкрепа.',
+      remedy_link: 'stress_resilience'
+    }
+  ];
+
   const remedyBase = {
     foundational_principles: { title: 'Основи', principles: [] },
     targeted_protocols: {
       nervine_support: { title: 'Нервно успокояване', description: 'Използвай магнезий и адаптогени.' },
-      lymph_support: { title: 'Лимфен дренаж', description: 'Сухо четкане и контрастни душове.' }
+      lymph_support: { title: 'Лимфен дренаж', description: 'Сухо четкане и контрастни душове.' },
+      stress_resilience: { title: 'Адаптогенна подкрепа', description: 'Адаптогени и дихателни практики.' },
+      longevity_protocol: { title: 'Антиейджинг стратегия', description: 'Поддържай антиоксиданти и регенерация.' }
     },
     mandatory_disclaimer: { text: 'Информацията не е медицински съвет.' }
   };
@@ -129,7 +147,13 @@ test('generateHolisticReport подава релевантни секции и �
 
   try {
     const report = await __testables__.generateHolisticReport(
-      { name: 'Мария', age: '32' },
+      {
+        name: 'Мария',
+        age: '32',
+        'main-goals': ['Антиейджинг'],
+        'health-status': ['Хипертония'],
+        stress: '9'
+      },
       leftEyeAnalysis,
       rightEyeAnalysis,
       interpretationKnowledge,
@@ -139,12 +163,18 @@ test('generateHolisticReport подава релевантни секции и �
     );
 
     assert.equal(report.references.includes('nervine_support'), true);
+    assert.equal(report.references.includes('stress_resilience'), true);
+    assert.equal(report.references.includes('longevity_protocol'), true);
     assert.equal(report.references.includes('lymph_support'), false);
-    assert.match(report.sections.recommendations, /nervine_support/);
+    assert.match(report.sections.recommendations, /stress_resilience/);
 
     const usedPrompt = prompts[0];
     assert.ok(usedPrompt.includes('Нервни пръстени'));
     assert.ok(usedPrompt.includes('nervine_support'));
+    assert.ok(usedPrompt.includes('Антиейджинг фокус'));
+    assert.ok(usedPrompt.includes('longevity_protocol'));
+    assert.ok(usedPrompt.includes('Високо ниво на стрес'));
+    assert.ok(usedPrompt.includes('stress_resilience'));
     assert.ok(!usedPrompt.includes('lymph_support'));
   } finally {
     global.fetch = originalFetch;
