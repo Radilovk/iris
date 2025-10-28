@@ -376,6 +376,10 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   }
 }
 
+/**
+ * @param {unknown[]} identifiedSigns
+ * @param {Record<string, unknown>} [userData={}]
+ */
 function buildKeywordSet(identifiedSigns, userData = {}) {
   const keywords = new Set();
   if (Array.isArray(identifiedSigns)) {
@@ -388,15 +392,16 @@ function buildKeywordSet(identifiedSigns, userData = {}) {
   }
 
   if (userData && typeof userData === 'object') {
+    const stressSource = /** @type {Record<string, unknown>} */ (userData);
     const arrayLikeFields = ['main-goals', 'health-status'];
     for (const field of arrayLikeFields) {
-      addValueToKeywords(keywords, userData[field]);
+      addValueToKeywords(keywords, stressSource[field]);
     }
 
-    addValueToKeywords(keywords, userData['health-other']);
-    addValueToKeywords(keywords, userData['family-history']);
+    addValueToKeywords(keywords, stressSource['health-other']);
+    addValueToKeywords(keywords, stressSource['family-history']);
 
-    const stressValue = Number(userData.stress ?? userData['stress-level']);
+    const stressValue = Number(stressSource.stress ?? stressSource['stress-level']);
     if (!Number.isNaN(stressValue)) {
       addValueToKeywords(keywords, `стрес ${stressValue}`);
       addValueToKeywords(keywords, `stress level ${stressValue}`);
