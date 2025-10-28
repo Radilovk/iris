@@ -170,7 +170,15 @@ async function handlePostRequest(request, env) {
 
   const userData = {};
   for (const [key, value] of formData.entries()) {
-    if (typeof value === 'string') {
+    if (typeof value !== 'string') continue;
+
+    if (Object.prototype.hasOwnProperty.call(userData, key)) {
+      if (Array.isArray(userData[key])) {
+        userData[key].push(value);
+      } else {
+        userData[key] = [userData[key], value];
+      }
+    } else {
       userData[key] = value;
     }
   }
