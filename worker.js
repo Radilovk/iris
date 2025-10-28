@@ -308,6 +308,9 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
+  const keywordHints = Array.from(keywordSet);
+  const promptUserData = { ...userData, keyword_hints: keywordHints };
+
   const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
   const remedyPayload = JSON.stringify(relevantRemedyBase, null, 2);
   const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
@@ -315,7 +318,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
 
   const prompt = config.report_prompt_template
-    .replace('{{USER_DATA}}', JSON.stringify(userData, null, 2))
+    .replace('{{USER_DATA}}', JSON.stringify(promptUserData, null, 2))
     .replace('{{LEFT_EYE_ANALYSIS}}', JSON.stringify(leftEyeAnalysis, null, 2))
     .replace('{{RIGHT_EYE_ANALYSIS}}', JSON.stringify(rightEyeAnalysis, null, 2))
     .replace('{{INTERPRETATION_KNOWLEDGE}}', interpretationPayload)
@@ -400,15 +403,63 @@ function buildKeywordSet(identifiedSigns, userData = {}) {
 
     addValueToKeywords(keywords, stressSource['health-other']);
     addValueToKeywords(keywords, stressSource['family-history']);
+    addValueToKeywords(keywords, stressSource['additional-notes']);
+    addValueToKeywords(keywords, stressSource['free-text']);
 
-    const stressValue = Number(stressSource.stress ?? stressSource['stress-level']);
-    if (!Number.isNaN(stressValue)) {
+    const numericContext = parseNumericContext(stressSource);
+
+    if (numericContext.heightCm) {
+      addKeywordVariants(keywords, `${Math.round(numericContext.heightCm)} cm`);
+      keywords.add(`height_${Math.round(numericContext.heightCm)}cm`);
+    }
+
+    if (numericContext.weightKg) {
+      addKeywordVariants(keywords, `${Math.round(numericContext.weightKg)} kg`);
+      keywords.add(`weight_${Math.round(numericContext.weightKg)}kg`);
+    }
+
+    if (numericContext.ageYears !== undefined) {
+      keywords.add(`age_${Math.round(numericContext.ageYears)}y`);
+      if (numericContext.ageYears >= 45) {
+        keywords.add('midlife_focus');
+      }
+    }
+
+    if (numericContext.sleepHours !== undefined) {
+      keywords.add(`sleep_${Math.round(numericContext.sleepHours)}h`);
+      if (numericContext.sleepHours < 7) {
+        keywords.add('недостатъчен сън');
+        keywords.add('sleep_deficit');
+      }
+    }
+
+    if (numericContext.waterLiters !== undefined) {
+      keywords.add(`water_${numericContext.waterLiters.toFixed(1)}l`);
+      if (numericContext.waterLiters < 1.5) {
+        keywords.add('ниска хидратация');
+        keywords.add('hydration_low');
+      }
+    }
+
+    const stressValue = numericContext.stressLevel;
+    if (stressValue !== undefined) {
       addValueToKeywords(keywords, `стрес ${stressValue}`);
       addValueToKeywords(keywords, `stress level ${stressValue}`);
       if (stressValue >= 7) {
         addValueToKeywords(keywords, 'високо ниво на стрес');
         addValueToKeywords(keywords, 'висок стрес');
       }
+    }
+
+    const bmiKeywordPayload = deriveBmiKeywords(numericContext.heightCm, numericContext.weightKg);
+    for (const keyword of bmiKeywordPayload) {
+      keywords.add(keyword);
+    }
+
+    const genderKeyword = deriveGenderKeyword(stressSource.gender ?? stressSource.sex);
+    if (genderKeyword) {
+      addKeywordVariants(keywords, genderKeyword);
+      keywords.add(genderKeyword);
     }
   }
 
@@ -439,7 +490,143 @@ function addValueToKeywords(set, value) {
     const text = String(value).trim();
     if (text) {
       addKeywordVariants(set, text);
+      if (typeof value === 'string') {
+        enhanceWithSynonyms(set, text);
+      }
     }
+  }
+}
+
+function parseNumericContext(source) {
+  /** @type {{ heightCm?: number, weightKg?: number, ageYears?: number, waterLiters?: number, sleepHours?: number, stressLevel?: number }} */
+  const context = {};
+
+  const height = parseFloatValue(source.height ?? source['height-cm']);
+  if (isValidRange(height, 90, 250)) {
+    context.heightCm = height;
+  }
+
+  const weight = parseFloatValue(source.weight ?? source['weight-kg']);
+  if (isValidRange(weight, 35, 300)) {
+    context.weightKg = weight;
+  }
+
+  const age = parseFloatValue(source.age ?? source['age-years']);
+  if (isValidRange(age, 0, 120)) {
+    context.ageYears = age;
+  }
+
+  const water = parseFloatValue(source.water ?? source['water-intake']);
+  if (isValidRange(water, 0, 12)) {
+    context.waterLiters = water;
+  }
+
+  const sleep = parseFloatValue(source.sleep ?? source['sleep-hours']);
+  if (isValidRange(sleep, 0, 24)) {
+    context.sleepHours = sleep;
+  }
+
+  const stress = parseFloatValue(source.stress ?? source['stress-level']);
+  if (isValidRange(stress, 0, 10)) {
+    context.stressLevel = Math.round(stress);
+  }
+
+  return context;
+}
+
+function parseFloatValue(raw) {
+  if (raw == null) return undefined;
+  if (typeof raw === 'number') {
+    return Number.isFinite(raw) ? raw : undefined;
+  }
+  if (typeof raw === 'string') {
+    const normalized = raw
+      .replace(/,/g, '.')
+      .replace(/(cm|kg|l|литра|часа|ч|hrs?|hours?|kg|мм)/gi, '')
+      .replace(/[^0-9.\-]/g, ' ');
+    const match = normalized.match(/-?\d+(?:\.\d+)?/);
+    if (!match) return undefined;
+    const value = Number.parseFloat(match[0]);
+    return Number.isFinite(value) ? value : undefined;
+  }
+  return undefined;
+}
+
+function isValidRange(value, min, max) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
+}
+
+function deriveBmiKeywords(heightCm, weightKg) {
+  const bmiKeywords = new Set();
+  if (!heightCm || !weightKg) {
+    return bmiKeywords;
+  }
+  const heightMeters = heightCm / 100;
+  if (heightMeters <= 0) {
+    return bmiKeywords;
+  }
+
+  const bmi = weightKg / (heightMeters * heightMeters);
+  if (!Number.isFinite(bmi)) {
+    return bmiKeywords;
+  }
+
+  const rounded = Math.round(bmi);
+  bmiKeywords.add(`bmi_${rounded}`);
+
+  if (bmi < 18.5) {
+    bmiKeywords.add('поднормено тегло');
+    bmiKeywords.add('underweight');
+  } else if (bmi < 25) {
+    bmiKeywords.add('нормално тегло');
+    bmiKeywords.add('healthy_weight');
+  } else if (bmi < 30) {
+    bmiKeywords.add('наднормено тегло');
+    bmiKeywords.add('overweight');
+    bmiKeywords.add('weight_management');
+  } else {
+    bmiKeywords.add('затлъстяване');
+    bmiKeywords.add('obesity');
+    bmiKeywords.add('weight_management');
+  }
+
+  if (bmi >= 27) {
+    bmiKeywords.add('metabolic_risk');
+  }
+
+  return bmiKeywords;
+}
+
+function deriveGenderKeyword(rawGender) {
+  if (!rawGender || typeof rawGender !== 'string') return undefined;
+  const normalized = rawGender.trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  if (/^(f|ж|female|жен)/.test(normalized)) {
+    return 'женски клиент';
+  }
+  if (/^(m|м|male|мъж)/.test(normalized)) {
+    return 'мъжки клиент';
+  }
+  return undefined;
+}
+
+function enhanceWithSynonyms(set, text) {
+  const normalized = text.toLowerCase();
+  if (/(контрол|управление|редукц|намаляване).*(тегло|килог|weight)|weight\s*management/.test(normalized)) {
+    set.add('weight_management');
+  }
+
+  if (/анти.?ейдж|anti.?aging|подмлад/.test(normalized)) {
+    set.add('anti_aging_goal');
+  }
+
+  if (/възстанов|recovery|регенерац/.test(normalized)) {
+    set.add('recovery_focus');
+  }
+
+  if (/детокс|пречиств/.test(normalized)) {
+    set.add('detox_focus');
   }
 }
 

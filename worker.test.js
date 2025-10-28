@@ -180,3 +180,79 @@ test('generateHolisticReport подава релевантни секции и �
     global.fetch = originalFetch;
   }
 });
+
+test('generateHolisticReport добавя биометрични ключове към prompt (пример 170см/82кг/6ч сън)', async () => {
+  const originalFetch = global.fetch;
+  const prompts = [];
+
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    const prompt = body.messages[0].content;
+    prompts.push(prompt);
+
+    const responsePayload = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ summary: 'OK', references: [], sections: {} })
+          }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  const minimalKnowledge = { scientific_validation_summary: {}, analysis_flow: {} };
+  const minimalRemedy = { mandatory_disclaimer: { text: '' } };
+
+  const config = {
+    provider: 'openai',
+    report_model: 'gpt-test',
+    report_prompt_template: 'Пациент: {{USER_DATA}}\nИнтерпретация: {{INTERPRETATION_KNOWLEDGE}}'
+  };
+
+  try {
+    await __testables__.generateHolisticReport(
+      {
+        name: 'Ива',
+        gender: 'Female',
+        height: '170 см',
+        weight: '82 кг',
+        sleep: '6 часа',
+        water: '1.2 L',
+        stress: '5',
+        'main-goals': ['Антиейджинг', 'Контрол на теглото'],
+        'health-status': ['Възстановяване след травма'],
+        'free-text': 'Фокус върху възстановяване и енергия.'
+      },
+      { identified_signs: [] },
+      { identified_signs: [] },
+      minimalKnowledge,
+      minimalRemedy,
+      config,
+      'key'
+    );
+
+    const usedPrompt = prompts[0];
+    const expectedSlugs = [
+      'bmi_28',
+      'наднормено тегло',
+      'sleep_6h',
+      'hydration_low',
+      'женски клиент',
+      'weight_management',
+      'anti_aging_goal',
+      'recovery_focus'
+    ];
+
+    for (const slug of expectedSlugs) {
+      assert.ok(usedPrompt.includes(slug), `Очаквахме prompt да съдържа ${slug}`);
+    }
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
