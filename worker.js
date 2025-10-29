@@ -374,13 +374,18 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     ? remedyBase.mandatory_disclaimer.text
     : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
 
-  const prompt = config.report_prompt_template
+  const reportTemplate = typeof config.report_prompt_template === 'string'
+    ? config.report_prompt_template
+    : '';
+  const externalContextPayload = shouldExposeExternalContext ? externalPayload : '[]';
+
+  const prompt = reportTemplate
     .replace('{{USER_DATA}}', JSON.stringify(promptUserData, null, 2))
     .replace('{{LEFT_EYE_ANALYSIS}}', JSON.stringify(leftEyeAnalysis, null, 2))
     .replace('{{RIGHT_EYE_ANALYSIS}}', JSON.stringify(rightEyeAnalysis, null, 2))
     .replace('{{INTERPRETATION_KNOWLEDGE}}', interpretationPayload)
     .replace('{{REMEDY_BASE}}', remedyPayload)
-    .replace('{{EXTERNAL_CONTEXT}}', shouldExposeExternalContext ? externalPayload : '[]')
+    .replace('{{EXTERNAL_CONTEXT}}', externalContextPayload)
     .replace('{{PATIENT_NAME}}', userData.name || 'Не е посочено')
     .replace('{{DISCLAIMER}}', disclaimerText);
 

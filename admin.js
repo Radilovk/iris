@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const modelsListEditor = document.getElementById('models-list-editor');
   const saveModelsListBtn = document.getElementById('save-models-list');
 
+  promptEditor.placeholder = 'Ползвай {{EXTERNAL_CONTEXT}} за външните източници';
+
   // Глобални променливи за състоянието
   let MODEL_OPTIONS = {}; // Вече не е константа, ще се зареди от KV
   let currentConfig = {}; // Съхранява текущо заредената/редактирана конфигурация
