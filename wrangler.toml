@@ -11,4 +11,6 @@ GEMINI_API_KEY = ""
 openai_api_key = ""
 allowed_origin = "*"
 DEBUG = "false" # Set to "true" for detailed logging
+WEB_RESEARCH_API_KEY = ""
+WEB_RESEARCH_ENDPOINT = "https://serper.dev/search"
 

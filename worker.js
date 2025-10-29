@@ -209,7 +209,7 @@ async function handlePostRequest(request, env) {
 
   const finalReport = await generateHolisticReport(
     userData, leftEyeAnalysisResult, rightEyeAnalysisResult,
-    interpretationKnowledge, remedyBase, config, apiKey
+    interpretationKnowledge, remedyBase, config, apiKey, env
   );
 
   return new Response(JSON.stringify(finalReport), {
@@ -298,7 +298,60 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
   }
 }
 
-async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey) {
+async function fetchExternalInsights(keywordHints, env) {
+  if (!Array.isArray(keywordHints) || keywordHints.length === 0) {
+    console.log('Външно търсене пропуснато – липсват ключови думи.');
+    return [];
+  }
+
+  const endpoint = env.WEB_RESEARCH_ENDPOINT || 'https://serper.dev/search';
+  const query = keywordHints.slice(0, 8).join(' ');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': env.WEB_RESEARCH_API_KEY,
+      },
+      body: JSON.stringify({ q: query }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn('Външно търсене върна грешка:', response.status, errorText);
+      return [];
+    }
+
+    const data = await response.json();
+    const organicResults = Array.isArray(data.organic) ? data.organic : [];
+    const limitedResults = organicResults.slice(0, 3)
+      .map((item) => ({
+        title: item.title || '',
+        snippet: item.snippet || item.snippet_highlighted || '',
+        url: item.link || item.url || '',
+      }))
+      .filter((item) => item.title || item.snippet || item.url);
+
+    console.log(`Външни ключови думи: ${keywordHints.join(', ')} | върнати източници: ${limitedResults.length}`);
+
+    return limitedResults;
+  } catch (error) {
+    if (error && error.name === 'AbortError') {
+      console.warn('Външно търсене прекъснато поради timeout.');
+    } else {
+      console.error('Грешка при извличане на външни инсайти:', error);
+    }
+    return [];
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env) {
   const identifiedSigns = [
     ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
     ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
@@ -309,6 +362,10 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
   const keywordHints = Array.from(keywordSet);
+  const externalInsights = env && env.WEB_RESEARCH_API_KEY ? await fetchExternalInsights(keywordHints, env) : [];
+  const externalPayload = JSON.stringify(externalInsights, null, 2);
+  const hasExternalInsights = externalInsights.length > 0;
+  const shouldExposeExternalContext = hasExternalInsights && externalPayload !== '[]';
   const promptUserData = { ...userData, keyword_hints: keywordHints };
 
   const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
@@ -323,8 +380,13 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     .replace('{{RIGHT_EYE_ANALYSIS}}', JSON.stringify(rightEyeAnalysis, null, 2))
     .replace('{{INTERPRETATION_KNOWLEDGE}}', interpretationPayload)
     .replace('{{REMEDY_BASE}}', remedyPayload)
+    .replace('{{EXTERNAL_CONTEXT}}', shouldExposeExternalContext ? externalPayload : '[]')
     .replace('{{PATIENT_NAME}}', userData.name || 'Не е посочено')
     .replace('{{DISCLAIMER}}', disclaimerText);
+
+  if (!shouldExposeExternalContext && env && env.WEB_RESEARCH_API_KEY) {
+    console.log('Външни източници не са намерени за текущия анализ.');
+  }
 
   if (!apiKey) throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
   
