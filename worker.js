@@ -380,10 +380,11 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
   const keywordHints = Array.from(keywordSet);
-  const externalInsights = env && env.WEB_RESEARCH_API_KEY ? await fetchExternalInsights(keywordHints, env) : [];
-  const externalPayload = JSON.stringify(externalInsights, null, 2);
-  const hasExternalInsights = externalInsights.length > 0;
-  const shouldExposeExternalContext = hasExternalInsights && externalPayload !== '[]';
+  const webInsights = env && env.WEB_RESEARCH_API_KEY ? await fetchExternalInsights(keywordHints, env) : [];
+  const normalizedWebInsights = normalizeWebSearchResults(webInsights);
+  const fallbackExternalContext = buildFallbackExternalContext(keywordHints, filteredKnowledge, identifiedSigns);
+  const externalContextEntries = normalizedWebInsights.length > 0 ? normalizedWebInsights : fallbackExternalContext;
+  const externalContextPayload = JSON.stringify(externalContextEntries, null, 2);
   const promptUserData = { ...userData, keyword_hints: keywordHints };
 
   const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
@@ -395,7 +396,6 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   const reportTemplate = typeof config.report_prompt_template === 'string'
     ? config.report_prompt_template
     : '';
-  const externalContextPayload = shouldExposeExternalContext ? externalPayload : '[]';
 
   const prompt = reportTemplate
     .replace('{{USER_DATA}}', JSON.stringify(promptUserData, null, 2))
@@ -407,8 +407,8 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     .replace('{{PATIENT_NAME}}', userData.name || 'Не е посочено')
     .replace('{{DISCLAIMER}}', disclaimerText);
 
-  if (!shouldExposeExternalContext && env && env.WEB_RESEARCH_API_KEY) {
-    console.log('Външни източници не са намерени за текущия анализ.');
+  if (!normalizedWebInsights.length && env && env.WEB_RESEARCH_API_KEY) {
+    console.log('Външни източници не са намерени – използваме синтезиран fallback контекст.');
   }
 
   if (!apiKey) throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
@@ -494,6 +494,50 @@ function extractRagContextSummaries(knowledge) {
   return contexts;
 }
 
+function buildFallbackExternalContext(keywordHints, interpretationKnowledge, identifiedSigns) {
+  const fallbackEntries = [];
+  const ragSummaries = extractRagContextSummaries(interpretationKnowledge).slice(0, 3);
+
+  for (const entry of ragSummaries) {
+    fallbackEntries.push({
+      source: `Интерпретация (${entry.source})`,
+      summary: entry.summary
+    });
+  }
+
+  const signNames = Array.isArray(identifiedSigns)
+    ? identifiedSigns
+        .map((sign) => (sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''))
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
+
+  const summarySegments = [];
+
+  if (signNames.length) {
+    summarySegments.push(`Засечени знаци: ${signNames.join(', ')}`);
+  }
+
+  if (Array.isArray(keywordHints) && keywordHints.length) {
+    summarySegments.push(`Ключови индикатори: ${keywordHints.slice(0, 6).join(', ')}`);
+  }
+
+  if (!summarySegments.length && ragSummaries.length) {
+    summarySegments.push(ragSummaries[0].summary);
+  }
+
+  if (!summarySegments.length) {
+    summarySegments.push('Не са открити външни източници; използвай вътрешната база и експертна синтеза.');
+  }
+
+  fallbackEntries.unshift({
+    source: 'LLM synthesis',
+    summary: summarySegments.join(' | ')
+  });
+
+  return fallbackEntries;
+}
+
 function parseExternalInsightsFromForm(formData) {
   if (!formData || typeof formData.getAll !== 'function') {
     return [];
@@ -539,12 +583,43 @@ function normalizeExternalEntry(entry, bucket) {
           }
         })();
 
-    bucket.push({ source, summary: summaryValue });
+    const normalized = { source, summary: summaryValue };
+    if (typeof entry.url === 'string' && entry.url.trim()) {
+      normalized.url = entry.url.trim();
+    }
+
+    bucket.push(normalized);
     return;
   }
 
   const fallbackSummary = typeof entry === 'string' ? entry : String(entry);
   bucket.push({ source: 'external', summary: fallbackSummary });
+}
+
+function normalizeWebSearchResults(results) {
+  const bucket = [];
+
+  if (!Array.isArray(results)) {
+    return bucket;
+  }
+
+  for (const result of results) {
+    if (!result || typeof result !== 'object') continue;
+
+    const title = typeof result.title === 'string' ? result.title.trim() : '';
+    const snippet = typeof result.snippet === 'string' ? result.snippet.trim() : '';
+    const url = typeof result.url === 'string' ? result.url.trim() : '';
+
+    const candidate = {
+      source: title || url || 'Уеб търсене',
+      summary: snippet || title || (url ? `Прегледай ${url} за допълнителна информация.` : 'Външният източник не предостави резюме.'),
+      url: url || undefined
+    };
+
+    normalizeExternalEntry(candidate, bucket);
+  }
+
+  return bucket;
 }
 
 /**
