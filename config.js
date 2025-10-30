@@ -1,3 +1,4 @@
+// Споделени настройки за фронтенда и админ панела.
 export const WORKER_URL =
   (typeof process !== 'undefined' && process.env && process.env.WORKER_URL) ||
   (typeof window !== 'undefined' && window.WORKER_URL) ||

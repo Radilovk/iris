@@ -1,7 +1,7 @@
+import { WORKER_URL, MAX_IMAGE_BYTES } from './config.js';
+
 // --- КОНФИГУРАЦИЯ ---
-// ПРОМЯНА: URL адресът е коригиран да бъде правилният, без допълнителни пътища.
-const WORKER_URL = 'https://iris.radilov-k.workers.dev/'; 
-const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15MB - Лимит за оригиналния файл
+// Стойностите се споделят с админ панела чрез config.js
 
 document.addEventListener('DOMContentLoaded', function() {
     // --- ЕЛЕМЕНТИ ---
