@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressBar = messageBox.querySelector('.progress-bar');
 
     let currentStep = 1;
+    let cacheNotice = '';
+    let currentMessage = '';
+    let currentMessageType = 'info';
 
     // --- ОСНОВНА ЛОГИКА ЗА НАВИГАЦИЯ ---
     function showStep(stepNumber) {
@@ -94,16 +97,38 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- СЪОБЩЕНИЯ ---
+    function renderMessage() {
+        const combinedMessage = cacheNotice
+            ? (currentMessage ? `${currentMessage} ${cacheNotice}` : cacheNotice)
+            : currentMessage;
+
+        messageContent.textContent = combinedMessage;
+
+        if (combinedMessage) {
+            messageContent.className = 'message-content active';
+            messageBox.className = currentMessage ? `${currentMessageType}-box` : 'info-box';
+        } else {
+            messageContent.className = 'message-content';
+            messageBox.className = '';
+        }
+    }
+
     function showMessage(message, type = 'info') {
-        messageContent.textContent = message;
-        messageContent.className = 'message-content active';
-        messageBox.className = `${type}-box`;
+        currentMessage = message;
+        currentMessageType = type;
+        renderMessage();
     }
 
     function clearMessage() {
-        messageContent.textContent = '';
-        messageContent.className = 'message-content';
-        messageBox.className = '';
+        currentMessage = '';
+        currentMessageType = 'info';
+        cacheNotice = '';
+        renderMessage();
+    }
+
+    function setCacheNotice(notice = '') {
+        cacheNotice = notice;
+        renderMessage();
     }
 
     // --- КАЧВАНЕ НА ФАЙЛОВЕ ---
@@ -190,7 +215,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // ===================================================================
             // ▼▼▼ НОВО: Запазваме данните за бутона "Повтори анализа" ▼▼▼
             // ===================================================================
-            await saveFormDataForReanalysis(formData);
+            const cacheState = await saveFormDataForReanalysis(formData);
+            if (cacheState?.cacheDisabled) {
+                const reason = cacheState.reason === 'quota'
+                    ? ' (ограничение на мястото за съхранение).'
+                    : ' (файловете са твърде големи за кеширане).';
+                setCacheNotice(`⚠ Повторният анализ няма да бъде наличен за тази сесия${reason}`);
+            } else {
+                setCacheNotice('');
+            }
             // ===================================================================
 
             const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
@@ -242,7 +275,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===================================================================
     async function saveFormDataForReanalysis(formData) {
         const dataToStore = {};
-        const promises = [];
+        const binaryEntries = [];
+        const encoder = new TextEncoder();
+        const MAX_CACHE_BYTES = 4 * 1024 * 1024;
+        let totalSize = 0;
+        let skippedBinary = false;
 
         const readFileAsDataURL = (file) => {
             return new Promise((resolve, reject) => {
@@ -253,19 +290,52 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         };
 
+        const countSize = (key, value) => encoder.encode(`${key}:${value}`).length;
+
         for (const [key, value] of formData.entries()) {
-            // Проверяваме дали е File или Blob
             if ((value instanceof File || value instanceof Blob) && value.size > 0) {
-                const promise = readFileAsDataURL(value).then(dataUrl => {
-                    dataToStore[key] = dataUrl;
-                });
-                promises.push(promise);
+                binaryEntries.push({ key, value });
             } else {
-                dataToStore[key] = value;
+                const stringValue = typeof value === 'string' ? value : String(value);
+                dataToStore[key] = stringValue;
+                totalSize += countSize(key, stringValue);
             }
         }
 
-        await Promise.all(promises);
-        localStorage.setItem('iridologyFormData', JSON.stringify(dataToStore));
+        for (const entry of binaryEntries) {
+            try {
+                const dataUrl = await readFileAsDataURL(entry.value);
+                const entrySize = countSize(entry.key, dataUrl);
+                if (totalSize + entrySize > MAX_CACHE_BYTES) {
+                    dataToStore[entry.key] = `[пропуснато изображение: ${entry.value.name || 'файл'}]`;
+                    skippedBinary = true;
+                    continue;
+                }
+
+                dataToStore[entry.key] = dataUrl;
+                totalSize += entrySize;
+            } catch (error) {
+                console.warn('Неуспешно четене на файл за кеширане на повторен анализ.', error);
+                dataToStore[entry.key] = `[пропуснато изображение: ${entry.value.name || 'файл'}]`;
+                skippedBinary = true;
+            }
+        }
+
+        const serializedData = JSON.stringify(dataToStore);
+        if (encoder.encode(serializedData).length > MAX_CACHE_BYTES) {
+            console.warn('Данните за повторен анализ надвишават допустимия лимит и няма да бъдат кеширани.');
+            return { cacheDisabled: true, reason: 'sizeLimit' };
+        }
+
+        try {
+            localStorage.setItem('iridologyFormData', serializedData);
+            return skippedBinary ? { cacheDisabled: true, reason: 'sizeLimit' } : { cacheDisabled: false };
+        } catch (error) {
+            if (error && (error.name === 'QuotaExceededError' || error.code === 22)) {
+                console.warn('Недостатъчно място в localStorage за кеширане на повторен анализ.', error);
+                return { cacheDisabled: true, reason: 'quota' };
+            }
+            throw error;
+        }
     }
 });
