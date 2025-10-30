@@ -7,38 +7,6 @@
  *     като използва Cloudflare API, за да управлява KV хранилището.
  */
 
-/**
- * Общ тип за динамичните полета на въпросника.
- * @typedef {Record<string, string | number | boolean | Array<string | number | boolean>>} SurveyDynamicRecord
- */
-
-/**
- * Данните, изпратени от потребителския въпросник.
- * @typedef {SurveyDynamicRecord & {
- *   name?: string;
- *   age?: string | number;
- *   "age-years"?: string | number;
- *   height?: string | number;
- *   "height-cm"?: string | number;
- *   weight?: string | number;
- *   "weight-kg"?: string | number;
- *   "main-goals"?: string | string[];
- *   "health-status"?: string | string[];
- *   "health-other"?: string;
- *   "family-history"?: string;
- *   "additional-notes"?: string;
- *   "free-text"?: string;
- *   water?: string | number;
- *   "water-intake"?: string | number;
- *   sleep?: string | number;
- *   "sleep-hours"?: string | number;
- *   stress?: string | number;
- *   "stress-level"?: string | number;
- *   gender?: string;
- *   sex?: string;
- * }} UserSurveyData
- */
-
 // --- Конфигурация и константи ---
 
 const API_BASE_URLS = {
@@ -200,8 +168,7 @@ async function handlePostRequest(request, env) {
     });
   }
 
-  /** @type {UserSurveyData} */
-  const userData = /** @type {UserSurveyData} */ ({});
+  const userData = {};
   for (const [key, value] of formData.entries()) {
     if (key === 'external-insights' || key === 'externalInsights') {
       continue;
@@ -421,9 +388,6 @@ async function fetchExternalInsights(keywordHints, env) {
   }
 }
 
-/**
- * @param {UserSurveyData} userData
- */
 async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env) {
   const identifiedSigns = [
     ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
@@ -697,9 +661,9 @@ function normalizeWebSearchResults(results) {
 
 /**
  * @param {unknown[]} identifiedSigns
- * @param {UserSurveyData} [userData]
+ * @param {Record<string, unknown>} [userData={}]
  */
-function buildKeywordSet(identifiedSigns, userData) {
+function buildKeywordSet(identifiedSigns, userData = {}) {
   const keywords = new Set();
   if (Array.isArray(identifiedSigns)) {
     for (const sign of identifiedSigns) {
@@ -710,20 +674,19 @@ function buildKeywordSet(identifiedSigns, userData) {
     }
   }
 
-  const survey = userData ?? /** @type {UserSurveyData} */ ({});
-
-  if (survey && typeof survey === 'object') {
+  if (userData && typeof userData === 'object') {
+    const stressSource = /** @type {Record<string, unknown>} */ (userData);
     const arrayLikeFields = ['main-goals', 'health-status'];
     for (const field of arrayLikeFields) {
-      addValueToKeywords(keywords, survey[field]);
+      addValueToKeywords(keywords, stressSource[field]);
     }
 
-    addValueToKeywords(keywords, survey['health-other']);
-    addValueToKeywords(keywords, survey['family-history']);
-    addValueToKeywords(keywords, survey['additional-notes']);
-    addValueToKeywords(keywords, survey['free-text']);
+    addValueToKeywords(keywords, stressSource['health-other']);
+    addValueToKeywords(keywords, stressSource['family-history']);
+    addValueToKeywords(keywords, stressSource['additional-notes']);
+    addValueToKeywords(keywords, stressSource['free-text']);
 
-    const numericContext = parseNumericContext(survey);
+    const numericContext = parseNumericContext(stressSource);
 
     if (numericContext.heightCm) {
       addKeywordVariants(keywords, `${Math.round(numericContext.heightCm)} cm`);
@@ -773,7 +736,7 @@ function buildKeywordSet(identifiedSigns, userData) {
       keywords.add(keyword);
     }
 
-    const genderKeyword = deriveGenderKeyword(survey.gender ?? survey.sex);
+    const genderKeyword = deriveGenderKeyword(stressSource.gender ?? stressSource.sex);
     if (genderKeyword) {
       addKeywordVariants(keywords, genderKeyword);
       keywords.add(genderKeyword);
@@ -814,9 +777,6 @@ function addValueToKeywords(set, value) {
   }
 }
 
-/**
- * @param {UserSurveyData} source
- */
 function parseNumericContext(source) {
   /** @type {{ heightCm?: number, weightKg?: number, ageYears?: number, waterLiters?: number, sleepHours?: number, stressLevel?: number }} */
   const context = {};
