@@ -43,6 +43,46 @@ test('POST без снимки връща 400', async () => {
   assert.equal(res.status, 400);
 });
 
+test('POST връща 503 при липса на AI модели в конфигурацията', async () => {
+  const missingModelsEnv = {
+    iris_rag_kv: {
+      get: (key) => {
+        if (key === 'iris_config_kv') {
+          return Promise.resolve({
+            provider: 'openai',
+            analysis_model: '   ',
+            report_model: ''
+          });
+        }
+        return Promise.resolve({});
+      }
+    }
+  };
+
+  const form = new FormData();
+  form.append('left-eye-upload', new File(['left'], 'left.png', { type: 'image/png' }));
+  form.append('right-eye-upload', new File(['right'], 'right.png', { type: 'image/png' }));
+
+  const req = new Request('https://example.com', { method: 'POST', body: form });
+
+  const originalError = console.error;
+  let capturedLog = '';
+  console.error = (...args) => {
+    capturedLog = args.join(' ');
+  };
+
+  try {
+    const res = await worker.fetch(req, missingModelsEnv, { waitUntil(){} });
+    assert.equal(res.status, 503);
+
+    const payload = await res.json();
+    assert.equal(payload.error, 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.');
+    assert.ok(capturedLog.includes('analysis_model'), 'Очаквахме да се логне предупреждение за липсващи модели.');
+  } finally {
+    console.error = originalError;
+  }
+});
+
 test('analyzeImageWithVision използва външен контекст вместо плейсхолдър', async () => {
   const originalFetch = global.fetch;
   const prompts = [];

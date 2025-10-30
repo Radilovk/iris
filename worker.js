@@ -197,6 +197,20 @@ async function handlePostRequest(request, env) {
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       });
   }
+
+  const analysisModel = typeof config.analysis_model === 'string' ? config.analysis_model.trim() : '';
+  const reportModel = typeof config.report_model === 'string' ? config.report_model.trim() : '';
+
+  if (!analysisModel || !reportModel) {
+      console.error('Конфигурацията на AI моделите е непълна. analysis_model или report_model липсват.');
+      return new Response(JSON.stringify({ error: 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.' }), {
+          status: 503,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+  }
+
+  config.analysis_model = analysisModel;
+  config.report_model = reportModel;
    if (!irisMap || !interpretationKnowledge || !remedyBase) {
       return new Response(JSON.stringify({ error: 'Не можахме да заредим базата данни за анализ.' }), {
           status: 503, 
