@@ -43,6 +43,62 @@ test('POST без снимки връща 400', async () => {
   assert.equal(res.status, 400);
 });
 
+test('analyzeImageWithVision използва външен контекст вместо плейсхолдър', async () => {
+  const originalFetch = global.fetch;
+  const prompts = [];
+
+  global.fetch = async (_url, options) => {
+    const body = JSON.parse(options.body);
+    const prompt = body.messages[0].content[0].text;
+    prompts.push(prompt);
+
+    const responsePayload = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ eye: 'ляво око', identified_signs: [] })
+          }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  try {
+    const file = new File(['123'], 'left-eye.png', { type: 'image/png' });
+    const irisMap = { region: 'digestive' };
+    const config = {
+      provider: 'openai',
+      analysis_model: 'gpt-4o-mini',
+      analysis_prompt_template: 'Око: {{EYE_IDENTIFIER}}\nКонтекст: {{EXTERNAL_CONTEXT}}'
+    };
+
+    const externalContextPayload = JSON.stringify([
+      { source: 'Serper', summary: 'B12 deficiency link' }
+    ]);
+
+    // Нов аргумент externalContextPayload гарантира, че Vision промптът вижда реалните данни.
+    await __testables__.analyzeImageWithVision(
+      file,
+      'ляво око',
+      irisMap,
+      config,
+      'test-api-key',
+      externalContextPayload
+    );
+
+    assert.equal(prompts.length, 1);
+    assert.ok(prompts[0].includes('B12 deficiency link'));
+    assert.ok(!prompts[0].includes('{{EXTERNAL_CONTEXT}}'));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('generateHolisticReport подава релевантни секции и ги реферира в изхода', async () => {
   const originalFetch = global.fetch;
   const prompts = [];
