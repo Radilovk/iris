@@ -222,9 +222,14 @@ async function handlePostRequest(request, env) {
 
   const preliminaryKeywordSet = buildKeywordSet([], userData);
   const { filteredKnowledge: preliminaryKnowledge } = selectRelevantInterpretationKnowledge(interpretationKnowledge, preliminaryKeywordSet);
-  const ragContext = extractRagContextSummaries(preliminaryKnowledge);
+  const maxContextEntries = Number.isInteger(config.max_context_entries) && config.max_context_entries > 0
+    ? config.max_context_entries
+    : 6;
+  config.max_context_entries = maxContextEntries;
+
+  const ragContext = extractRagContextSummaries(preliminaryKnowledge, maxContextEntries);
   const externalInsights = parseExternalInsightsFromForm(formData);
-  const combinedContextEntries = [...ragContext, ...externalInsights];
+  const combinedContextEntries = [...ragContext, ...externalInsights].slice(0, maxContextEntries);
   const combinedContextPayload = combinedContextEntries.length > 0
     ? JSON.stringify(combinedContextEntries, null, 2)
     : '[]';
@@ -396,8 +401,18 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   const keywordHints = Array.from(keywordSet);
   const webInsights = env && env.WEB_RESEARCH_API_KEY ? await fetchExternalInsights(keywordHints, env) : [];
   const normalizedWebInsights = normalizeWebSearchResults(webInsights);
-  const fallbackExternalContext = buildFallbackExternalContext(keywordHints, filteredKnowledge, identifiedSigns);
-  const externalContextEntries = normalizedWebInsights.length > 0 ? normalizedWebInsights : fallbackExternalContext;
+  const contextLimit = Number.isInteger(config.max_context_entries) && config.max_context_entries > 0
+    ? config.max_context_entries
+    : 6;
+  const fallbackExternalContext = buildFallbackExternalContext(
+    keywordHints,
+    filteredKnowledge,
+    identifiedSigns,
+    contextLimit
+  );
+  const externalContextEntries = normalizedWebInsights.length > 0
+    ? normalizedWebInsights.slice(0, contextLimit)
+    : fallbackExternalContext;
   const externalContextPayload = JSON.stringify(externalContextEntries, null, 2);
   const promptUserData = { ...userData, keyword_hints: keywordHints };
 
@@ -478,12 +493,13 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   }
 }
 
-function extractRagContextSummaries(knowledge) {
+function extractRagContextSummaries(knowledge, limit = Number.POSITIVE_INFINITY) {
   if (!knowledge || typeof knowledge !== 'object') {
     return [];
   }
 
   const contexts = [];
+  const maxEntries = Number.isInteger(limit) && limit > 0 ? limit : Number.POSITIVE_INFINITY;
   for (const [key, value] of Object.entries(knowledge)) {
     if (value == null) continue;
 
@@ -503,20 +519,27 @@ function extractRagContextSummaries(knowledge) {
 
     const normalizedSummary = summary.length > 400 ? `${summary.slice(0, 397)}...` : summary;
     contexts.push({ source: key, summary: normalizedSummary });
+    if (contexts.length >= maxEntries) {
+      break;
+    }
   }
 
   return contexts;
 }
 
-function buildFallbackExternalContext(keywordHints, interpretationKnowledge, identifiedSigns) {
+function buildFallbackExternalContext(keywordHints, interpretationKnowledge, identifiedSigns, limit = 6) {
+  const effectiveLimit = Number.isInteger(limit) && limit > 0 ? limit : 6;
   const fallbackEntries = [];
-  const ragSummaries = extractRagContextSummaries(interpretationKnowledge).slice(0, 3);
+  const ragSummaries = extractRagContextSummaries(interpretationKnowledge, effectiveLimit);
 
   for (const entry of ragSummaries) {
     fallbackEntries.push({
       source: `Интерпретация (${entry.source})`,
       summary: entry.summary
     });
+    if (fallbackEntries.length >= effectiveLimit) {
+      return fallbackEntries;
+    }
   }
 
   const signNames = Array.isArray(identifiedSigns)
@@ -549,7 +572,7 @@ function buildFallbackExternalContext(keywordHints, interpretationKnowledge, ide
     summary: summarySegments.join(' | ')
   });
 
-  return fallbackEntries;
+  return fallbackEntries.slice(0, effectiveLimit);
 }
 
 function parseExternalInsightsFromForm(formData) {
