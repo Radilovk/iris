@@ -168,6 +168,7 @@ async function handlePostRequest(request, env) {
     });
   }
 
+  /** @type {Record<string, unknown>} */
   const userData = {};
   for (const [key, value] of formData.entries()) {
     if (key === 'external-insights' || key === 'externalInsights') {
@@ -176,15 +177,19 @@ async function handlePostRequest(request, env) {
 
     if (typeof value !== 'string') continue;
 
-    if (Object.prototype.hasOwnProperty.call(userData, key)) {
-      if (Array.isArray(userData[key])) {
-        userData[key].push(value);
-      } else {
-        userData[key] = [userData[key], value];
-      }
-    } else {
-      userData[key] = value;
+    const existingValue = userData[key];
+
+    if (Array.isArray(existingValue)) {
+      existingValue.push(value);
+      continue;
     }
+
+    if (existingValue !== undefined) {
+      userData[key] = [existingValue, value];
+      continue;
+    }
+
+    userData[key] = value;
   }
 
   const kvKeys = ['iris_config_kv', 'iris_diagnostic_map', 'holistic_interpretation_knowledge', 'remedy_and_recommendation_base'];
