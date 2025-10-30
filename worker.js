@@ -170,6 +170,10 @@ async function handlePostRequest(request, env) {
 
   const userData = {};
   for (const [key, value] of formData.entries()) {
+    if (key === 'external-insights' || key === 'externalInsights') {
+      continue;
+    }
+
     if (typeof value !== 'string') continue;
 
     if (Object.prototype.hasOwnProperty.call(userData, key)) {
@@ -202,9 +206,18 @@ async function handlePostRequest(request, env) {
 
   const apiKey = config.provider === 'gemini' ? env.GEMINI_API_KEY : (config.provider === 'openai' ? env.OPENAI_API_KEY : null);
 
+  const preliminaryKeywordSet = buildKeywordSet([], userData);
+  const { filteredKnowledge: preliminaryKnowledge } = selectRelevantInterpretationKnowledge(interpretationKnowledge, preliminaryKeywordSet);
+  const ragContext = extractRagContextSummaries(preliminaryKnowledge);
+  const externalInsights = parseExternalInsightsFromForm(formData);
+  const combinedContextEntries = [...ragContext, ...externalInsights];
+  const combinedContextPayload = combinedContextEntries.length > 0
+    ? JSON.stringify(combinedContextEntries, null, 2)
+    : '[]';
+
   const [leftEyeAnalysisResult, rightEyeAnalysisResult] = await Promise.all([
-    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, config, apiKey),
-    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, config, apiKey)
+    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, config, apiKey, combinedContextPayload),
+    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, config, apiKey, combinedContextPayload)
   ]);
 
   const finalReport = await generateHolisticReport(
@@ -225,10 +238,15 @@ async function handlePostRequest(request, env) {
  * Тази функция е напълно преработена, за да поддържа както Gemini, така и OpenAI за визуален анализ.
  * Вече няма да пропуска анализа на снимките, ако е избран OpenAI.
  */
-async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiKey) {
-  const prompt = config.analysis_prompt_template
+async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiKey, externalContextPayload = '[]') {
+  const template = typeof config.analysis_prompt_template === 'string'
+    ? config.analysis_prompt_template
+    : '';
+
+  const prompt = template
     .replace('{{EYE_IDENTIFIER}}', eyeIdentifier)
-    .replace('{{IRIS_MAP}}', JSON.stringify(irisMap, null, 2));
+    .replace('{{IRIS_MAP}}', JSON.stringify(irisMap, null, 2))
+    .replace('{{EXTERNAL_CONTEXT}}', externalContextPayload);
 
   const base64Image = await arrayBufferToBase64(await file.arrayBuffer());
 
@@ -444,6 +462,89 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
       console.error("Грешка при парсване на JSON от AI (финален доклад):", jsonText);
       throw new Error("AI моделът върна невалиден JSON формат за финалния доклад.");
   }
+}
+
+function extractRagContextSummaries(knowledge) {
+  if (!knowledge || typeof knowledge !== 'object') {
+    return [];
+  }
+
+  const contexts = [];
+  for (const [key, value] of Object.entries(knowledge)) {
+    if (value == null) continue;
+
+    let summary;
+    if (typeof value === 'string') {
+      summary = value;
+    } else {
+      try {
+        summary = JSON.stringify(value);
+      } catch (error) {
+        console.warn('Неуспешно сериализиране на RAG контекст за ключ', key, error);
+        summary = String(value);
+      }
+    }
+
+    if (!summary) continue;
+
+    const normalizedSummary = summary.length > 400 ? `${summary.slice(0, 397)}...` : summary;
+    contexts.push({ source: key, summary: normalizedSummary });
+  }
+
+  return contexts;
+}
+
+function parseExternalInsightsFromForm(formData) {
+  if (!formData || typeof formData.getAll !== 'function') {
+    return [];
+  }
+
+  const insights = [];
+  const keys = ['external-insights', 'externalInsights'];
+
+  for (const key of keys) {
+    const rawValues = formData.getAll(key) || [];
+    for (const raw of rawValues) {
+      if (typeof raw !== 'string' || !raw.trim()) continue;
+
+      try {
+        const parsed = JSON.parse(raw);
+        normalizeExternalEntry(parsed, insights);
+      } catch {
+        insights.push({ source: 'external', summary: raw });
+      }
+    }
+  }
+
+  return insights;
+}
+
+function normalizeExternalEntry(entry, bucket) {
+  if (Array.isArray(entry)) {
+    for (const item of entry) {
+      normalizeExternalEntry(item, bucket);
+    }
+    return;
+  }
+
+  if (entry && typeof entry === 'object') {
+    const source = typeof entry.source === 'string' && entry.source.trim() ? entry.source : 'external';
+    const summaryValue = typeof entry.summary === 'string' && entry.summary.trim()
+      ? entry.summary
+      : (() => {
+          try {
+            return JSON.stringify(entry);
+          } catch {
+            return String(entry);
+          }
+        })();
+
+    bucket.push({ source, summary: summaryValue });
+    return;
+  }
+
+  const fallbackSummary = typeof entry === 'string' ? entry : String(entry);
+  bucket.push({ source: 'external', summary: fallbackSummary });
 }
 
 /**
@@ -945,6 +1046,7 @@ async function arrayBufferToBase64(buffer) {
 }
 
 export const __testables__ = {
+  analyzeImageWithVision,
   generateHolisticReport,
   buildKeywordSet,
   selectRelevantInterpretationKnowledge,
