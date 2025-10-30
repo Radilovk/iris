@@ -312,3 +312,83 @@ test('generateHolisticReport добавя биометрични ключове 
     global.fetch = originalFetch;
   }
 });
+
+test('generateHolisticReport попълва описателен fallback, когато уеб резултатите липсват', async () => {
+  const originalFetch = global.fetch;
+  const prompts = [];
+
+  global.fetch = async (url, options) => {
+    if (typeof url === 'string' && url.includes('serper.dev')) {
+      return new Response(JSON.stringify({ organic: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const body = JSON.parse(options.body);
+    const prompt = body.messages[0].content;
+    prompts.push(prompt);
+
+    const responsePayload = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ summary: 'Fallback', references: [], sections: {} })
+          }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  const interpretationKnowledge = {
+    scientific_validation_summary: 'Лимфната система реагира на хроничен стрес.',
+    detox_channels: { summary: 'Подкрепи лимфния дренаж и чернодробна детоксикация.' }
+  };
+
+  const remedyBase = {
+    targeted_protocols: {
+      detox_focus: { title: 'Детокс', description: 'Чай от глухарче и сухо четкане.' }
+    },
+    mandatory_disclaimer: { text: 'Информацията не е медицински съвет.' }
+  };
+
+  const config = {
+    provider: 'openai',
+    report_model: 'gpt-test',
+    report_prompt_template: [
+      'Контекст: {{EXTERNAL_CONTEXT}}',
+      'Данни: {{USER_DATA}}'
+    ].join('\n')
+  };
+
+  try {
+    await __testables__.generateHolisticReport(
+      {
+        name: 'Георги',
+        age: '45',
+        'main-goals': ['Детокс'],
+        stress: '7'
+      },
+      { identified_signs: [{ sign_name: 'Лимфни лакуни' }] },
+      { identified_signs: [] },
+      interpretationKnowledge,
+      remedyBase,
+      config,
+      'test-key',
+      { WEB_RESEARCH_API_KEY: 'dummy', WEB_RESEARCH_ENDPOINT: 'https://serper.dev/search' }
+    );
+
+    assert.equal(prompts.length, 1);
+    const prompt = prompts[0];
+    assert.ok(prompt.includes('LLM synthesis'));
+    assert.ok(prompt.includes('Ключови индикатори'));
+    assert.ok(prompt.includes('Интерпретация (detox_channels)'));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
