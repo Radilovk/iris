@@ -8,30 +8,35 @@
  */
 
 /**
+ * Общ тип за динамичните полета на въпросника.
+ * @typedef {Record<string, string | number | boolean | Array<string | number | boolean>>} SurveyDynamicRecord
+ */
+
+/**
  * Данните, изпратени от потребителския въпросник.
- * @typedef {Object} UserSurveyData
- * @property {string} [name]
- * @property {string | number} [age]
- * @property {string | number} ['age-years']
- * @property {string | number} [height]
- * @property {string | number} ['height-cm']
- * @property {string | number} [weight]
- * @property {string | number} ['weight-kg']
- * @property {string | string[]} ['main-goals']
- * @property {string | string[]} ['health-status']
- * @property {string} ['health-other']
- * @property {string} ['family-history']
- * @property {string} ['additional-notes']
- * @property {string} ['free-text']
- * @property {string | number} [water]
- * @property {string | number} ['water-intake']
- * @property {string | number} [sleep]
- * @property {string | number} ['sleep-hours']
- * @property {string | number} [stress]
- * @property {string | number} ['stress-level']
- * @property {string} [gender]
- * @property {string} [sex]
- * @property {(string | number | boolean | Array<string | number | boolean>)} [key: string]
+ * @typedef {SurveyDynamicRecord & {
+ *   name?: string;
+ *   age?: string | number;
+ *   "age-years"?: string | number;
+ *   height?: string | number;
+ *   "height-cm"?: string | number;
+ *   weight?: string | number;
+ *   "weight-kg"?: string | number;
+ *   "main-goals"?: string | string[];
+ *   "health-status"?: string | string[];
+ *   "health-other"?: string;
+ *   "family-history"?: string;
+ *   "additional-notes"?: string;
+ *   "free-text"?: string;
+ *   water?: string | number;
+ *   "water-intake"?: string | number;
+ *   sleep?: string | number;
+ *   "sleep-hours"?: string | number;
+ *   stress?: string | number;
+ *   "stress-level"?: string | number;
+ *   gender?: string;
+ *   sex?: string;
+ * }} UserSurveyData
  */
 
 // --- Конфигурация и константи ---
@@ -196,7 +201,7 @@ async function handlePostRequest(request, env) {
   }
 
   /** @type {UserSurveyData} */
-  const userData = {};
+  const userData = /** @type {UserSurveyData} */ ({});
   for (const [key, value] of formData.entries()) {
     if (key === 'external-insights' || key === 'externalInsights') {
       continue;
