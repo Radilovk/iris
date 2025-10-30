@@ -196,7 +196,7 @@ async function handlePostRequest(request, env) {
   }
 
   /** @type {UserSurveyData} */
-  const userData = /** @type {Record<string, unknown>} */ ({});
+  const userData = {};
   for (const [key, value] of formData.entries()) {
     if (key === 'external-insights' || key === 'externalInsights') {
       continue;
