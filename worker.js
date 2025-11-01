@@ -327,9 +327,21 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
   if (config.provider === 'gemini') {
     jsonText = data.candidates[0].content.parts[0].text;
   } else if (config.provider === 'openai') {
-    jsonText = data.choices[0].message.content;
+    const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
+    const message = choice?.message;
+    const payload = extractJsonPayload(message);
+
+    if (!payload) {
+      console.error('Vision AI върна отказ или празно съдържание.', {
+        finish_reason: choice?.finish_reason ?? null,
+        refusal: message && typeof message === 'object' ? message.refusal ?? null : null,
+      });
+      throw new Error('Моделът не върна визуален JSON (refusal/празен отговор).');
+    }
+
+    jsonText = payload;
   }
-  
+
   jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
   
   try {
@@ -536,13 +548,25 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
 
   const data = await response.json();
   let jsonText;
-  
+
   if (config.provider === 'gemini') {
     jsonText = data.candidates[0].content.parts[0].text;
   } else if (config.provider === 'openai') {
-    jsonText = data.choices[0].message.content;
+    const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
+    const message = choice?.message;
+    const payload = extractJsonPayload(message);
+
+    if (!payload) {
+      console.error('Генеративният модел върна отказ или празно съдържание.', {
+        finish_reason: choice?.finish_reason ?? null,
+        refusal: message && typeof message === 'object' ? message.refusal ?? null : null,
+      });
+      throw new Error('AI моделът не върна JSON за финалния доклад (refusal/празен отговор).');
+    }
+
+    jsonText = payload;
   }
-  
+
   jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
 
   try {
@@ -1202,7 +1226,31 @@ function slugify(text) {
     .replace(/^_|_$/g, '');
 }
 
-// --- Други помощни функции (без промяна) ---
+// --- Други помощни функции ---
+
+function extractJsonPayload(message) {
+  if (!message || typeof message !== 'object') {
+    return null;
+  }
+
+  const { content } = message;
+
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    let combined = '';
+    for (const part of content) {
+      if (part && typeof part === 'object' && typeof part.text === 'string') {
+        combined += part.text;
+      }
+    }
+    return combined;
+  }
+
+  return null;
+}
 
 /**
  * @returns {Promise<string>}

@@ -139,6 +139,105 @@ test('analyzeImageWithVision използва външен контекст вм
   }
 });
 
+test('analyzeImageWithVision хвърля грешка при отказ с празно съдържание', async () => {
+  const originalFetch = global.fetch;
+  const originalError = console.error;
+  const capturedLogs = [];
+
+  global.fetch = async () => {
+    const responsePayload = {
+      choices: [
+        {
+          finish_reason: 'content_filter',
+          message: { content: null, refusal: 'Content filtered' }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  console.error = (...args) => {
+    capturedLogs.push(args);
+  };
+
+  try {
+    await assert.rejects(
+      () =>
+        __testables__.analyzeImageWithVision(
+          new File(['x'], 'eye.png', { type: 'image/png' }),
+          'ляво око',
+          {},
+          {
+            provider: 'openai',
+            analysis_model: 'gpt-4o-mini',
+            analysis_prompt_template: 'Контекст: {{EXTERNAL_CONTEXT}}'
+          },
+          'test-api-key',
+          '[]'
+        ),
+      (error) => {
+        assert.equal(error.message, 'Моделът не върна визуален JSON (refusal/празен отговор).');
+        return true;
+      }
+    );
+
+    const logHasReason = capturedLogs.some((entry) =>
+      entry.some((part) => part && typeof part === 'object' && part.finish_reason === 'content_filter')
+    );
+
+    assert.ok(logHasReason, 'Очаквахме логът да съдържа finish_reason.');
+  } finally {
+    global.fetch = originalFetch;
+    console.error = originalError;
+  }
+});
+
+test('analyzeImageWithVision приема масив от части в content', async () => {
+  const originalFetch = global.fetch;
+
+  global.fetch = async () => {
+    const responsePayload = {
+      choices: [
+        {
+          message: {
+            content: [
+              { type: 'text', text: '{"ok":1}' }
+            ]
+          }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  try {
+    const result = await __testables__.analyzeImageWithVision(
+      new File(['y'], 'eye.png', { type: 'image/png' }),
+      'ляво око',
+      {},
+      {
+        provider: 'openai',
+        analysis_model: 'gpt-4o-mini',
+        analysis_prompt_template: 'Контекст: {{EXTERNAL_CONTEXT}}'
+      },
+      'test-api-key',
+      '[]'
+    );
+
+    assert.deepEqual(result, { ok: 1 });
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('generateHolisticReport подава релевантни секции и ги реферира в изхода', async () => {
   const originalFetch = global.fetch;
   const prompts = [];
