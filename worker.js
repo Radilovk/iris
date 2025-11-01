@@ -29,6 +29,18 @@ class AiRefusalError extends Error {
   }
 }
 
+class AiResponseFormatError extends Error {
+  /**
+   * @param {string} message
+   * @param {Record<string, unknown>} [metadata]
+   */
+  constructor(message, metadata = {}) {
+    super(message || 'AI моделът върна невалиден JSON формат.');
+    this.name = 'AiResponseFormatError';
+    this.metadata = metadata;
+  }
+}
+
 function resolveAiRefusalReason(choice, message) {
   const rawRefusal = message && typeof message === 'object' ? message.refusal : undefined;
   if (typeof rawRefusal === 'string' && rawRefusal.trim()) {
@@ -87,6 +99,20 @@ export default {
             error: error.message,
             reason: error.reason,
             suggestion: 'Моля, преформулирайте заявката или проверете предоставените изображения преди повторен опит.'
+          }), {
+            status: 422,
+            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          });
+        }
+
+        if (error instanceof AiResponseFormatError) {
+          console.warn('AI върна невалиден JSON.', {
+            message: error.message,
+            metadata: error.metadata,
+          });
+          return new Response(JSON.stringify({
+            error: error.message,
+            details: error.metadata?.preview ?? 'Моля, повторете опита след кратка пауза.'
           }), {
             status: 422,
             headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
@@ -402,13 +428,14 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     jsonText = payload;
   }
 
-  jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-  
+  jsonText = normalizeAiJsonText(jsonText);
+
   try {
       return JSON.parse(jsonText);
   } catch (e) {
-      console.error("Грешка при парсване на JSON от AI (визуален анализ):", jsonText);
-      throw new Error("AI моделът върна невалиден JSON формат за визуалния анализ.");
+      const preview = createJsonPreview(jsonText);
+      console.warn('Грешка при парсване на JSON от AI (визуален анализ).', { eye: eyeIdentifier, preview });
+      throw new AiResponseFormatError('AI моделът върна невалиден JSON формат за визуалния анализ.', { preview });
   }
 }
 
@@ -632,13 +659,14 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     jsonText = payload;
   }
 
-  jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+  jsonText = normalizeAiJsonText(jsonText);
 
   try {
       return JSON.parse(jsonText);
   } catch(e) {
-      console.error("Грешка при парсване на JSON от AI (финален доклад):", jsonText);
-      throw new Error("AI моделът върна невалиден JSON формат за финалния доклад.");
+      const preview = createJsonPreview(jsonText);
+      console.warn('Грешка при парсване на JSON от AI (финален доклад).', { preview });
+      throw new AiResponseFormatError('AI моделът върна невалиден JSON формат за финалния доклад.', { preview });
   }
 }
 
@@ -1315,6 +1343,125 @@ function extractJsonPayload(message) {
   }
 
   return null;
+}
+
+/**
+ * Нормализира AI текста, за да извлече първия валиден JSON блок.
+ * @param {string} text
+ * @returns {string}
+ */
+function normalizeAiJsonText(text) {
+  if (typeof text !== 'string') {
+    return '';
+  }
+
+  const trimmed = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const candidate = extractFirstJsonBlock(trimmed);
+  return (candidate || trimmed).trim();
+}
+
+/**
+ * Извлича първия JSON блок (обект или масив) от подадения текст.
+ * @param {string} text
+ * @returns {string|null}
+ */
+function extractFirstJsonBlock(text) {
+  if (!text) {
+    return null;
+  }
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char === '{' || char === '[') {
+      const block = collectBalancedJson(text, i);
+      if (block) {
+        return block;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Събира балансиран JSON блок, започващ от даден индекс.
+ * @param {string} text
+ * @param {number} startIndex
+ * @returns {string|null}
+ */
+function collectBalancedJson(text, startIndex) {
+  const stack = [];
+  let inString = false;
+  let escaped = false;
+
+  for (let i = startIndex; i < text.length; i++) {
+    const char = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === '{' || char === '[') {
+      stack.push(char === '{' ? '}' : ']');
+      continue;
+    }
+
+    if (char === '}' || char === ']') {
+      if (!stack.length) {
+        return null;
+      }
+
+      const expected = stack.pop();
+      if (expected !== char) {
+        return null;
+      }
+
+      if (!stack.length) {
+        return text.slice(startIndex, i + 1);
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Създава кратък преглед на JSON текст за логване.
+ * @param {string} text
+ * @param {number} [maxLength]
+ * @returns {string}
+ */
+function createJsonPreview(text, maxLength = 400) {
+  if (typeof text !== 'string') {
+    return '';
+  }
+
+  const normalized = text.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength)}…`;
 }
 
 /**
