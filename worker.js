@@ -14,58 +14,6 @@ const API_BASE_URLS = {
   openai: 'https://api.openai.com/v1/chat/completions'
 };
 
-class AiRefusalError extends Error {
-  /**
-   * @param {string|null|undefined} reason
-   * @param {Record<string, unknown>} [metadata]
-   */
-  constructor(reason, metadata = {}) {
-    super('AI моделът отказа да изпълни заявката.');
-    this.name = 'AiRefusalError';
-    this.reason = typeof reason === 'string' && reason.trim()
-      ? reason.trim()
-      : 'Неуспешно извеждане на причина за отказ.';
-    this.metadata = metadata;
-  }
-}
-
-class AiResponseFormatError extends Error {
-  /**
-   * @param {string} message
-   * @param {Record<string, unknown>} [metadata]
-   */
-  constructor(message, metadata = {}) {
-    super(message || 'AI моделът върна невалиден JSON формат.');
-    this.name = 'AiResponseFormatError';
-    this.metadata = metadata;
-  }
-}
-
-function resolveAiRefusalReason(choice, message) {
-  const rawRefusal = message && typeof message === 'object' ? message.refusal : undefined;
-  if (typeof rawRefusal === 'string' && rawRefusal.trim()) {
-    return rawRefusal.trim();
-  }
-
-  if (rawRefusal && typeof rawRefusal === 'object') {
-    try {
-      const serialized = JSON.stringify(rawRefusal);
-      if (serialized && serialized !== '{}') {
-        return serialized;
-      }
-    } catch {
-      return String(rawRefusal);
-    }
-  }
-
-  const finishReason = choice && typeof choice === 'object' ? choice.finish_reason : undefined;
-  if (typeof finishReason === 'string' && finishReason.trim()) {
-    return finishReason.trim();
-  }
-
-  return null;
-}
-
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*', // За продукция: сменете с конкретния домейн
   'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS',
@@ -90,35 +38,6 @@ export default {
       try {
         return await handlePostRequest(request, env);
       } catch (error) {
-        if (error instanceof AiRefusalError) {
-          console.warn('AI отказа да изпълни заявката.', {
-            reason: error.reason,
-            metadata: error.metadata,
-          });
-          return new Response(JSON.stringify({
-            error: error.message,
-            reason: error.reason,
-            suggestion: 'Моля, преформулирайте заявката или проверете предоставените изображения преди повторен опит.'
-          }), {
-            status: 422,
-            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-          });
-        }
-
-        if (error instanceof AiResponseFormatError) {
-          console.warn('AI върна невалиден JSON.', {
-            message: error.message,
-            metadata: error.metadata,
-          });
-          return new Response(JSON.stringify({
-            error: error.message,
-            details: error.metadata?.preview ?? 'Моля, повторете опита след кратка пауза.'
-          }), {
-            status: 422,
-            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-          });
-        }
-
         console.error('Критична грешка в worker-а:', error);
         return new Response(JSON.stringify({ error: 'Вътрешна грешка на сървъра: ' + error.message }), {
           status: 500,
@@ -408,34 +327,16 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
   if (config.provider === 'gemini') {
     jsonText = data.candidates[0].content.parts[0].text;
   } else if (config.provider === 'openai') {
-    const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
-    const message = choice?.message;
-    const payload = extractJsonPayload(message);
-
-    if (!payload) {
-      const refusalDetails = {
-        finish_reason: choice?.finish_reason ?? null,
-        refusal: message && typeof message === 'object' ? message.refusal ?? null : null,
-      };
-      const refusalReason = resolveAiRefusalReason(choice, message);
-      console.warn('Vision AI отказа да върне визуален JSON.', {
-        reason: refusalReason,
-        ...refusalDetails,
-      });
-      throw new AiRefusalError(refusalReason, refusalDetails);
-    }
-
-    jsonText = payload;
+    jsonText = data.choices[0].message.content;
   }
-
-  jsonText = normalizeAiJsonText(jsonText);
-
+  
+  jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+  
   try {
       return JSON.parse(jsonText);
   } catch (e) {
-      const preview = createJsonPreview(jsonText);
-      console.warn('Грешка при парсване на JSON от AI (визуален анализ).', { eye: eyeIdentifier, preview });
-      throw new AiResponseFormatError('AI моделът върна невалиден JSON формат за визуалния анализ.', { preview });
+      console.error("Грешка при парсване на JSON от AI (визуален анализ):", jsonText);
+      throw new Error("AI моделът върна невалиден JSON формат за визуалния анализ.");
   }
 }
 
@@ -499,63 +400,8 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   ];
 
   const keywordSet = buildKeywordSet(identifiedSigns, userData);
-
-  const SURVEY_VALUE_TO_REMEDY = {
-    'отслабване': 'weight_management',
-    'контрол на теглото': 'weight_management',
-    'контрол_на_теглото': 'weight_management',
-    'антиейджинг': 'anti_aging',
-    'анти_ейджинг': 'anti_aging',
-    'anti-aging': 'anti_aging',
-    'anti_aging': 'anti_aging',
-    'възстановяване': 'recovery_protocol',
-    'детокс': 'detox_focus',
-    'detox': 'detox_focus',
-    'инсулинова резистентност': 'insulin_resistance_support',
-    'инсулинова_резистентност': 'insulin_resistance_support',
-    'диабет тип 2': 'glucose_regulation_protocol',
-    'диабет_тип_2': 'glucose_regulation_protocol',
-    'хашимото': 'thyroid_balance',
-    'хипертония': 'hypertension_support',
-    'повишен холестерол': 'lipid_balance_protocol',
-    'повишен_холестерол': 'lipid_balance_protocol',
-    'автоимунно заболяване': 'autoimmune_balancing_protocol',
-    'автоимунно_заболяване': 'autoimmune_balancing_protocol',
-    'храносмилателни проблеми': 'digestive_health_restoration',
-    'храносмилателни_проблеми': 'digestive_health_restoration',
-    'интоксикация на черен дроб': 'liver_support',
-    'интоксикация_на_черен_дроб': 'liver_support',
-    'хормонален дисбаланс': 'endocrine_recalibration_protocol',
-    'хормонален баланс': 'endocrine_recalibration_protocol',
-    'хормонален_дисбаланс': 'endocrine_recalibration_protocol',
-    'хормонален_баланс': 'endocrine_recalibration_protocol',
-    'pregnancy': 'pregnancy_support_guidelines',
-    'бременност': 'pregnancy_support_guidelines',
-    'хронична умора': 'adrenal_recovery_protocol',
-    'хронична_умора': 'adrenal_recovery_protocol'
-  };
-
-  const surveyDerivedRemedyLinks = new Set();
-  const surveyFields = ['main-goals', 'health-status'];
-  for (const field of surveyFields) {
-    const raw = userData ? userData[field] : undefined;
-    const values = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
-    for (const value of values) {
-      if (typeof value !== 'string') continue;
-      const normalized = value.trim().toLowerCase();
-      if (!normalized) continue;
-      const slugCandidate = slugify(value);
-      const remedySlug = SURVEY_VALUE_TO_REMEDY[normalized] || SURVEY_VALUE_TO_REMEDY[slugCandidate];
-      if (remedySlug) {
-        surveyDerivedRemedyLinks.add(remedySlug);
-      }
-    }
-  }
-
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
-  const combinedRemedyLinks = new Set(matchedRemedyLinks ? Array.from(matchedRemedyLinks) : []);
-  surveyDerivedRemedyLinks.forEach((slug) => combinedRemedyLinks.add(slug));
-  const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, combinedRemedyLinks, keywordSet);
+  const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
   const keywordHints = Array.from(keywordSet);
   const webInsights = env && env.WEB_RESEARCH_API_KEY ? await fetchExternalInsights(keywordHints, env) : [];
@@ -635,38 +481,20 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
 
   const data = await response.json();
   let jsonText;
-
+  
   if (config.provider === 'gemini') {
     jsonText = data.candidates[0].content.parts[0].text;
   } else if (config.provider === 'openai') {
-    const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
-    const message = choice?.message;
-    const payload = extractJsonPayload(message);
-
-    if (!payload) {
-      const refusalDetails = {
-        finish_reason: choice?.finish_reason ?? null,
-        refusal: message && typeof message === 'object' ? message.refusal ?? null : null,
-      };
-      const refusalReason = resolveAiRefusalReason(choice, message);
-      console.warn('Генеративният модел отказа да върне JSON за финалния доклад.', {
-        reason: refusalReason,
-        ...refusalDetails,
-      });
-      throw new AiRefusalError(refusalReason, refusalDetails);
-    }
-
-    jsonText = payload;
+    jsonText = data.choices[0].message.content;
   }
-
-  jsonText = normalizeAiJsonText(jsonText);
+  
+  jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
 
   try {
       return JSON.parse(jsonText);
   } catch(e) {
-      const preview = createJsonPreview(jsonText);
-      console.warn('Грешка при парсване на JSON от AI (финален доклад).', { preview });
-      throw new AiResponseFormatError('AI моделът върна невалиден JSON формат за финалния доклад.', { preview });
+      console.error("Грешка при парсване на JSON от AI (финален доклад):", jsonText);
+      throw new Error("AI моделът върна невалиден JSON формат за финалния доклад.");
   }
 }
 
@@ -1319,150 +1147,7 @@ function slugify(text) {
     .replace(/^_|_$/g, '');
 }
 
-// --- Други помощни функции ---
-
-function extractJsonPayload(message) {
-  if (!message || typeof message !== 'object') {
-    return null;
-  }
-
-  const { content } = message;
-
-  if (typeof content === 'string') {
-    return content;
-  }
-
-  if (Array.isArray(content)) {
-    let combined = '';
-    for (const part of content) {
-      if (part && typeof part === 'object' && typeof part.text === 'string') {
-        combined += part.text;
-      }
-    }
-    return combined;
-  }
-
-  return null;
-}
-
-/**
- * Нормализира AI текста, за да извлече първия валиден JSON блок.
- * @param {string} text
- * @returns {string}
- */
-function normalizeAiJsonText(text) {
-  if (typeof text !== 'string') {
-    return '';
-  }
-
-  const trimmed = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-  if (!trimmed) {
-    return '';
-  }
-
-  const candidate = extractFirstJsonBlock(trimmed);
-  return (candidate || trimmed).trim();
-}
-
-/**
- * Извлича първия JSON блок (обект или масив) от подадения текст.
- * @param {string} text
- * @returns {string|null}
- */
-function extractFirstJsonBlock(text) {
-  if (!text) {
-    return null;
-  }
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    if (char === '{' || char === '[') {
-      const block = collectBalancedJson(text, i);
-      if (block) {
-        return block;
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
- * Събира балансиран JSON блок, започващ от даден индекс.
- * @param {string} text
- * @param {number} startIndex
- * @returns {string|null}
- */
-function collectBalancedJson(text, startIndex) {
-  const stack = [];
-  let inString = false;
-  let escaped = false;
-
-  for (let i = startIndex; i < text.length; i++) {
-    const char = text[i];
-
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (char === '\\') {
-        escaped = true;
-        continue;
-      }
-      if (char === '"') {
-        inString = false;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (char === '{' || char === '[') {
-      stack.push(char === '{' ? '}' : ']');
-      continue;
-    }
-
-    if (char === '}' || char === ']') {
-      if (!stack.length) {
-        return null;
-      }
-
-      const expected = stack.pop();
-      if (expected !== char) {
-        return null;
-      }
-
-      if (!stack.length) {
-        return text.slice(startIndex, i + 1);
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
- * Създава кратък преглед на JSON текст за логване.
- * @param {string} text
- * @param {number} [maxLength]
- * @returns {string}
- */
-function createJsonPreview(text, maxLength = 400) {
-  if (typeof text !== 'string') {
-    return '';
-  }
-
-  const normalized = text.replace(/\s+/g, ' ').trim();
-  if (normalized.length <= maxLength) {
-    return normalized;
-  }
-
-  return `${normalized.slice(0, maxLength)}…`;
-}
+// --- Други помощни функции (без промяна) ---
 
 /**
  * @returns {Promise<string>}
