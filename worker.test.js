@@ -139,9 +139,9 @@ test('analyzeImageWithVision използва външен контекст вм
   }
 });
 
-test('analyzeImageWithVision хвърля грешка при отказ с празно съдържание', async () => {
+test('analyzeImageWithVision хвърля AiRefusalError при отказ с празно съдържание', async () => {
   const originalFetch = global.fetch;
-  const originalError = console.error;
+  const originalWarn = console.warn;
   const capturedLogs = [];
 
   global.fetch = async () => {
@@ -160,7 +160,7 @@ test('analyzeImageWithVision хвърля грешка при отказ с пр
     });
   };
 
-  console.error = (...args) => {
+  console.warn = (...args) => {
     capturedLogs.push(args);
   };
 
@@ -180,7 +180,9 @@ test('analyzeImageWithVision хвърля грешка при отказ с пр
           '[]'
         ),
       (error) => {
-        assert.equal(error.message, 'Моделът не върна визуален JSON (refusal/празен отговор).');
+        assert.equal(error.name, 'AiRefusalError');
+        assert.equal(error.message, 'AI моделът отказа да изпълни заявката.');
+        assert.equal(error.reason, 'Content filtered');
         return true;
       }
     );
@@ -192,7 +194,7 @@ test('analyzeImageWithVision хвърля грешка при отказ с пр
     assert.ok(logHasReason, 'Очаквахме логът да съдържа finish_reason.');
   } finally {
     global.fetch = originalFetch;
-    console.error = originalError;
+    console.warn = originalWarn;
   }
 });
 

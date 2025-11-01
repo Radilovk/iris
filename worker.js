@@ -14,6 +14,46 @@ const API_BASE_URLS = {
   openai: 'https://api.openai.com/v1/chat/completions'
 };
 
+class AiRefusalError extends Error {
+  /**
+   * @param {string|null|undefined} reason
+   * @param {Record<string, unknown>} [metadata]
+   */
+  constructor(reason, metadata = {}) {
+    super('AI моделът отказа да изпълни заявката.');
+    this.name = 'AiRefusalError';
+    this.reason = typeof reason === 'string' && reason.trim()
+      ? reason.trim()
+      : 'Неуспешно извеждане на причина за отказ.';
+    this.metadata = metadata;
+  }
+}
+
+function resolveAiRefusalReason(choice, message) {
+  const rawRefusal = message && typeof message === 'object' ? message.refusal : undefined;
+  if (typeof rawRefusal === 'string' && rawRefusal.trim()) {
+    return rawRefusal.trim();
+  }
+
+  if (rawRefusal && typeof rawRefusal === 'object') {
+    try {
+      const serialized = JSON.stringify(rawRefusal);
+      if (serialized && serialized !== '{}') {
+        return serialized;
+      }
+    } catch {
+      return String(rawRefusal);
+    }
+  }
+
+  const finishReason = choice && typeof choice === 'object' ? choice.finish_reason : undefined;
+  if (typeof finishReason === 'string' && finishReason.trim()) {
+    return finishReason.trim();
+  }
+
+  return null;
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*', // За продукция: сменете с конкретния домейн
   'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS',
@@ -38,6 +78,21 @@ export default {
       try {
         return await handlePostRequest(request, env);
       } catch (error) {
+        if (error instanceof AiRefusalError) {
+          console.warn('AI отказа да изпълни заявката.', {
+            reason: error.reason,
+            metadata: error.metadata,
+          });
+          return new Response(JSON.stringify({
+            error: error.message,
+            reason: error.reason,
+            suggestion: 'Моля, преформулирайте заявката или проверете предоставените изображения преди повторен опит.'
+          }), {
+            status: 422,
+            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          });
+        }
+
         console.error('Критична грешка в worker-а:', error);
         return new Response(JSON.stringify({ error: 'Вътрешна грешка на сървъра: ' + error.message }), {
           status: 500,
@@ -332,11 +387,16 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     const payload = extractJsonPayload(message);
 
     if (!payload) {
-      console.error('Vision AI върна отказ или празно съдържание.', {
+      const refusalDetails = {
         finish_reason: choice?.finish_reason ?? null,
         refusal: message && typeof message === 'object' ? message.refusal ?? null : null,
+      };
+      const refusalReason = resolveAiRefusalReason(choice, message);
+      console.warn('Vision AI отказа да върне визуален JSON.', {
+        reason: refusalReason,
+        ...refusalDetails,
       });
-      throw new Error('Моделът не върна визуален JSON (refusal/празен отговор).');
+      throw new AiRefusalError(refusalReason, refusalDetails);
     }
 
     jsonText = payload;
@@ -557,11 +617,16 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     const payload = extractJsonPayload(message);
 
     if (!payload) {
-      console.error('Генеративният модел върна отказ или празно съдържание.', {
+      const refusalDetails = {
         finish_reason: choice?.finish_reason ?? null,
         refusal: message && typeof message === 'object' ? message.refusal ?? null : null,
+      };
+      const refusalReason = resolveAiRefusalReason(choice, message);
+      console.warn('Генеративният модел отказа да върне JSON за финалния доклад.', {
+        reason: refusalReason,
+        ...refusalDetails,
       });
-      throw new Error('AI моделът не върна JSON за финалния доклад (refusal/празен отговор).');
+      throw new AiRefusalError(refusalReason, refusalDetails);
     }
 
     jsonText = payload;
