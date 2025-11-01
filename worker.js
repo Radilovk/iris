@@ -400,8 +400,63 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   ];
 
   const keywordSet = buildKeywordSet(identifiedSigns, userData);
+
+  const SURVEY_VALUE_TO_REMEDY = {
+    'отслабване': 'weight_management',
+    'контрол на теглото': 'weight_management',
+    'контрол_на_теглото': 'weight_management',
+    'антиейджинг': 'anti_aging',
+    'анти_ейджинг': 'anti_aging',
+    'anti-aging': 'anti_aging',
+    'anti_aging': 'anti_aging',
+    'възстановяване': 'recovery_protocol',
+    'детокс': 'detox_focus',
+    'detox': 'detox_focus',
+    'инсулинова резистентност': 'insulin_resistance_support',
+    'инсулинова_резистентност': 'insulin_resistance_support',
+    'диабет тип 2': 'glucose_regulation_protocol',
+    'диабет_тип_2': 'glucose_regulation_protocol',
+    'хашимото': 'thyroid_balance',
+    'хипертония': 'hypertension_support',
+    'повишен холестерол': 'lipid_balance_protocol',
+    'повишен_холестерол': 'lipid_balance_protocol',
+    'автоимунно заболяване': 'autoimmune_balancing_protocol',
+    'автоимунно_заболяване': 'autoimmune_balancing_protocol',
+    'храносмилателни проблеми': 'digestive_health_restoration',
+    'храносмилателни_проблеми': 'digestive_health_restoration',
+    'интоксикация на черен дроб': 'liver_support',
+    'интоксикация_на_черен_дроб': 'liver_support',
+    'хормонален дисбаланс': 'endocrine_recalibration_protocol',
+    'хормонален баланс': 'endocrine_recalibration_protocol',
+    'хормонален_дисбаланс': 'endocrine_recalibration_protocol',
+    'хормонален_баланс': 'endocrine_recalibration_protocol',
+    'pregnancy': 'pregnancy_support_guidelines',
+    'бременност': 'pregnancy_support_guidelines',
+    'хронична умора': 'adrenal_recovery_protocol',
+    'хронична_умора': 'adrenal_recovery_protocol'
+  };
+
+  const surveyDerivedRemedyLinks = new Set();
+  const surveyFields = ['main-goals', 'health-status'];
+  for (const field of surveyFields) {
+    const raw = userData ? userData[field] : undefined;
+    const values = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
+    for (const value of values) {
+      if (typeof value !== 'string') continue;
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) continue;
+      const slugCandidate = slugify(value);
+      const remedySlug = SURVEY_VALUE_TO_REMEDY[normalized] || SURVEY_VALUE_TO_REMEDY[slugCandidate];
+      if (remedySlug) {
+        surveyDerivedRemedyLinks.add(remedySlug);
+      }
+    }
+  }
+
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
-  const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
+  const combinedRemedyLinks = new Set(matchedRemedyLinks ? Array.from(matchedRemedyLinks) : []);
+  surveyDerivedRemedyLinks.forEach((slug) => combinedRemedyLinks.add(slug));
+  const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, combinedRemedyLinks, keywordSet);
 
   const keywordHints = Array.from(keywordSet);
   const webInsights = env && env.WEB_RESEARCH_API_KEY ? await fetchExternalInsights(keywordHints, env) : [];
