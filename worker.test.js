@@ -277,6 +277,77 @@ test('generateHolisticReport подава релевантни секции и �
   }
 });
 
+test('generateHolisticReport зарежда протокол само от анкетни цели', async () => {
+  const originalFetch = global.fetch;
+  const prompts = [];
+
+  global.fetch = async (_url, options) => {
+    const body = JSON.parse(options.body);
+    const prompt = body.messages[0].content;
+    prompts.push(prompt);
+
+    const responsePayload = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              summary: 'Фокус върху тегло',
+              references: ['weight_management'],
+              sections: {
+                weight_management: 'Протоколът е активиран на база целите от анкетата.'
+              }
+            })
+          }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  const remedyBase = {
+    targeted_protocols: {
+      weight_management: { title: 'Управление на теглото', description: 'Фокус върху метаболитна подкрепа.' }
+    },
+    mandatory_disclaimer: { text: 'Информацията не е медицински съвет.' }
+  };
+
+  const config = {
+    provider: 'openai',
+    report_model: 'gpt-test',
+    report_prompt_template: [
+      'Потребител: {{USER_DATA}}',
+      'Препоръки: {{REMEDY_BASE}}'
+    ].join('\n')
+  };
+
+  try {
+    const report = await __testables__.generateHolisticReport(
+      {
+        name: 'Иван',
+        'main-goals': ['Отслабване'],
+        'health-status': []
+      },
+      { identified_signs: [] },
+      { identified_signs: [] },
+      {},
+      remedyBase,
+      config,
+      'test-key'
+    );
+
+    assert.equal(prompts.length, 1);
+    assert.ok(prompts[0].includes('weight_management'), 'Очакваме протоколът weight_management да присъства в prompt.');
+    assert.equal(report.references.includes('weight_management'), true);
+    assert.equal(typeof report.sections.weight_management, 'string');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('generateHolisticReport добавя биометрични ключове към prompt (пример 170см/82кг/6ч сън)', async () => {
   const originalFetch = global.fetch;
   const prompts = [];
