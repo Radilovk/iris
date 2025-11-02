@@ -240,6 +240,165 @@ test('analyzeImageWithVision приема масив от части в content'
   }
 });
 
+test('analyzeImageWithVision с gpt-4o-search-preview активира web_search', async () => {
+  const originalFetch = global.fetch;
+  const calls = [];
+
+  global.fetch = async (url, options = {}) => {
+    calls.push({ url, options });
+
+    if (typeof url === 'string' && url.endsWith('/assistants')) {
+      return new Response(JSON.stringify({ id: 'asst_test' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.endsWith('/threads')) {
+      return new Response(JSON.stringify({ id: 'thread_test' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.includes('/runs') && options.method === 'POST') {
+      return new Response(JSON.stringify({ id: 'run_test', status: 'queued' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.includes('/runs/run_test') && options.method === 'GET') {
+      return new Response(JSON.stringify({ id: 'run_test', status: 'completed' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.includes('/messages')) {
+      return new Response(JSON.stringify({
+        data: [
+          {
+            id: 'msg_test',
+            role: 'assistant',
+            run_id: 'run_test',
+            content: [
+              { type: 'output_text', text: { value: JSON.stringify({ eye: 'ляво око', identified_signs: [] }) } }
+            ]
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    throw new Error(`Непознат URL: ${url}`);
+  };
+
+  try {
+    const result = await __testables__.analyzeImageWithVision(
+      new File(['img'], 'eye.png', { type: 'image/png' }),
+      'ляво око',
+      {},
+      {
+        provider: 'openai',
+        analysis_model: 'gpt-4o-search-preview',
+        analysis_prompt_template: 'Око: {{EYE_IDENTIFIER}}'
+      },
+      'key'
+    );
+
+    const runCall = calls.find((call) =>
+      typeof call.url === 'string' && call.url.includes('/runs') && call.options.method === 'POST'
+    );
+
+    assert.ok(runCall, 'Очаквахме POST към /runs.');
+
+    const runPayload = JSON.parse(runCall.options.body);
+    assert.equal(runPayload.web_search.enable, true);
+
+    assert.deepEqual(result, { eye: 'ляво око', identified_signs: [] });
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('runSearchPreview връща нормализиран JSON от assistant', async () => {
+  const originalFetch = global.fetch;
+  const payloads = [];
+
+  global.fetch = async (url, options = {}) => {
+    payloads.push({ url, options });
+
+    if (typeof url === 'string' && url.endsWith('/threads')) {
+      return new Response(JSON.stringify({ id: 'thread_direct' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.includes('/runs') && options.method === 'POST') {
+      return new Response(JSON.stringify({ id: 'run_direct', status: 'queued' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.includes('/runs/run_direct') && options.method === 'GET') {
+      return new Response(JSON.stringify({ id: 'run_direct', status: 'completed' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.includes('/messages')) {
+      return new Response(JSON.stringify({
+        data: [
+          {
+            id: 'msg_direct',
+            role: 'assistant',
+            run_id: 'run_direct',
+            content: [
+              { type: 'output_text', text: { value: '{"ok":true}' } }
+            ]
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof url === 'string' && url.endsWith('/assistants')) {
+      return new Response(JSON.stringify({ id: 'assistant_direct' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    throw new Error(`Непознат URL: ${url}`);
+  };
+
+  try {
+    const result = await __testables__.runSearchPreview({
+      apiKey: 'key',
+      prompt: 'Върни JSON',
+      responseFormat: { type: 'json_object' }
+    });
+
+    assert.deepEqual(result, { ok: true });
+
+    const runPayload = JSON.parse(
+      payloads.find((call) => typeof call.url === 'string' && call.url.includes('/runs') && call.options.method === 'POST').options.body
+    );
+
+    assert.equal(runPayload.web_search.enable, true);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('Цел „Диабет тип 2“ връща насочени секции вместо fallback', () => {
   const keywords = __testables__.buildKeywordSet([], { 'main-goals': 'Диабет тип 2' });
 
