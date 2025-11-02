@@ -240,6 +240,50 @@ test('analyzeImageWithVision приема масив от части в content'
   }
 });
 
+test('Цел „Диабет тип 2“ връща насочени секции вместо fallback', () => {
+  const keywords = __testables__.buildKeywordSet([], { 'main-goals': 'Диабет тип 2' });
+
+  assert.ok(keywords.has('type_2_diabetes'));
+
+  const knowledge = {
+    scientific_validation_summary: 'Валидирано съдържание.',
+    type_2_diabetes: {
+      summary: 'Персонални насоки при диабет тип 2.',
+      remedy_link: 'баланс на кръвната захар'
+    }
+  };
+
+  const { filteredKnowledge, matchedRemedyLinks } =
+    __testables__.selectRelevantInterpretationKnowledge(knowledge, keywords);
+
+  assert.equal(filteredKnowledge.type_2_diabetes.summary, 'Персонални насоки при диабет тип 2.');
+  assert.ok(
+    !filteredKnowledge.summary ||
+      !filteredKnowledge.summary.includes('Няма директно открити секции в базата')
+  );
+
+  const remedyBase = {
+    foundational_principles: ['Винаги се консултирай с лекар.'],
+    type_2_diabetes: {
+      name: 'Подход за диабет тип 2',
+      description: 'Препоръки за хранене и движение.'
+    },
+    summary: 'Това е общ fallback, който не трябва да се връща.'
+  };
+
+  const filteredRemedy = __testables__.selectRelevantRemedyBase(
+    remedyBase,
+    matchedRemedyLinks,
+    keywords
+  );
+
+  assert.equal(filteredRemedy.type_2_diabetes.name, 'Подход за диабет тип 2');
+  assert.ok(
+    !filteredRemedy.summary ||
+      filteredRemedy.summary !== 'Няма директно съвпадащи препоръки; използвай професионална преценка.'
+  );
+});
+
 test('generateHolisticReport подава релевантни секции и ги реферира в изхода', async () => {
   const originalFetch = global.fetch;
   const prompts = [];

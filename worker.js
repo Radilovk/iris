@@ -20,6 +20,14 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+class AiRefusalError extends Error {
+  constructor(message, reason) {
+    super(message);
+    this.name = 'AiRefusalError';
+    this.reason = reason;
+  }
+}
+
 // --- Основен Handler на Worker-а ---
 
 export default {
@@ -325,13 +333,31 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
   let jsonText;
 
   if (config.provider === 'gemini') {
-    jsonText = data.candidates[0].content.parts[0].text;
+    const candidate = Array.isArray(data?.candidates) ? data.candidates[0] : undefined;
+    if (candidate?.finishReason === 'SAFETY') {
+      const refusalReason = candidate?.safetyRatings?.[0]?.probability || 'Content flagged';
+      console.warn('AI отказ за визуален анализ (Gemini):', {
+        finishReason: candidate.finishReason,
+        refusalReason
+      });
+      throw new AiRefusalError('AI моделът отказа да изпълни заявката.', refusalReason);
+    }
+    jsonText = candidate?.content?.parts?.map((part) => part?.text || '').join('\n') ?? '';
   } else if (config.provider === 'openai') {
-    jsonText = data.choices[0].message.content;
+    const choice = Array.isArray(data?.choices) ? data.choices[0] : undefined;
+    if (choice?.finish_reason === 'content_filter') {
+      const refusalReason = choice?.message?.refusal || 'Content filtered';
+      console.warn('AI отказ за визуален анализ (OpenAI):', {
+        finish_reason: choice.finish_reason,
+        refusal: refusalReason
+      });
+      throw new AiRefusalError('AI моделът отказа да изпълни заявката.', refusalReason);
+    }
+    jsonText = choice?.message?.content ?? '';
   }
-  
-  jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-  
+
+  jsonText = normalizeModelJsonText(jsonText).replace(/```json/g, '').replace(/```/g, '').trim();
+
   try {
       return JSON.parse(jsonText);
   } catch (e) {
@@ -483,12 +509,14 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   let jsonText;
   
   if (config.provider === 'gemini') {
-    jsonText = data.candidates[0].content.parts[0].text;
+    const candidate = Array.isArray(data?.candidates) ? data.candidates[0] : undefined;
+    jsonText = candidate?.content?.parts?.map((part) => part?.text || '').join('\n') ?? '';
   } else if (config.provider === 'openai') {
-    jsonText = data.choices[0].message.content;
+    const choice = Array.isArray(data?.choices) ? data.choices[0] : undefined;
+    jsonText = choice?.message?.content ?? '';
   }
-  
-  jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+  jsonText = normalizeModelJsonText(jsonText).replace(/```json/g, '').replace(/```/g, '').trim();
 
   try {
       return JSON.parse(jsonText);
@@ -668,6 +696,28 @@ function normalizeWebSearchResults(results) {
  * @param {unknown[]} identifiedSigns
  * @param {Record<string, unknown>} [userData={}]
  */
+const GOAL_KEYWORDS_MAP = {
+  'main-goals': {
+    'отслабване': ['weight_management'],
+    'контрол на теглото': ['weight_management'],
+    'регулация на теглото': ['weight_management'],
+    'диабет тип 2': ['type_2_diabetes', 'glycemic_control'],
+    'контрол на кръвната захар': ['glycemic_control'],
+    'инсулинова резистентност': ['insulin_resistance'],
+    'подобряване на метаболизма': ['metabolic_risk'],
+    'анти-ейдж': ['anti_aging_goal'],
+    'детокс': ['detox_focus'],
+    'детоксикация': ['detox_focus']
+  },
+  'health-status': {
+    'диабет тип 2': ['type_2_diabetes', 'glycemic_control'],
+    'инсулинова резистентност': ['insulin_resistance'],
+    'метаболитен синдром': ['metabolic_risk'],
+    'наднормено тегло': ['weight_management'],
+    'затлъстяване': ['weight_management']
+  }
+};
+
 function buildKeywordSet(identifiedSigns, userData = {}) {
   const keywords = new Set();
   if (Array.isArray(identifiedSigns)) {
@@ -684,6 +734,29 @@ function buildKeywordSet(identifiedSigns, userData = {}) {
     const arrayLikeFields = ['main-goals', 'health-status'];
     for (const field of arrayLikeFields) {
       addValueToKeywords(keywords, stressSource[field]);
+    }
+
+    for (const [field, mapping] of Object.entries(GOAL_KEYWORDS_MAP)) {
+      const rawValue = stressSource[field];
+      if (rawValue == null) continue;
+
+      const valueList = Array.isArray(rawValue) ? rawValue : [rawValue];
+      for (const entry of valueList) {
+        if (typeof entry !== 'string') continue;
+        const normalized = entry.trim().toLowerCase();
+        if (!normalized) continue;
+
+        const normalizedSlug = slugify(entry);
+        const mappedSlugs =
+          mapping[normalized] || (normalizedSlug ? mapping[normalizedSlug] : undefined);
+        if (!mappedSlugs) continue;
+
+        for (const slug of mappedSlugs) {
+          if (slug) {
+            keywords.add(slug);
+          }
+        }
+      }
     }
 
     addValueToKeywords(keywords, stressSource['health-other']);
@@ -930,7 +1003,18 @@ function selectRelevantInterpretationKnowledge(knowledge, keywords) {
       continue;
     }
 
+    const keySlug = slugify(key);
+    const slugMatched = keySlug && keywords.has(keySlug);
     const { included, filteredValue, remedyLinks } = filterKnowledgeValue(value, keywords);
+
+    if (slugMatched) {
+      filteredKnowledge[key] = included ? filteredValue : value;
+      const supplementalLinks = collectRemedyLinks(value);
+      supplementalLinks.forEach(link => matchedRemedyLinks.add(link));
+      remedyLinks.forEach(link => matchedRemedyLinks.add(link));
+      continue;
+    }
+
     if (included) {
       filteredKnowledge[key] = filteredValue;
       remedyLinks.forEach(link => matchedRemedyLinks.add(link));
@@ -1019,6 +1103,31 @@ function filterKnowledgeValue(value, keywords) {
   return { included: false, filteredValue: value, remedyLinks };
 }
 
+function collectRemedyLinks(value, bucket = new Set()) {
+  if (value == null) {
+    return bucket;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectRemedyLinks(item, bucket);
+    }
+    return bucket;
+  }
+
+  if (typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) {
+      if (key === 'remedy_link' && typeof child === 'string') {
+        bucket.add(child);
+        continue;
+      }
+      collectRemedyLinks(child, bucket);
+    }
+  }
+
+  return bucket;
+}
+
 function selectRelevantRemedyBase(remedyBase, remedyLinks, keywords) {
   const ALWAYS_INCLUDE_KEYS = ['foundational_principles'];
   const filteredBase = {};
@@ -1034,6 +1143,12 @@ function selectRelevantRemedyBase(remedyBase, remedyLinks, keywords) {
     }
 
     if (ALWAYS_INCLUDE_KEYS.includes(key)) {
+      filteredBase[key] = value;
+      continue;
+    }
+
+    const keySlug = slugify(key);
+    if (keySlug && keywords.has(keySlug)) {
       filteredBase[key] = value;
       continue;
     }
@@ -1061,7 +1176,7 @@ function filterRemedyValue(keyName, value, normalizedLinks, keywords) {
   }
 
   const keySlug = slugify(keyName);
-  if (keySlug && normalizedLinks.has(keySlug)) {
+  if (keySlug && (normalizedLinks.has(keySlug) || keywords.has(keySlug))) {
     return { included: true, filteredValue: value };
   }
 
@@ -1083,7 +1198,7 @@ function filterRemedyValue(keyName, value, normalizedLinks, keywords) {
   if (typeof value === 'object') {
     const descriptor = value.id || value.key || value.remedy_link || value.name || value.title;
     const descriptorSlug = typeof descriptor === 'string' ? slugify(descriptor) : '';
-    if (descriptorSlug && normalizedLinks.has(descriptorSlug)) {
+    if (descriptorSlug && (normalizedLinks.has(descriptorSlug) || keywords.has(descriptorSlug))) {
       return { included: true, filteredValue: value };
     }
 
@@ -1122,6 +1237,41 @@ function filterRemedyValue(keyName, value, normalizedLinks, keywords) {
   }
 
   return { included: false, filteredValue: value };
+}
+
+function normalizeModelJsonText(raw) {
+  if (raw == null) {
+    return '';
+  }
+
+  if (typeof raw === 'string') {
+    return raw;
+  }
+
+  if (Array.isArray(raw)) {
+    return raw
+      .map((part) => {
+        if (!part) return '';
+        if (typeof part === 'string') return part;
+        if (typeof part.text === 'string') return part.text;
+        if (typeof part.content === 'string') return part.content;
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  if (typeof raw === 'object') {
+    if (typeof raw.text === 'string') return raw.text;
+    if (typeof raw.content === 'string') return raw.content;
+    try {
+      return JSON.stringify(raw);
+    } catch {
+      return String(raw);
+    }
+  }
+
+  return String(raw);
 }
 
 function matchesKeywords(text, keywords) {
