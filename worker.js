@@ -294,6 +294,26 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
       generationConfig: { "response_mime_type": "application/json" }
     };
   } else if (config.provider === 'openai') {
+    if ((config.analysis_model || '').trim() === 'gpt-4o-search-preview') {
+      return await runSearchPreview({
+        apiKey,
+        prompt,
+        assistantId: config.analysis_assistant_id || config.search_preview_assistant_id,
+        metadata: {
+          usecase: 'analysis',
+          eye: eyeIdentifier
+        },
+        attachments: [
+          {
+            type: 'image_base64',
+            mimeType: file.type,
+            data: base64Image,
+            label: eyeIdentifier
+          }
+        ],
+        responseFormat: { type: 'json_object' }
+      });
+    }
     // НОВА ЛОГИКА: Конструиране на заявка за OpenAI Vision API
     apiUrl = API_BASE_URLS.openai;
     headers = {
@@ -483,6 +503,18 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
       generationConfig: { "response_mime_type": "application/json" }
     };
   } else if (config.provider === 'openai') {
+    if ((config.report_model || '').trim() === 'gpt-4o-search-preview') {
+      return await runSearchPreview({
+        apiKey,
+        prompt,
+        assistantId: config.report_assistant_id || config.search_preview_assistant_id,
+        metadata: {
+          usecase: 'report',
+          patient: userData?.name || 'unknown'
+        },
+        responseFormat: { type: 'json_object' }
+      });
+    }
     apiUrl = API_BASE_URLS.openai;
     headers = {
       'Content-Type': 'application/json',
@@ -524,6 +556,235 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
       console.error("Грешка при парсване на JSON от AI (финален доклад):", jsonText);
       throw new Error("AI моделът върна невалиден JSON формат за финалния доклад.");
   }
+}
+
+async function runSearchPreview({
+  apiKey,
+  prompt,
+  attachments = [],
+  assistantId,
+  metadata,
+  responseFormat,
+  instructions
+}) {
+  if (!apiKey) {
+    throw new Error('Липсва API ключ за OpenAI Search Preview.');
+  }
+
+  const baseUrl = 'https://api.openai.com/v1';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`,
+    'OpenAI-Beta': 'assistants=v2'
+  };
+
+  let effectiveAssistantId = typeof assistantId === 'string' && assistantId.trim() ? assistantId.trim() : '';
+
+  if (!effectiveAssistantId) {
+    const assistantResponse = await fetch(`${baseUrl}/assistants`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'gpt-4o-search-preview',
+        tools: [{ type: 'web_search' }]
+      })
+    });
+
+    if (!assistantResponse.ok) {
+      const errorBody = await assistantResponse.text();
+      throw new Error(`Неуспешно създаване на Assistant: ${errorBody}`);
+    }
+
+    const assistantData = await assistantResponse.json();
+    effectiveAssistantId = assistantData?.id;
+
+    if (!effectiveAssistantId) {
+      throw new Error('OpenAI Assistant API не върна валидно ID.');
+    }
+  }
+
+  const threadPayload = {
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: buildSearchPreviewMessage(prompt, attachments)
+          }
+        ]
+      }
+    ]
+  };
+
+  if (metadata && typeof metadata === 'object' && Object.keys(metadata).length > 0) {
+    threadPayload.metadata = metadata;
+  }
+
+  const threadResponse = await fetch(`${baseUrl}/threads`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(threadPayload)
+  });
+
+  if (!threadResponse.ok) {
+    const errorBody = await threadResponse.text();
+    throw new Error(`Неуспешно създаване на Thread: ${errorBody}`);
+  }
+
+  const threadData = await threadResponse.json();
+  const threadId = threadData?.id;
+
+  if (!threadId) {
+    throw new Error('OpenAI Assistant API не върна валидно thread ID.');
+  }
+
+  const runPayload = {
+    assistant_id: effectiveAssistantId,
+    web_search: { enable: true }
+  };
+
+  if (responseFormat) {
+    runPayload.response_format = responseFormat;
+  }
+
+  if (instructions) {
+    runPayload.instructions = instructions;
+  }
+
+  const runResponse = await fetch(`${baseUrl}/threads/${threadId}/runs`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(runPayload)
+  });
+
+  if (!runResponse.ok) {
+    const errorBody = await runResponse.text();
+    throw new Error(`Неуспешно стартиране на Run: ${errorBody}`);
+  }
+
+  const runData = await runResponse.json();
+  const runId = runData?.id;
+
+  if (!runId) {
+    throw new Error('OpenAI Assistant API не върна валидно run ID.');
+  }
+
+  const completedRun = await pollAssistantRun({ baseUrl, threadId, runId, headers });
+
+  const messagesResponse = await fetch(`${baseUrl}/threads/${threadId}/messages?limit=20`, {
+    method: 'GET',
+    headers
+  });
+
+  if (!messagesResponse.ok) {
+    const errorBody = await messagesResponse.text();
+    throw new Error(`Неуспешно извличане на съобщения: ${errorBody}`);
+  }
+
+  const messagesData = await messagesResponse.json();
+  const assistantMessage = Array.isArray(messagesData?.data)
+    ? messagesData.data.find((message) => message && message.role === 'assistant' && message.run_id === completedRun.id)
+      || messagesData.data.find((message) => message && message.role === 'assistant')
+    : null;
+
+  const assistantText = extractAssistantMessageText(assistantMessage);
+  const normalized = normalizeModelJsonText(assistantText).replace(/```json/g, '').replace(/```/g, '').trim();
+
+  try {
+    return JSON.parse(normalized);
+  } catch (error) {
+    console.error('Невалиден JSON от gpt-4o-search-preview:', normalized);
+    throw new Error('Асистентът не върна валидно JSON съдържание.');
+  }
+}
+
+async function pollAssistantRun({ baseUrl, threadId, runId, headers, intervalMs = 1000, timeoutMs = 45000 }) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const runStatusResponse = await fetch(`${baseUrl}/threads/${threadId}/runs/${runId}`, {
+      method: 'GET',
+      headers
+    });
+
+    if (!runStatusResponse.ok) {
+      const errorBody = await runStatusResponse.text();
+      throw new Error(`Грешка при проверка на Run: ${errorBody}`);
+    }
+
+    const statusData = await runStatusResponse.json();
+    const status = statusData?.status;
+
+    if (status === 'completed') {
+      return statusData;
+    }
+
+    if (status === 'failed' || status === 'cancelled' || status === 'expired') {
+      const reason = statusData?.last_error?.message || `Run приключи със статус ${status}`;
+      throw new Error(reason);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error('Асистентът не завърши навреме.');
+}
+
+function buildSearchPreviewMessage(prompt, attachments) {
+  const parts = [prompt || ''];
+
+  if (Array.isArray(attachments)) {
+    for (const attachment of attachments) {
+      if (!attachment || typeof attachment !== 'object') continue;
+      if (attachment.type === 'image_base64' && attachment.data) {
+        const label = attachment.label ? ` (${attachment.label})` : '';
+        const mime = attachment.mimeType || 'application/octet-stream';
+        parts.push(`Изображение${label}: data:${mime};base64,${attachment.data}`);
+      } else if (attachment.type === 'text' && attachment.text) {
+        parts.push(String(attachment.text));
+      }
+    }
+  }
+
+  return parts.filter(Boolean).join('\n\n');
+}
+
+function extractAssistantMessageText(message) {
+  if (!message || !Array.isArray(message.content)) {
+    return '';
+  }
+
+  const fragments = [];
+
+  for (const part of message.content) {
+    if (!part) continue;
+    if (typeof part.text === 'string') {
+      fragments.push(part.text);
+      continue;
+    }
+
+    if (part.text && typeof part.text.value === 'string') {
+      fragments.push(part.text.value);
+      continue;
+    }
+
+    if (typeof part.value === 'string') {
+      fragments.push(part.value);
+      continue;
+    }
+
+    if (part.type === 'output_text' && part.output_text && typeof part.output_text === 'string') {
+      fragments.push(part.output_text);
+      continue;
+    }
+
+    if (part.type === 'output_text' && part.text && typeof part.text === 'object' && typeof part.text.value === 'string') {
+      fragments.push(part.text.value);
+    }
+  }
+
+  return fragments.join('\n');
 }
 
 function extractRagContextSummaries(knowledge, limit = Number.POSITIVE_INFINITY) {
@@ -1317,5 +1578,6 @@ export const __testables__ = {
   generateHolisticReport,
   buildKeywordSet,
   selectRelevantInterpretationKnowledge,
-  selectRelevantRemedyBase
+  selectRelevantRemedyBase,
+  runSearchPreview
 };
