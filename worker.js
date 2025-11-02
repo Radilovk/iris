@@ -558,6 +558,16 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   }
 }
 
+/**
+ * @param {Object} params
+ * @param {string} params.apiKey
+ * @param {string} params.prompt
+ * @param {Array} [params.attachments]
+ * @param {string} [params.assistantId]
+ * @param {Object} [params.metadata]
+ * @param {Object} [params.responseFormat]
+ * @param {string} [params.instructions]
+ */
 async function runSearchPreview({
   apiKey,
   prompt,
