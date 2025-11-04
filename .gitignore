@@ -1,2 +1,8 @@
 node_modules/
 .env
+.eslintcache
+.prettierignore
+.DS_Store
+*.log
+dist/
+.wrangler/

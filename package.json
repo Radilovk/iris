@@ -4,14 +4,20 @@
   "description": "Този проект съдържа Cloudflare Worker, който изпълнява многостъпков RAG анализ на ирисови изображения.",
   "main": "worker.js",
   "scripts": {
-    "test": "node worker.test.js"
+    "test": "node worker.test.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,json,html,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,json,html,css,md}\""
   },
-  "keywords": [],
+  "keywords": ["iridology", "ai", "cloudflare-workers", "health"],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {},
   "devDependencies": {
-    "@types/node": "^24.3.0"
+    "@types/node": "^24.3.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
   }
 }

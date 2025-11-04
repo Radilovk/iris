@@ -14,11 +14,18 @@ const API_BASE_URLS = {
   openai: 'https://api.openai.com/v1/chat/completions'
 };
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*', // За продукция: сменете с конкретния домейн
-  'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+const MAX_FILE_SIZE_MB = 20; // Максимален размер на файловете в MB
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // В байтове
+
+// CORS хедъри - конфигурирани чрез environment variable
+function getCorsHeaders(env) {
+  const allowedOrigin = env?.ALLOWED_ORIGIN || '*';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
 
 class AiRefusalError extends Error {
   constructor(message, reason) {
@@ -28,42 +35,60 @@ class AiRefusalError extends Error {
   }
 }
 
+class ValidationError extends Error {
+  constructor(message, field) {
+    super(message);
+    this.name = 'ValidationError';
+    this.field = field;
+  }
+}
+
+class ConfigurationError extends Error {
+  constructor(message, missingConfig) {
+    super(message);
+    this.name = 'ConfigurationError';
+    this.missingConfig = missingConfig;
+  }
+}
+
 // --- Основен Handler на Worker-а ---
 
 export default {
   async fetch(request, env, ctx) {
+    const corsHeaders = getCorsHeaders(env);
+    
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: CORS_HEADERS });
+      return new Response(null, { headers: corsHeaders });
     }
 
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/admin/')) {
-      return handleAdminRequest(request, env);
+      return handleAdminRequest(request, env, corsHeaders);
     }
 
     if (request.method === 'POST' && url.pathname === '/') {
       try {
-        return await handlePostRequest(request, env);
+        return await handlePostRequest(request, env, corsHeaders);
       } catch (error) {
         console.error('Критична грешка в worker-а:', error);
         return new Response(JSON.stringify({ error: 'Вътрешна грешка на сървъра: ' + error.message }), {
           status: 500,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
     }
 
     return new Response(JSON.stringify({ error: `Методът ${request.method} за път ${url.pathname} не е разрешен.` }), {
       status: 405,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   },
 };
 
 // --- Логика за обработка на АДМИН заявки (без промяна) ---
 
-async function handleAdminRequest(request, env) {
+async function handleAdminRequest(request, env, corsHeaders = {}) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const method = request.method;
@@ -74,11 +99,11 @@ async function handleAdminRequest(request, env) {
         const modelsListJson = await env.iris_rag_kv.get('iris_models_list') || '{}';
         const models = JSON.parse(modelsListJson);
         return new Response(JSON.stringify({ models }), { 
-          status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (err) {
         return new Response(JSON.stringify({ error: 'Невалиден JSON в `iris_models_list`: ' + err.message }), {
-          status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
     }
@@ -88,11 +113,11 @@ async function handleAdminRequest(request, env) {
         const newModelsList = await request.json();
         await env.iris_rag_kv.put('iris_models_list', JSON.stringify(newModelsList));
         return new Response(JSON.stringify({ success: true }), {
-          status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (err) {
         return new Response(JSON.stringify({ error: 'Грешка при запис на списъка с модели: ' + err.message }), {
-          status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
     }
@@ -101,7 +126,7 @@ async function handleAdminRequest(request, env) {
   const { CF_ACCOUNT_ID, CF_API_TOKEN, CF_KV_NAMESPACE_ID } = env;
   if (!CF_ACCOUNT_ID || !CF_API_TOKEN || !CF_KV_NAMESPACE_ID) {
     return new Response(JSON.stringify({ error: 'Cloudflare API credentials не са конфигурирани.' }), {
-      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
@@ -124,7 +149,7 @@ async function handleAdminRequest(request, env) {
     cfHeaders['Content-Type'] = 'text/plain';
   } else {
     return new Response(JSON.stringify({ error: 'Невалидна административна команда.' }), {
-      status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
@@ -133,38 +158,38 @@ async function handleAdminRequest(request, env) {
     if (!response.ok) {
       const errorText = await response.text();
       return new Response(JSON.stringify({ error: `Грешка от Cloudflare API: ${errorText}` }), {
-        status: response.status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+        status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     if (pathname.endsWith('/keys')) {
       const data = await response.json();
       return new Response(JSON.stringify({ keys: data.result }), {
-        status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     if (pathname.endsWith('/get')) {
       const value = await response.text();
       return new Response(JSON.stringify({ value: value }), {
-        status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     if (pathname.endsWith('/put') || pathname.endsWith('/set')) {
       return new Response(JSON.stringify({ success: true }), {
-        status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    return new Response(await response.text(), { status: response.status, headers: CORS_HEADERS });
+    return new Response(await response.text(), { status: response.status, headers: corsHeaders });
   } catch (err) {
     return new Response(JSON.stringify({ error: 'Вътрешна грешка в worker-а: ' + err.message }), {
-      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 }
 
 // --- Логика за обработка на POST заявка (AI Анализ) ---
 
-async function handlePostRequest(request, env) {
+async function handlePostRequest(request, env, corsHeaders = {}) {
   const formData = await request.formData();
   const leftEyeFile = formData.get('left-eye-upload');
   const rightEyeFile = formData.get('right-eye-upload');
@@ -172,7 +197,15 @@ async function handlePostRequest(request, env) {
   if (!leftEyeFile || !rightEyeFile || !(leftEyeFile instanceof File) || !(rightEyeFile instanceof File)) {
     return new Response(JSON.stringify({ error: 'Моля, качете снимки и на двете очи.' }), {
       status: 400,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Валидация на размера на файловете
+  if (leftEyeFile.size > MAX_FILE_SIZE || rightEyeFile.size > MAX_FILE_SIZE) {
+    return new Response(JSON.stringify({ error: `Файловете трябва да са под ${MAX_FILE_SIZE_MB}MB.` }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
@@ -207,7 +240,7 @@ async function handlePostRequest(request, env) {
   if (!config) {
       return new Response(JSON.stringify({ error: 'Липсва конфигурация на AI асистента (iris_config_kv).' }), {
           status: 503,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
   }
 
@@ -218,7 +251,7 @@ async function handlePostRequest(request, env) {
       console.error('Конфигурацията на AI моделите е непълна. analysis_model или report_model липсват.');
       return new Response(JSON.stringify({ error: 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.' }), {
           status: 503,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
   }
 
@@ -227,7 +260,7 @@ async function handlePostRequest(request, env) {
    if (!irisMap || !interpretationKnowledge || !remedyBase) {
       return new Response(JSON.stringify({ error: 'Не можахме да заредим базата данни за анализ.' }), {
           status: 503, 
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
   }
 
@@ -259,7 +292,7 @@ async function handlePostRequest(request, env) {
 
   return new Response(JSON.stringify(finalReport), {
     status: 200,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
