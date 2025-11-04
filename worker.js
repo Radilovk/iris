@@ -472,6 +472,109 @@ async function fetchExternalInsights(keywordHints, env) {
   }
 }
 
+/**
+ * Обогатява потребителските данни с изчислени метрики за по-добра персонализация
+ * @param {Record<string, unknown>} userData - Оригинални потребителски данни
+ * @param {unknown[]} identifiedSigns - Идентифицирани знаци от двете очи
+ * @returns {Record<string, unknown>} - Обогатени данни
+ */
+function enrichUserDataWithMetrics(userData, identifiedSigns) {
+  const enriched = { ...userData };
+  const numericContext = parseNumericContext(userData);
+  
+  // Добавяне на BMI ако има данни за ръст и тегло
+  if (numericContext.heightCm && numericContext.weightKg) {
+    const heightMeters = numericContext.heightCm / 100;
+    const bmi = numericContext.weightKg / (heightMeters * heightMeters);
+    enriched.calculated_bmi = Math.round(bmi * 10) / 10;
+    
+    // Интерпретация на BMI
+    if (bmi < 18.5) {
+      enriched.bmi_category = 'поднормено тегло';
+    } else if (bmi < 25) {
+      enriched.bmi_category = 'нормално тегло';
+    } else if (bmi < 30) {
+      enriched.bmi_category = 'наднормено тегло';
+    } else {
+      enriched.bmi_category = 'затлъстяване';
+    }
+  }
+  
+  // Добавяне на възрастова група за по-добра персонализация
+  if (numericContext.ageYears) {
+    if (numericContext.ageYears < 30) {
+      enriched.age_group = 'млад възрастен';
+    } else if (numericContext.ageYears < 45) {
+      enriched.age_group = 'среден възрастен';
+    } else if (numericContext.ageYears < 65) {
+      enriched.age_group = 'зряла възраст';
+    } else {
+      enriched.age_group = 'напреднала възраст';
+    }
+  }
+  
+  // Оценка на общия риск според броя и интензитета на знаците
+  if (identifiedSigns && Array.isArray(identifiedSigns)) {
+    enriched.signs_count = identifiedSigns.length;
+    
+    // Броене на знаци с висок интензитет
+    const highIntensitySigns = identifiedSigns.filter(sign => 
+      sign && typeof sign === 'object' && 
+      (sign.intensity === 'силен' || sign.intensity === 'high' || sign.intensity === 'severe')
+    ).length;
+    
+    enriched.high_intensity_signs_count = highIntensitySigns;
+    
+    // Обща оценка на риска
+    if (identifiedSigns.length === 0) {
+      enriched.overall_risk_assessment = 'нисък риск';
+    } else if (identifiedSigns.length <= 3 && highIntensitySigns === 0) {
+      enriched.overall_risk_assessment = 'умерен риск';
+    } else if (highIntensitySigns > 0 || identifiedSigns.length > 5) {
+      enriched.overall_risk_assessment = 'повишен риск';
+    } else {
+      enriched.overall_risk_assessment = 'умерен риск';
+    }
+  }
+  
+  // Оценка на нивото на стрес
+  if (numericContext.stressLevel !== undefined) {
+    if (numericContext.stressLevel <= 3) {
+      enriched.stress_assessment = 'ниско ниво на стрес';
+    } else if (numericContext.stressLevel <= 6) {
+      enriched.stress_assessment = 'умерено ниво на стрес';
+    } else {
+      enriched.stress_assessment = 'високо ниво на стрес';
+    }
+  }
+  
+  // Оценка на съня
+  if (numericContext.sleepHours !== undefined) {
+    if (numericContext.sleepHours < 6) {
+      enriched.sleep_assessment = 'недостатъчен сън (критично)';
+    } else if (numericContext.sleepHours < 7) {
+      enriched.sleep_assessment = 'субоптимален сън';
+    } else if (numericContext.sleepHours <= 9) {
+      enriched.sleep_assessment = 'добър сън';
+    } else {
+      enriched.sleep_assessment = 'прекалено много сън';
+    }
+  }
+  
+  // Оценка на хидратацията
+  if (numericContext.waterLiters !== undefined) {
+    if (numericContext.waterLiters < 1.5) {
+      enriched.hydration_assessment = 'недостатъчна хидратация';
+    } else if (numericContext.waterLiters < 2.5) {
+      enriched.hydration_assessment = 'умерена хидратация';
+    } else {
+      enriched.hydration_assessment = 'добра хидратация';
+    }
+  }
+  
+  return enriched;
+}
+
 async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env) {
   const identifiedSigns = [
     ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
@@ -498,7 +601,10 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     ? normalizedWebInsights.slice(0, contextLimit)
     : fallbackExternalContext;
   const externalContextPayload = JSON.stringify(externalContextEntries, null, 2);
-  const promptUserData = { ...userData, keyword_hints: keywordHints };
+  
+  // Обогатяване на потребителските данни с изчислени метрики за по-добра персонализация
+  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
+  const promptUserData = { ...enrichedUserData, keyword_hints: keywordHints };
 
   const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
   const remedyPayload = JSON.stringify(relevantRemedyBase, null, 2);
