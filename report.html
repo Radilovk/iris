@@ -470,10 +470,12 @@
                     const allDetails = document.querySelectorAll('details.report-section');
                     allDetails.forEach(detail => detail.setAttribute('open', ''));
                     
-                    // Малко забавяне за да се рендерира съдържанието
-                    setTimeout(() => {
-                        window.print();
-                    }, 300);
+                    // Използваме requestAnimationFrame за да сме сигурни че съдържанието е рендерирано
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            window.print();
+                        });
+                    });
                 });
             }
         });

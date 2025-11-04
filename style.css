@@ -291,6 +291,7 @@ details.report-section[open] summary .arrow { transform: rotate(180deg); }
     font-size: 13px;
     font-weight: 400;
     white-space: normal;
+    width: 200px; /* fallback for older browsers */
     width: max-content;
     max-width: 250px;
     z-index: 1000;

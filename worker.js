@@ -528,11 +528,10 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
     // Обща оценка на риска
     if (identifiedSigns.length === 0) {
       enriched.overall_risk_assessment = 'нисък риск';
-    } else if (identifiedSigns.length <= 3 && highIntensitySigns === 0) {
-      enriched.overall_risk_assessment = 'умерен риск';
     } else if (highIntensitySigns > 0 || identifiedSigns.length > 5) {
       enriched.overall_risk_assessment = 'повишен риск';
     } else {
+      // 1-5 знака без високо интензитетни
       enriched.overall_risk_assessment = 'умерен риск';
     }
   }
