@@ -14,6 +14,9 @@ const API_BASE_URLS = {
   openai: 'https://api.openai.com/v1/chat/completions'
 };
 
+const MAX_FILE_SIZE_MB = 20; // Максимален размер на файловете в MB
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // В байтове
+
 // CORS хедъри - конфигурирани чрез environment variable
 function getCorsHeaders(env) {
   const allowedOrigin = env?.ALLOWED_ORIGIN || '*';
@@ -198,10 +201,9 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
     });
   }
 
-  // Валидация на размера на файловете (максимум 20MB)
-  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+  // Валидация на размера на файловете
   if (leftEyeFile.size > MAX_FILE_SIZE || rightEyeFile.size > MAX_FILE_SIZE) {
-    return new Response(JSON.stringify({ error: `Файловете трябва да са под ${MAX_FILE_SIZE / 1024 / 1024}MB.` }), {
+    return new Response(JSON.stringify({ error: `Файловете трябва да са под ${MAX_FILE_SIZE_MB}MB.` }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
