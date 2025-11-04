@@ -519,7 +519,7 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
     
     // Броене на знаци с висок интензитет
     const highIntensitySigns = identifiedSigns.filter(sign => 
-      sign && typeof sign === 'object' && 
+      sign && typeof sign === 'object' && 'intensity' in sign &&
       (sign.intensity === 'силен' || sign.intensity === 'high' || sign.intensity === 'severe')
     ).length;
     
