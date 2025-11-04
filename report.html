@@ -163,6 +163,20 @@
             .report-disclaimer { padding: 1rem; }
         }
 
+        /* Print styles for PDF export */
+        @media print {
+            body { background: white; }
+            .container { padding: 0; max-width: 100%; }
+            .button-group-report { display: none; }
+            .report-header { color: #1a253c; }
+            .report-header h2, .report-header p { color: #1a253c; text-shadow: none; }
+            details.report-section { border: 1px solid #ddd; }
+            details.report-section summary { page-break-inside: avoid; }
+            details.report-section .content { page-break-inside: avoid; }
+            .report-section { page-break-inside: avoid; margin-bottom: 1rem; }
+            .info-card { page-break-inside: avoid; }
+        }
+
     </style>
 </head>
 <body>
@@ -180,8 +194,11 @@
             <div id="message-box"></div>
             
             <div class="button-group-report">
+                <button id="print-btn" class="btn btn-primary fade-in-up delay-3" title="Принтирайте или запазете като PDF">
+                    <i class="fas fa-file-pdf"></i> Запази PDF
+                </button>
                 <button id="re-analyze-btn" class="btn btn-secondary fade-in-up delay-3">Повтори анализа</button>
-                <a href="analysis.html" class="btn btn-primary fade-in-up delay-3">Нов анализ</a>
+                <a href="analysis.html" class="btn btn-secondary fade-in-up delay-3">Нов анализ</a>
             </div>
         </section>
     </div>
@@ -191,14 +208,17 @@
 
         // *** КЛЮЧОВА ПРОМЯНА: Актуализирана конфигурация на секциите ***
         const ICONS_CONFIG = {
+            "Резюме на анализа": { icon: "fa-file-medical", color: "#06b6d4" },
             "Конституционален анализ": { icon: "fa-shield-halved", color: "#3b82f6" },
             "Приоритетни системи за подкрепа": { icon: "fa-heart-pulse", color: "#ef4444" },
             "Анализ на елиминативните канали": { icon: "fa-recycle", color: "#10b981" },
             "Ключови находки и тяхната връзка": { icon: "fa-project-diagram", color: "#8b5cf6" },
+            "План за действие": { icon: "fa-list-check", color: "#14b8a6" },
             "Холистични препоръки": { icon: "fa-seedling", color: "#f59e0b" },
             "Фундаментални принципи": { icon: "fa-lightbulb", color: "#1d4ed8" },
             "Целенасочени препоръки": { icon: "fa-bullseye", color: "#c2410c" },
-            "Психология и емоции": { icon: "fa-brain", color: "#be185d" }, // ПРОМЯНА: Преименувано и с нова икона
+            "Психология и емоции": { icon: "fa-brain", color: "#be185d" },
+            "Препоръки за проследяване": { icon: "fa-calendar-check", color: "#7c3aed" },
             "default": { icon: "fa-circle-info", color: "#6b7280" }
         };
 
@@ -246,12 +266,27 @@
             `;
             container.appendChild(hero);
 
+            // Добавяме резюме ако е налично
+            if (data["Резюме на анализа"]) {
+                const summaryBox = document.createElement('div');
+                summaryBox.className = 'report-hero';
+                summaryBox.style.background = 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)';
+                summaryBox.style.borderLeft = '4px solid #f59e0b';
+                summaryBox.innerHTML = `
+                    <h3 style="color: #92400e; margin-bottom: 0.75rem;"><i class="fas fa-file-medical" style="margin-right: 0.5rem;"></i>Резюме</h3>
+                    <div style="color: #78350f; font-size: 1.05rem; line-height: 1.7; text-align: left;">${formatTextContent(data["Резюме на анализа"])}</div>
+                `;
+                container.appendChild(summaryBox);
+            }
+
             const sectionOrder = [
                 "Конституционален анализ",
                 "Приоритетни системи за подкрепа",
                 "Анализ на елиминативните канали",
                 "Ключови находки и тяхната връзка",
-                "Холистични препоръки"
+                "План за действие",
+                "Холистични препоръки",
+                "Препоръки за проследяване"
             ];
             
             sectionOrder.forEach(key => {
@@ -424,6 +459,23 @@
                         reAnalyzeBtn.disabled = false;
                         reAnalyzeBtn.innerHTML = 'Повтори анализа';
                     }
+                });
+            }
+
+            // PDF Print functionality
+            const printBtn = document.getElementById('print-btn');
+            if (printBtn) {
+                printBtn.addEventListener('click', () => {
+                    // Отваряме всички секции преди принтиране за пълен доклад
+                    const allDetails = document.querySelectorAll('details.report-section');
+                    allDetails.forEach(detail => detail.setAttribute('open', ''));
+                    
+                    // Използваме requestAnimationFrame за да сме сигурни че съдържанието е рендерирано
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            window.print();
+                        });
+                    });
                 });
             }
         });

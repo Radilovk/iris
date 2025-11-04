@@ -259,3 +259,100 @@ details.report-section[open] summary .arrow { transform: rotate(180deg); }
     .report-section summary, .report-section .content { padding-left: 1.25rem; padding-right: 1.25rem; }
     .report-header h2 { font-size: 2rem; }
 }
+
+/* ====== TOOLTIP STYLES FOR BETTER UX ====== */
+.tooltip-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 6px;
+    cursor: help;
+    position: relative;
+    vertical-align: middle;
+}
+
+.tooltip-trigger:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    white-space: normal;
+    width: 200px; /* fallback for older browsers */
+    width: max-content;
+    max-width: 250px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    line-height: 1.4;
+}
+
+.tooltip-trigger:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+}
+
+/* Loading indicator improvements */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Progress bar improvements */
+.progress-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-color);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+    z-index: 9999;
+}
+
+.progress-indicator.active {
+    transform: scaleX(1);
+}
+
+/* Better focus states for accessibility */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}

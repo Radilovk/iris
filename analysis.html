@@ -41,7 +41,7 @@
                             <input type="number" id="age" name="age" required>
                         </div>
                         <div class="form-group">
-                            <label for="height">Ръст (см):</label>
+                            <label for="height">Ръст (см): <span class="tooltip-trigger" data-tooltip="Ръстът и теглото се използват за изчисляване на BMI и персонализиране на препоръките.">?</span></label>
                             <input type="number" id="height" name="height">
                         </div>
                         <div class="form-group">
@@ -57,7 +57,10 @@
                             </select>
                         </div>
                         <div class="form-group full-width">
-                            <label>Вашата основна цел:</label>
+                            <label>
+                                Вашата основна цел:
+                                <span class="tooltip-trigger" data-tooltip="Изборът на цел помага на AI да персонализира препоръките според вашите приоритети. Можете да изберете повече от една цел.">?</span>
+                            </label>
                             <p class="form-hint">Изберете всички направления, които искате да развием заедно.</p>
                             <div class="checkbox-group">
                                 <label class="checkbox-item"><input type="checkbox" name="main-goals" value="Отслабване"> Отслабване</label>
@@ -89,7 +92,7 @@
                             </div>
                         </details>
                         <div class="form-group full-width">
-                            <label>Фамилна анамнеза (сърдечни проблеми, диабет и др.):</label>
+                            <label>Фамилна анамнеза: <span class="tooltip-trigger" data-tooltip="Семейната история помага за по-точна оценка на генетичните предразположения.">?</span></label>
                             <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'">
                         </div>
                     </div>
@@ -113,7 +116,7 @@
                             <input type="number" id="sleep" name="sleep" required value="7">
                         </div>
                         <div class="form-group full-width">
-                            <label for="stress">Ниво на стрес (1-10):</label>
+                            <label for="stress">Ниво на стрес (1-10): <span class="tooltip-trigger" data-tooltip="Оценете стреса от 1 (минимален) до 10 (критичен). Нива над 7 се считат за високи.">?</span></label>
                             <input type="range" id="stress" name="stress" min="1" max="10" value="5" oninput="this.nextElementSibling.value = this.value" required>
                             <output>5</output>
                         </div>
