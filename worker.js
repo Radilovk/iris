@@ -32,6 +32,22 @@ class AiRefusalError extends Error {
   }
 }
 
+class ValidationError extends Error {
+  constructor(message, field) {
+    super(message);
+    this.name = 'ValidationError';
+    this.field = field;
+  }
+}
+
+class ConfigurationError extends Error {
+  constructor(message, missingConfig) {
+    super(message);
+    this.name = 'ConfigurationError';
+    this.missingConfig = missingConfig;
+  }
+}
+
 // --- Основен Handler на Worker-а ---
 
 export default {
