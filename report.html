@@ -163,6 +163,20 @@
             .report-disclaimer { padding: 1rem; }
         }
 
+        /* Print styles for PDF export */
+        @media print {
+            body { background: white; }
+            .container { padding: 0; max-width: 100%; }
+            .button-group-report { display: none; }
+            .report-header { color: #1a253c; }
+            .report-header h2, .report-header p { color: #1a253c; text-shadow: none; }
+            details.report-section { border: 1px solid #ddd; }
+            details.report-section summary { page-break-inside: avoid; }
+            details.report-section .content { page-break-inside: avoid; }
+            .report-section { page-break-inside: avoid; margin-bottom: 1rem; }
+            .info-card { page-break-inside: avoid; }
+        }
+
     </style>
 </head>
 <body>
@@ -180,8 +194,11 @@
             <div id="message-box"></div>
             
             <div class="button-group-report">
+                <button id="print-btn" class="btn btn-primary fade-in-up delay-3" title="Принтирайте или запазете като PDF">
+                    <i class="fas fa-file-pdf"></i> Запази PDF
+                </button>
                 <button id="re-analyze-btn" class="btn btn-secondary fade-in-up delay-3">Повтори анализа</button>
-                <a href="analysis.html" class="btn btn-primary fade-in-up delay-3">Нов анализ</a>
+                <a href="analysis.html" class="btn btn-secondary fade-in-up delay-3">Нов анализ</a>
             </div>
         </section>
     </div>
@@ -442,6 +459,21 @@
                         reAnalyzeBtn.disabled = false;
                         reAnalyzeBtn.innerHTML = 'Повтори анализа';
                     }
+                });
+            }
+
+            // PDF Print functionality
+            const printBtn = document.getElementById('print-btn');
+            if (printBtn) {
+                printBtn.addEventListener('click', () => {
+                    // Отваряме всички секции преди принтиране за пълен доклад
+                    const allDetails = document.querySelectorAll('details.report-section');
+                    allDetails.forEach(detail => detail.setAttribute('open', ''));
+                    
+                    // Малко забавяне за да се рендерира съдържанието
+                    setTimeout(() => {
+                        window.print();
+                    }, 300);
                 });
             }
         });
