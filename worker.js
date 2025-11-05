@@ -660,7 +660,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     };
     requestBody = {
       model: config.report_model,
-      messages: [{ role: "system", content: prompt }],
+      messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" }
     };
   } else {
