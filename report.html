@@ -201,22 +201,22 @@
         .chart-container {
             position: relative;
             margin: 1.5rem auto;
-            padding: 1rem;
+            padding: 1.5rem;
             background: #ffffff;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .chart-container.small {
-            max-width: 400px;
-            height: 300px;
+            max-width: 450px;
+            height: 350px;
         }
         .chart-container.medium {
-            max-width: 600px;
-            height: 350px;
+            max-width: 700px;
+            height: 450px;
         }
         .chart-container.large {
             width: 100%;
-            height: 400px;
+            height: 500px;
         }
         .chart-title {
             text-align: center;
@@ -250,6 +250,9 @@
             .info-card { padding: 1.25rem; }
             .channel-analysis-item span { width: 90px; font-size: 0.9rem; }
             .report-disclaimer { padding: 1rem; }
+            .chart-container { padding: 1rem; }
+            .chart-container.medium { max-width: 100%; height: 400px; }
+            .chart-container.large { height: 450px; }
         }
 
         /* Print styles for PDF export */
@@ -299,7 +302,7 @@
         const ICONS_CONFIG = {
             "Резюме на анализа": { icon: "fa-file-medical", color: "#06b6d4" },
             "Конституционален анализ": { icon: "fa-shield-halved", color: "#3b82f6" },
-            "Приоритетни системи за подкрепа": { icon: "fa-heart-pulse", color: "#ef4444" },
+            "Системи, изискващи внимание": { icon: "fa-heart-pulse", color: "#ef4444" },
             "Анализ на елиминативните канали": { icon: "fa-recycle", color: "#10b981" },
             "Ключови находки и тяхната връзка": { icon: "fa-project-diagram", color: "#8b5cf6" },
             "План за действие": { icon: "fa-list-check", color: "#14b8a6" },
@@ -375,7 +378,7 @@
 
             const sectionOrder = [
                 "Конституционален анализ",
-                "Приоритетни системи за подкрепа",
+                "Системи, изискващи внимание",
                 "Анализ на елиминативните канали",
                 "Ключови находки и тяхната връзка",
                 "План за действие",
@@ -397,7 +400,7 @@
                         section = createHerbsSupplementsSection(key, content);
                     } else if (key === 'Анализ на елиминативните канали' && typeof content === 'string') {
                         section = createChannelsSection(key, content);
-                    } else if (key === 'Приоритетни системи за подкрепа') {
+                    } else if (key === 'Системи, изискващи внимание') {
                         section = createPrioritySystemsSection(key, content);
                     } else {
                         section = createCollapsibleSection(key, formatTextContent(content), false);
@@ -546,7 +549,7 @@
             
             const contentWithChart = `
                 <div class="chart-container medium">
-                    <div class="chart-title">Баланс на системите за подкрепа</div>
+                    <div class="chart-title">Баланс на системите</div>
                     <canvas id="${chartId}"></canvas>
                 </div>
                 ${textContentHTML}
@@ -630,17 +633,18 @@
                 data: {
                     labels: systems,
                     datasets: [{
-                        label: 'Приоритет за подкрепа',
+                        label: 'Приоритет за внимание',
                         data: values,
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.25)',
                         borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 2,
+                        borderWidth: 2.5,
                         pointBackgroundColor: colors,
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
                         pointHoverBorderColor: colors,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBorderWidth: 2
                     }]
                 },
                 options: {
@@ -651,16 +655,38 @@
                             beginAtZero: true,
                             max: 100,
                             ticks: {
-                                stepSize: 25,
-                                font: { size: 11 }
+                                stepSize: 20,
+                                font: { size: 12 },
+                                backdropColor: 'rgba(255, 255, 255, 0.8)'
                             },
                             pointLabels: {
-                                font: { size: 12, weight: '600' }
+                                font: { size: 13, weight: '600' },
+                                padding: 10
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
                             }
                         }
                     },
                     plugins: {
-                        legend: { display: false }
+                        legend: { 
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 13, weight: '500' },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + Math.round(context.parsed.r) + '%';
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -701,9 +727,9 @@
                         label: 'Натовареност (%)',
                         data: data,
                         backgroundColor: data.map(val => 
-                            val >= 70 ? 'rgba(220, 53, 69, 0.7)' :
-                            val >= 50 ? 'rgba(255, 193, 7, 0.7)' :
-                            'rgba(40, 167, 69, 0.7)'
+                            val >= 70 ? 'rgba(220, 53, 69, 0.8)' :
+                            val >= 50 ? 'rgba(255, 193, 7, 0.8)' :
+                            'rgba(40, 167, 69, 0.8)'
                         ),
                         borderColor: data.map(val => 
                             val >= 70 ? '#dc3545' :
@@ -723,18 +749,32 @@
                             beginAtZero: true,
                             max: 100,
                             ticks: {
-                                callback: function(value) { return value + '%'; }
+                                callback: function(value) { return value + '%'; },
+                                font: { size: 12 }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
                             }
                         },
                         y: {
                             ticks: {
-                                font: { size: 12, weight: '600' }
+                                font: { size: 13, weight: '600' }
                             }
                         }
                     },
                     plugins: {
-                        legend: { display: false },
+                        legend: { 
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 13, weight: '500' },
+                                padding: 15
+                            }
+                        },
                         tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            bodyFont: { size: 13 },
                             callbacks: {
                                 label: function(context) {
                                     return 'Натовареност: ' + context.parsed.x + '%';
