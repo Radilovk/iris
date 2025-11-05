@@ -114,6 +114,11 @@
         }
         .report-section .content li {
             margin-bottom: 0.6rem;
+            line-height: 1.6;
+        }
+        .report-section .content p {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
         }
         .report-section .content p:last-child {
             margin-bottom: 0;
@@ -121,21 +126,75 @@
         .report-section .content h4 {
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
+            color: #1a253c;
+            font-size: 1.1rem;
         }
         .report-section .content strong {
             color: #1a253c;
+            font-weight: 600;
         }
 
         .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-        .info-card { background: #fdfdff; border-radius: 10px; padding: 1.5rem; border: 1px solid #e8eef7; }
-        .info-card h4 { font-weight: 600; margin-bottom: 0.75rem; color: #1a253c; display: flex; align-items: center; }
+        .info-card { 
+            background: #fdfdff; 
+            border-radius: 10px; 
+            padding: 1.5rem; 
+            border: 1px solid #e8eef7;
+            transition: all 0.3s ease;
+        }
+        .info-card:hover {
+            box-shadow: 0 4px 12px rgba(10, 40, 100, 0.08);
+            border-color: #cdd9f1;
+        }
+        .info-card h4 { 
+            font-weight: 600; 
+            margin-bottom: 0.75rem; 
+            color: #1a253c; 
+            display: flex; 
+            align-items: center;
+            font-size: 1.1rem;
+        }
+        .info-card ul, .info-card ol {
+            margin-top: 0.5rem;
+        }
+        .info-card ul li, .info-card ol li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
         
-        .channel-analysis-item { display: flex; align-items: center; margin-bottom: 0.75rem; }
-        .channel-analysis-item span { width: 110px; font-weight: 500; flex-shrink: 0; }
-        .channel-analysis-item .bar { flex-grow: 1; height: 10px; border-radius: 5px; overflow: hidden; background: #e9ecef; }
-        .channel-analysis-item .bar-fill.low { background: #28a745; }
-        .channel-analysis-item .bar-fill.medium { background: #ffc107; }
-        .channel-analysis-item .bar-fill.high { background: #dc3545; }
+        .channel-analysis-item { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0;
+        }
+        .channel-analysis-item span { 
+            width: 110px; 
+            font-weight: 500; 
+            flex-shrink: 0;
+            color: #333d52;
+        }
+        .channel-analysis-item .bar { 
+            flex-grow: 1; 
+            height: 12px; 
+            border-radius: 6px; 
+            overflow: hidden; 
+            background: #e9ecef;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .channel-analysis-item .bar-fill { 
+            border-radius: 6px;
+            transition: width 0.8s ease-out;
+        }
+        .channel-analysis-item .bar-fill.low { 
+            background: linear-gradient(90deg, #28a745, #34ce57);
+        }
+        .channel-analysis-item .bar-fill.medium { 
+            background: linear-gradient(90deg, #ffc107, #ffcd38);
+        }
+        .channel-analysis-item .bar-fill.high { 
+            background: linear-gradient(90deg, #dc3545, #e74c5c);
+        }
 
         .button-group-report {
             margin-top: 2rem;
@@ -214,6 +273,8 @@
             "Анализ на елиминативните канали": { icon: "fa-recycle", color: "#10b981" },
             "Ключови находки и тяхната връзка": { icon: "fa-project-diagram", color: "#8b5cf6" },
             "План за действие": { icon: "fa-list-check", color: "#14b8a6" },
+            "Специални хранителни насоки": { icon: "fa-apple-alt", color: "#f97316" },
+            "Препоръки за билки и добавки": { icon: "fa-leaf", color: "#059669" },
             "Холистични препоръки": { icon: "fa-seedling", color: "#f59e0b" },
             "Фундаментални принципи": { icon: "fa-lightbulb", color: "#1d4ed8" },
             "Целенасочени препоръки": { icon: "fa-bullseye", color: "#c2410c" },
@@ -234,6 +295,9 @@
                 return main + source;
             }
             let sanitizedText = DOMPurify.sanitize(String(text), { USE_PROFILES: { html: false } });
+            // Replace escaped newlines with actual newlines
+            sanitizedText = sanitizedText.replace(/\\n/g, '\n');
+            // Replace ** with <strong> for bold text
             let html = sanitizedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             const blocks = html.split(/\n\s*\n/);
             const processedBlocks = blocks.map(block => {
@@ -285,6 +349,8 @@
                 "Анализ на елиминативните канали",
                 "Ключови находки и тяхната връзка",
                 "План за действие",
+                "Специални хранителни насоки",
+                "Препоръки за билки и добавки",
                 "Холистични препоръки",
                 "Препоръки за проследяване"
             ];
@@ -295,10 +361,14 @@
                     let section;
                     if (key === 'Холистични препоръки') {
                         section = createRecommendationsSection(key, content);
+                    } else if (key === 'Специални хранителни насоки') {
+                        section = createNutritionalGuidelinesSection(key, content);
+                    } else if (key === 'Препоръки за билки и добавки') {
+                        section = createHerbsSupplementsSection(key, content);
                     } else if (key === 'Анализ на елиминативните канали' && typeof content === 'string') {
                         section = createChannelsSection(key, content);
                     } else {
-                        section = createCollapsibleSection(key, formatTextContent(content));
+                        section = createCollapsibleSection(key, formatTextContent(content), false);
                     }
                     container.appendChild(section);
                 }
@@ -312,11 +382,14 @@
             }
         }
 
-        function createCollapsibleSection(title, contentHTML) {
+        function createCollapsibleSection(title, contentHTML, defaultOpen = false) {
             const config = ICONS_CONFIG[title] || ICONS_CONFIG['default'];
             const details = document.createElement('details');
             details.className = 'report-section';
-            details.setAttribute('open', '');
+            // Only open by default if explicitly requested (not for regular sections)
+            if (defaultOpen) {
+                details.setAttribute('open', '');
+            }
             details.innerHTML = `
                 <summary>
                     <div class="summary-title">
@@ -356,7 +429,83 @@
                 `;
             });
             const contentHTML = `<div class="report-grid">${subSectionsHTML}</div>`;
-            return createCollapsibleSection(title, contentHTML);
+            return createCollapsibleSection(title, contentHTML, false);
+        }
+        
+        function createNutritionalGuidelinesSection(title, nutritionData) {
+            if (!nutritionData || typeof nutritionData !== 'object') return document.createElement('div');
+            let contentHTML = '<div class="report-grid">';
+            
+            // Foods to limit
+            if (nutritionData['Храни за ограничаване']) {
+                const config = { icon: "fa-ban", color: "#dc2626" };
+                const formattedValue = formatTextContent(nutritionData['Храни за ограничаване']);
+                contentHTML += `
+                    <div class="info-card" style="border-left: 3px solid #dc2626;">
+                        <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Храни за ограничаване</h4>
+                        <div>${formattedValue}</div>
+                    </div>
+                `;
+            }
+            
+            // Foods to add
+            if (nutritionData['Храни за добавяне']) {
+                const config = { icon: "fa-plus-circle", color: "#16a34a" };
+                const formattedValue = formatTextContent(nutritionData['Храни за добавяне']);
+                contentHTML += `
+                    <div class="info-card" style="border-left: 3px solid #16a34a;">
+                        <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Храни за добавяне</h4>
+                        <div>${formattedValue}</div>
+                    </div>
+                `;
+            }
+            
+            contentHTML += '</div>';
+            return createCollapsibleSection(title, contentHTML, false);
+        }
+        
+        function createHerbsSupplementsSection(title, herbsData) {
+            if (!herbsData || typeof herbsData !== 'object') return document.createElement('div');
+            let contentHTML = '<div class="report-grid">';
+            
+            // Herbal recommendations
+            if (herbsData['Билкови препоръки']) {
+                const config = { icon: "fa-seedling", color: "#059669" };
+                const formattedValue = formatTextContent(herbsData['Билкови препоръки']);
+                contentHTML += `
+                    <div class="info-card" style="border-left: 3px solid #059669;">
+                        <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Билкови препоръки</h4>
+                        <div>${formattedValue}</div>
+                    </div>
+                `;
+            }
+            
+            // Nutritional supplements
+            if (herbsData['Хранителни добавки']) {
+                const config = { icon: "fa-capsules", color: "#0891b2" };
+                const formattedValue = formatTextContent(herbsData['Хранителни добавки']);
+                contentHTML += `
+                    <div class="info-card" style="border-left: 3px solid #0891b2;">
+                        <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Хранителни добавки</h4>
+                        <div>${formattedValue}</div>
+                    </div>
+                `;
+            }
+            
+            // Homeopathic remedies
+            if (herbsData['Хомеопатични средства']) {
+                const config = { icon: "fa-flask", color: "#7c3aed" };
+                const formattedValue = formatTextContent(herbsData['Хомеопатични средства']);
+                contentHTML += `
+                    <div class="info-card" style="border-left: 3px solid #7c3aed;">
+                        <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Хомеопатични средства</h4>
+                        <div>${formattedValue}</div>
+                    </div>
+                `;
+            }
+            
+            contentHTML += '</div>';
+            return createCollapsibleSection(title, contentHTML, false);
         }
         
         function createChannelsSection(title, content) {
@@ -382,7 +531,7 @@
                 `;
             });
             const finalContentHTML = textContentHTML + barsHTML;
-            return createCollapsibleSection(title, finalContentHTML);
+            return createCollapsibleSection(title, finalContentHTML, false);
         }
 
         // --- ЛОГИКА ЗА ЗАРЕЖДАНЕ И ПОВТОРЕН АНАЛИЗ ---
