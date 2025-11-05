@@ -555,7 +555,12 @@
             const section = createCollapsibleSection(title, contentWithChart, false);
             
             // Create chart after section is added to DOM
-            setTimeout(() => createSystemBalanceChart(content, chartId), 100);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const canvas = document.getElementById(chartId);
+                    if (canvas) createSystemBalanceChart(content, chartId);
+                });
+            });
             
             return section;
         }
@@ -576,7 +581,12 @@
             const section = createCollapsibleSection(title, finalContentHTML, false);
             
             // Create chart after section is added to DOM
-            setTimeout(() => createChannelComparisonChart(content, chartId), 100);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const canvas = document.getElementById(chartId);
+                    if (canvas) createChannelComparisonChart(content, chartId);
+                });
+            });
             
             return section;
         }
