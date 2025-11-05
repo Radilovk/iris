@@ -621,6 +621,18 @@
                 return;
             }
             
+            // Priority calculation constants
+            const PRIORITY_MULTIPLIER = 25;
+            const PRIORITY_BASE = 35;
+            const PRIORITY_MAX_BASE = 85;
+            const PRIORITY_MIN = 20;
+            const PRIORITY_MAX = 100;
+            const CONTEXT_WINDOW_SIZE = 50;
+            const SEVERITY_BONUS_HIGH = 15;
+            const SEVERITY_BONUS_MEDIUM = 8;
+            const SEVERITY_PENALTY_MILD = -10;
+            const FALLBACK_PRIORITY = 50;
+            
             const systems = [];
             const values = [];
             const colors = [];
@@ -675,7 +687,7 @@
                     keywords: ['хормон', 'ендокрин', 'щитовидн', 'надбъбречн', 'хипофиз']
                 },
                 { 
-                    name: 'Метаболитна', 
+                    name: 'Метаболична', 
                     color: '#f97316',
                     gradient: 'rgba(249, 115, 22, 0.75)',
                     keywords: ['метаболи', 'енерги', 'обмен', 'митохондри']
@@ -699,7 +711,7 @@
                     backgroundColors.push(sys.gradient);
                     
                     // Calculate priority based on keyword frequency and severity indicators
-                    let basePriority = Math.min(matchCount * 25 + 35, 85);
+                    let basePriority = Math.min(matchCount * PRIORITY_MULTIPLIER + PRIORITY_BASE, PRIORITY_MAX_BASE);
                     
                     // Check for severity modifiers in proximity to system keywords
                     let severityBonus = 0;
@@ -707,21 +719,21 @@
                         if (lowerText.includes(kw)) {
                             // Check text around the keyword for severity indicators
                             const keywordIndex = lowerText.indexOf(kw);
-                            const contextStart = Math.max(0, keywordIndex - 50);
-                            const contextEnd = Math.min(lowerText.length, keywordIndex + 50);
+                            const contextStart = Math.max(0, keywordIndex - CONTEXT_WINDOW_SIZE);
+                            const contextEnd = Math.min(lowerText.length, keywordIndex + CONTEXT_WINDOW_SIZE);
                             const context = lowerText.substring(contextStart, contextEnd);
                             
                             if (severityIndicators.high.some(ind => context.includes(ind))) {
-                                severityBonus = Math.max(severityBonus, 15);
+                                severityBonus = Math.max(severityBonus, SEVERITY_BONUS_HIGH);
                             } else if (severityIndicators.medium.some(ind => context.includes(ind))) {
-                                severityBonus = Math.max(severityBonus, 8);
+                                severityBonus = Math.max(severityBonus, SEVERITY_BONUS_MEDIUM);
                             } else if (severityIndicators.mild.some(ind => context.includes(ind))) {
-                                severityBonus = Math.max(severityBonus, -10);
+                                severityBonus = Math.max(severityBonus, SEVERITY_PENALTY_MILD);
                             }
                         }
                     });
                     
-                    values.push(Math.min(Math.max(basePriority + severityBonus, 20), 100));
+                    values.push(Math.min(Math.max(basePriority + severityBonus, PRIORITY_MIN), PRIORITY_MAX));
                 }
             });
             
@@ -730,7 +742,7 @@
                 console.warn('No systems detected for chart, using fallback visualization');
                 systemKeywords.slice(0, 6).forEach(sys => {
                     systems.push(sys.name);
-                    values.push(50);
+                    values.push(FALLBACK_PRIORITY);
                     colors.push(sys.color);
                     backgroundColors.push(sys.gradient);
                 });
