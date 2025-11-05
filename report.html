@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <!-- Персонализирани стилове САМО за тази страница -->
     <style>
@@ -196,6 +197,35 @@
             background: linear-gradient(90deg, #dc3545, #e74c5c);
         }
 
+        /* Chart containers */
+        .chart-container {
+            position: relative;
+            margin: 1.5rem auto;
+            padding: 1rem;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .chart-container.small {
+            max-width: 400px;
+            height: 300px;
+        }
+        .chart-container.medium {
+            max-width: 600px;
+            height: 350px;
+        }
+        .chart-container.large {
+            width: 100%;
+            height: 400px;
+        }
+        .chart-title {
+            text-align: center;
+            font-weight: 600;
+            color: #1a253c;
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
         .button-group-report {
             margin-top: 2rem;
             text-align: center;
@@ -367,6 +397,8 @@
                         section = createHerbsSupplementsSection(key, content);
                     } else if (key === 'Анализ на елиминативните канали' && typeof content === 'string') {
                         section = createChannelsSection(key, content);
+                    } else if (key === 'Приоритетни системи за подкрепа') {
+                        section = createPrioritySystemsSection(key, content);
                     } else {
                         section = createCollapsibleSection(key, formatTextContent(content), false);
                     }
@@ -508,30 +540,271 @@
             return createCollapsibleSection(title, contentHTML, false);
         }
         
+        function createPrioritySystemsSection(title, content) {
+            const chartId = 'systemsChart_' + Date.now();
+            const textContentHTML = formatTextContent(content);
+            
+            const contentWithChart = `
+                <div class="chart-container medium">
+                    <div class="chart-title">Баланс на системите за подкрепа</div>
+                    <canvas id="${chartId}"></canvas>
+                </div>
+                ${textContentHTML}
+            `;
+            
+            const section = createCollapsibleSection(title, contentWithChart, false);
+            
+            // Create chart after section is added to DOM
+            setTimeout(() => createSystemBalanceChart(content, chartId), 100);
+            
+            return section;
+        }
+        
         function createChannelsSection(title, content) {
             const textContentHTML = formatTextContent(content);
             const channels = ['черва', 'бъбреци', 'лимфа', 'кожа', 'бели дробове'];
-            let barsHTML = '<h4>Визуална оценка на натовареността:</h4>';
-            channels.forEach(channel => {
-                let level = 'low';
-                let width = '33%';
-                const lowerCaseContent = content.toLowerCase();
-                
-                if (lowerCaseContent.includes(channel) && (lowerCaseContent.includes('най-натоварен') || lowerCaseContent.includes('силно натоварени') || lowerCaseContent.includes('значително натоварване'))) {
-                    level = 'high'; width = '90%';
-                } else if (lowerCaseContent.includes(channel)) {
-                    level = 'medium'; width = '66%';
-                }
-                
-                barsHTML += `
-                    <div class="channel-analysis-item">
-                        <span>${channel.charAt(0).toUpperCase() + channel.slice(1)}</span>
-                        <div class="bar"><div class="bar-fill ${level}" style="height: 100%; width: ${width}; transition: width 0.8s ease-out;"></div></div>
-                    </div>
-                `;
-            });
+            const chartId = 'channelsChart_' + Date.now();
+            
+            let barsHTML = `
+                <h4 style="margin-top: 1.5rem;">Визуална оценка на натовареността:</h4>
+                <div class="chart-container medium">
+                    <canvas id="${chartId}"></canvas>
+                </div>
+            `;
+            
             const finalContentHTML = textContentHTML + barsHTML;
-            return createCollapsibleSection(title, finalContentHTML, false);
+            const section = createCollapsibleSection(title, finalContentHTML, false);
+            
+            // Create chart after section is added to DOM
+            setTimeout(() => createChannelComparisonChart(content, chartId), 100);
+            
+            return section;
+        }
+
+        // --- CHART CREATION FUNCTIONS ---
+        
+        function createSystemBalanceChart(systemsData, containerId) {
+            const ctx = document.getElementById(containerId);
+            if (!ctx) return;
+            
+            const systems = [];
+            const values = [];
+            const colors = [];
+            
+            // Parse systems and their priorities
+            const text = typeof systemsData === 'string' ? systemsData : JSON.stringify(systemsData);
+            const systemKeywords = [
+                { name: 'Храносмилателна', color: '#f59e0b', keywords: ['храносмилат', 'черва', 'стомах'] },
+                { name: 'Нервна', color: '#8b5cf6', keywords: ['нервн', 'стрес', 'мозък'] },
+                { name: 'Лимфна', color: '#10b981', keywords: ['лимфа', 'имун'] },
+                { name: 'Сърдечно-съдова', color: '#ef4444', keywords: ['сърдечн', 'кръв', 'съдов'] },
+                { name: 'Дихателна', color: '#06b6d4', keywords: ['дихат', 'бели дробове'] },
+                { name: 'Елиминативна', color: '#84cc16', keywords: ['детокс', 'бъбрек', 'елиминат'] }
+            ];
+            
+            systemKeywords.forEach(sys => {
+                const found = sys.keywords.some(kw => text.toLowerCase().includes(kw));
+                if (found) {
+                    systems.push(sys.name);
+                    // Calculate priority based on keyword intensity
+                    const intensity = sys.keywords.filter(kw => text.toLowerCase().includes(kw)).length;
+                    values.push(Math.min(intensity * 30 + 40, 100));
+                    colors.push(sys.color);
+                }
+            });
+            
+            if (systems.length === 0) return;
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: systems,
+                    datasets: [{
+                        label: 'Приоритет за подкрепа',
+                        data: values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: colors,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: colors,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 25,
+                                font: { size: 11 }
+                            },
+                            pointLabels: {
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+        
+        function createChannelComparisonChart(channelsData, containerId) {
+            const ctx = document.getElementById(containerId);
+            if (!ctx) return;
+            
+            const text = typeof channelsData === 'string' ? channelsData.toLowerCase() : '';
+            const channels = [
+                { name: 'Черва', keyword: 'черва' },
+                { name: 'Бъбреци', keyword: 'бъбрек' },
+                { name: 'Лимфа', keyword: 'лимфа' },
+                { name: 'Кожа', keyword: 'кожа' },
+                { name: 'Бели дробове', keyword: 'бели дробове' }
+            ];
+            
+            const data = channels.map(ch => {
+                const keyword = ch.keyword.toLowerCase();
+                if (text.includes(keyword)) {
+                    if (text.includes('най-натоварен') || text.includes('силно натоварен')) {
+                        return 85;
+                    } else if (text.includes('умерен') || text.includes('средн')) {
+                        return 60;
+                    } else {
+                        return 40;
+                    }
+                }
+                return 20;
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: channels.map(ch => ch.name),
+                    datasets: [{
+                        label: 'Натовареност (%)',
+                        data: data,
+                        backgroundColor: data.map(val => 
+                            val >= 70 ? 'rgba(220, 53, 69, 0.7)' :
+                            val >= 50 ? 'rgba(255, 193, 7, 0.7)' :
+                            'rgba(40, 167, 69, 0.7)'
+                        ),
+                        borderColor: data.map(val => 
+                            val >= 70 ? '#dc3545' :
+                            val >= 50 ? '#ffc107' :
+                            '#28a745'
+                        ),
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) { return value + '%'; }
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Натовареност: ' + context.parsed.x + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createHealthMetricsChart(userData, containerId) {
+            const ctx = document.getElementById(containerId);
+            if (!ctx || !userData) return;
+            
+            // Calculate health metrics based on available data
+            const metrics = [];
+            const values = [];
+            const colors = [];
+            
+            // Stress level
+            if (userData.stress) {
+                metrics.push('Управление на стреса');
+                values.push(Math.max(0, 100 - (userData.stress * 10)));
+                colors.push('#8b5cf6');
+            }
+            
+            // Sleep quality (if available)
+            if (userData['sleep-hours']) {
+                const sleepScore = Math.min(100, (userData['sleep-hours'] / 8) * 100);
+                metrics.push('Качество на съня');
+                values.push(sleepScore);
+                colors.push('#06b6d4');
+            }
+            
+            // BMI status (if available)
+            if (userData.bmi) {
+                const bmi = parseFloat(userData.bmi);
+                let bmiScore = 100;
+                if (bmi < 18.5 || bmi > 30) bmiScore = 50;
+                else if (bmi < 20 || bmi > 27) bmiScore = 75;
+                metrics.push('BMI статус');
+                values.push(bmiScore);
+                colors.push('#10b981');
+            }
+            
+            if (metrics.length === 0) return;
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: metrics,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.map(c => c + 'CC'),
+                        borderColor: colors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + Math.round(context.parsed) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // --- ЛОГИКА ЗА ЗАРЕЖДАНЕ И ПОВТОРЕН АНАЛИЗ ---
