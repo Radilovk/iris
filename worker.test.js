@@ -7,12 +7,12 @@ const env = {
     get: (key) =>
       key === 'iris_config_kv'
         ? Promise.resolve({
-            provider: 'gemini',
-            analysis_prompt: '',
-            analysis_model: 'gemini-1.5-flash-latest',
-            report_prompt: '',
-            report_model: 'gemini-1.5-flash-latest'
-          })
+          provider: 'gemini',
+          analysis_prompt: '',
+          analysis_model: 'gemini-1.5-flash-latest',
+          report_prompt: '',
+          report_model: 'gemini-1.5-flash-latest'
+        })
         : Promise.resolve(null)
   }
 };
@@ -805,5 +805,145 @@ test('generateHolisticReport попълва описателен fallback, ко�
     assert.ok(prompt.includes('Интерпретация (detox_channels)'));
   } finally {
     global.fetch = originalFetch;
+  }
+});
+
+// --- Тестове за retry логика и rate limit ---
+
+test('retryWithBackoff успешно изпълнява функция при първи опит', async () => {
+  const { retryWithBackoff } = __testables__;
+  const mockFn = async () => 'success';
+  const result = await retryWithBackoff(mockFn);
+  assert.equal(result, 'success');
+});
+
+test('retryWithBackoff прави retry при неуспех и връща резултат', async () => {
+  const { retryWithBackoff } = __testables__;
+  let attempts = 0;
+  const mockFn = async () => {
+    attempts++;
+    if (attempts < 2) {
+      throw new Error('Temporary error');
+    }
+    return 'success after retry';
+  };
+
+  const result = await retryWithBackoff(mockFn, 3, 10); // малко забавяне за теста
+  assert.equal(result, 'success after retry');
+  assert.equal(attempts, 2);
+});
+
+test('retryWithBackoff не прави retry при ValidationError', async () => {
+  const { retryWithBackoff } = __testables__;
+
+  class ValidationError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = 'ValidationError';
+    }
+  }
+
+  let attempts = 0;
+  const mockFn = async () => {
+    attempts++;
+    throw new ValidationError('Invalid input');
+  };
+
+  await assert.rejects(
+    async () => retryWithBackoff(mockFn, 3, 10),
+    { name: 'ValidationError' }
+  );
+  assert.equal(attempts, 1);
+});
+
+test('retryWithBackoff хвърля грешка след изчерпване на опитите', async () => {
+  const { retryWithBackoff } = __testables__;
+  let attempts = 0;
+  const mockFn = async () => {
+    attempts++;
+    throw new Error('Persistent error');
+  };
+
+  await assert.rejects(
+    async () => retryWithBackoff(mockFn, 2, 10),
+    { message: 'Persistent error' }
+  );
+  assert.equal(attempts, 3); // начален + 2 retry
+});
+
+test('analyzeImageWithVision хвърля RateLimitError при 429 отговор', async () => {
+  const { analyzeImageWithVision } = __testables__;
+  const originalFetch = global.fetch;
+
+  try {
+    global.fetch = async () => ({
+      ok: false,
+      status: 429,
+      text: async () => JSON.stringify({
+        error: {
+          message: 'Rate limit reached. Please try again in 450ms.',
+          type: 'tokens',
+          code: 'rate_limit_exceeded'
+        }
+      }),
+      headers: new Map()
+    });
+
+    const file = { type: 'image/jpeg', arrayBuffer: async () => new ArrayBuffer(0) };
+    const config = {
+      provider: 'openai',
+      analysis_model: 'gpt-4o',
+      analysis_prompt_template: 'Test {{EYE_IDENTIFIER}} {{IRIS_MAP}} {{EXTERNAL_CONTEXT}}'
+    };
+
+    await assert.rejects(
+      async () => analyzeImageWithVision(file, 'test', {}, config, 'test-key'),
+      { name: 'RateLimitError' }
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('analyzeImageWithVision логва подробна информация при JSON parse грешка', async () => {
+  const { analyzeImageWithVision } = __testables__;
+  const originalFetch = global.fetch;
+  const consoleLogs = [];
+  const originalConsoleError = console.error;
+
+  try {
+    console.error = (...args) => consoleLogs.push(args.join(' '));
+
+    global.fetch = async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [{
+          message: { content: 'invalid json {' },
+          finish_reason: 'stop'
+        }]
+      })
+    });
+
+    const file = { type: 'image/jpeg', arrayBuffer: async () => new ArrayBuffer(0) };
+    const config = {
+      provider: 'openai',
+      analysis_model: 'gpt-4o',
+      analysis_prompt_template: 'Test {{EYE_IDENTIFIER}} {{IRIS_MAP}} {{EXTERNAL_CONTEXT}}'
+    };
+
+    await assert.rejects(
+      async () => analyzeImageWithVision(file, 'test', {}, config, 'test-key'),
+      (err) => {
+        return err.message.includes('невалиден JSON формат') &&
+               err.message.includes('invalid json');
+      }
+    );
+
+    assert.ok(consoleLogs.some(log => log.includes('Грешка при парсване на JSON')));
+    assert.ok(consoleLogs.some(log => log.includes('Получен текст:')));
+  } finally {
+    global.fetch = originalFetch;
+    console.error = originalConsoleError;
   }
 });
