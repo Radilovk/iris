@@ -23,7 +23,7 @@ function getCorsHeaders(env) {
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   };
 }
 
@@ -51,12 +51,67 @@ class ConfigurationError extends Error {
   }
 }
 
+class RateLimitError extends Error {
+  constructor(message, retryAfter) {
+    super(message);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+  }
+}
+
+// --- Помощна функция за retry с експоненциално backoff ---
+
+/**
+ * Извършва retry на асинхронна операция при rate limit или мрежови грешки
+ * @param {Function} fn - Асинхронна функция която да се извика
+ * @param {number} maxRetries - Максимален брой опити (по подразбиране 3)
+ * @param {number} baseDelay - Базово забавяне в ms (по подразбиране 1000)
+ * @returns {Promise} Резултат от функцията
+ */
+async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      // Не правим retry при validation или configuration грешки
+      if (error.name === 'ValidationError' || error.name === 'ConfigurationError' || error.name === 'AiRefusalError') {
+        throw error;
+      }
+
+      // При rate limit грешка, използваме retry-after ако е наличен
+      if (error.name === 'RateLimitError' && attempt < maxRetries) {
+        const delay = error.retryAfter || (baseDelay * Math.pow(2, attempt));
+        console.log(`Rate limit достигнат. Изчакваме ${delay}ms преди опит ${attempt + 2}/${maxRetries + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // При други грешки, използваме експоненциално backoff
+      if (attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`Опит ${attempt + 1} неуспешен. Изчакваме ${delay}ms преди следващ опит...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // Последният опит също се провали
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
+
 // --- Основен Handler на Worker-а ---
 
 export default {
   async fetch(request, env, ctx) {
     const corsHeaders = getCorsHeaders(env);
-    
+
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
@@ -74,16 +129,16 @@ export default {
         console.error('Критична грешка в worker-а:', error);
         return new Response(JSON.stringify({ error: 'Вътрешна грешка на сървъра: ' + error.message }), {
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
     }
 
     return new Response(JSON.stringify({ error: `Методът ${request.method} за път ${url.pathname} не е разрешен.` }), {
       status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-  },
+  }
 };
 
 // --- Логика за обработка на АДМИН заявки (без промяна) ---
@@ -98,7 +153,7 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
       try {
         const modelsListJson = await env.iris_rag_kv.get('iris_models_list') || '{}';
         const models = JSON.parse(modelsListJson);
-        return new Response(JSON.stringify({ models }), { 
+        return new Response(JSON.stringify({ models }), {
           status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (err) {
@@ -135,7 +190,7 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
   const cfHeaders = { 'Authorization': `Bearer ${CF_API_TOKEN}` };
 
   let apiUrl;
-  let cfMethod = request.method;
+  const cfMethod = request.method;
   let body = null;
 
   if (pathname.endsWith('/keys') && cfMethod === 'GET') {
@@ -165,24 +220,24 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
     if (pathname.endsWith('/keys')) {
       const data = await response.json();
       return new Response(JSON.stringify({ keys: data.result }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     if (pathname.endsWith('/get')) {
       const value = await response.text();
       return new Response(JSON.stringify({ value: value }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     if (pathname.endsWith('/put') || pathname.endsWith('/set')) {
       return new Response(JSON.stringify({ success: true }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     return new Response(await response.text(), { status: response.status, headers: corsHeaders });
   } catch (err) {
     return new Response(JSON.stringify({ error: 'Вътрешна грешка в worker-а: ' + err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 }
@@ -193,11 +248,11 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
   const formData = await request.formData();
   const leftEyeFile = formData.get('left-eye-upload');
   const rightEyeFile = formData.get('right-eye-upload');
-  
+
   if (!leftEyeFile || !rightEyeFile || !(leftEyeFile instanceof File) || !(rightEyeFile instanceof File)) {
     return new Response(JSON.stringify({ error: 'Моля, качете снимки и на двете очи.' }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
@@ -205,7 +260,7 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
   if (leftEyeFile.size > MAX_FILE_SIZE || rightEyeFile.size > MAX_FILE_SIZE) {
     return new Response(JSON.stringify({ error: `Файловете трябва да са под ${MAX_FILE_SIZE_MB}MB.` }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
@@ -238,30 +293,30 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
   const [config, irisMap, interpretationKnowledge, remedyBase] = await Promise.all(kvPromises);
 
   if (!config) {
-      return new Response(JSON.stringify({ error: 'Липсва конфигурация на AI асистента (iris_config_kv).' }), {
-          status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    return new Response(JSON.stringify({ error: 'Липсва конфигурация на AI асистента (iris_config_kv).' }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   const analysisModel = typeof config.analysis_model === 'string' ? config.analysis_model.trim() : '';
   const reportModel = typeof config.report_model === 'string' ? config.report_model.trim() : '';
 
   if (!analysisModel || !reportModel) {
-      console.error('Конфигурацията на AI моделите е непълна. analysis_model или report_model липсват.');
-      return new Response(JSON.stringify({ error: 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.' }), {
-          status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    console.error('Конфигурацията на AI моделите е непълна. analysis_model или report_model липсват.');
+    return new Response(JSON.stringify({ error: 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.' }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   config.analysis_model = analysisModel;
   config.report_model = reportModel;
-   if (!irisMap || !interpretationKnowledge || !remedyBase) {
-      return new Response(JSON.stringify({ error: 'Не можахме да заредим базата данни за анализ.' }), {
-          status: 503, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+  if (!irisMap || !interpretationKnowledge || !remedyBase) {
+    return new Response(JSON.stringify({ error: 'Не можахме да заредим базата данни за анализ.' }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   const apiKey = config.provider === 'gemini' ? env.GEMINI_API_KEY : (config.provider === 'openai' ? env.OPENAI_API_KEY : null);
@@ -281,18 +336,18 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
     : '[]';
 
   const [leftEyeAnalysisResult, rightEyeAnalysisResult] = await Promise.all([
-    analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, config, apiKey, combinedContextPayload),
-    analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, config, apiKey, combinedContextPayload)
+    retryWithBackoff(() => analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, config, apiKey, combinedContextPayload)),
+    retryWithBackoff(() => analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, config, apiKey, combinedContextPayload))
   ]);
 
-  const finalReport = await generateHolisticReport(
+  const finalReport = await retryWithBackoff(() => generateHolisticReport(
     userData, leftEyeAnalysisResult, rightEyeAnalysisResult,
     interpretationKnowledge, remedyBase, config, apiKey, env
-  );
+  ));
 
   return new Response(JSON.stringify(finalReport), {
     status: 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
 
@@ -323,8 +378,8 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     apiUrl = `${API_BASE_URLS.gemini}${config.analysis_model}:generateContent?key=${apiKey}`;
     headers = { 'Content-Type': 'application/json' };
     requestBody = {
-      contents: [{ parts: [ { text: prompt }, { inline_data: { mime_type: file.type, data: base64Image } } ] }],
-      generationConfig: { "response_mime_type": "application/json" }
+      contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: base64Image } }] }],
+      generationConfig: { 'response_mime_type': 'application/json' }
     };
   } else if (config.provider === 'openai') {
     if ((config.analysis_model || '').trim() === 'gpt-4o-search-preview') {
@@ -356,17 +411,17 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     requestBody = {
       model: config.analysis_model,
       messages: [{
-        role: "user",
+        role: 'user',
         content: [
-          { type: "text", text: prompt },
+          { type: 'text', text: prompt },
           {
-            type: "image_url",
-            image_url: { "url": `data:${file.type};base64,${base64Image}` }
+            type: 'image_url',
+            image_url: { 'url': `data:${file.type};base64,${base64Image}` }
           }
         ]
       }],
       max_tokens: 2048,
-      response_format: { type: "json_object" }
+      response_format: { type: 'json_object' }
     };
   } else {
     // Fallback за неподдържан доставчик
@@ -379,6 +434,36 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
   if (!response.ok) {
     const errorBody = await response.text();
     console.error(`Грешка от Vision API (${config.provider}): ${response.status}`, errorBody);
+
+    // Обработка на 429 Rate Limit грешка
+    if (response.status === 429) {
+      let retryAfter = 1000; // По подразбиране 1 секунда
+
+      try {
+        const errorData = JSON.parse(errorBody);
+        // Извличаме retry-after информация от отговора
+        if (errorData.error?.message) {
+          const match = errorData.error.message.match(/try again in (\d+\.?\d*)([ms])/i);
+          if (match) {
+            const value = parseFloat(match[1]);
+            const unit = match[2];
+            retryAfter = unit === 's' ? value * 1000 : value;
+          }
+        }
+      } catch (e) {
+        // Ако не можем да parse-нем грешката, използваме Retry-After header
+        const retryAfterHeader = response.headers.get('Retry-After');
+        if (retryAfterHeader) {
+          retryAfter = parseInt(retryAfterHeader, 10) * 1000;
+        }
+      }
+
+      throw new RateLimitError(
+        `Rate limit достигнат за ${config.provider}. Моля, изчакайте ${Math.ceil(retryAfter / 1000)} секунди.`,
+        retryAfter
+      );
+    }
+
     throw new Error(`Неуспешен визуален анализ на изображението с ${config.provider}.`);
   }
 
@@ -412,10 +497,16 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
   jsonText = normalizeModelJsonText(jsonText).replace(/```json/g, '').replace(/```/g, '').trim();
 
   try {
-      return JSON.parse(jsonText);
+    return JSON.parse(jsonText);
   } catch (e) {
-      console.error("Грешка при парсване на JSON от AI (визуален анализ):", jsonText);
-      throw new Error("AI моделът върна невалиден JSON формат за визуалния анализ.");
+    // Логване на пълния отговор и грешката за debugging
+    console.error('Грешка при парсване на JSON от AI (визуален анализ):');
+    console.error('Получен текст:', jsonText.substring(0, 500)); // Първите 500 символа
+    console.error('Parse грешка:', e.message);
+    throw new Error(
+      'AI моделът върна невалиден JSON формат за визуалния анализ. ' +
+        `Получен отговор започва с: "${jsonText.substring(0, 100)}..."`
+    );
   }
 }
 
@@ -435,10 +526,10 @@ async function fetchExternalInsights(keywordHints, env) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-KEY': env.WEB_RESEARCH_API_KEY,
+        'X-API-KEY': env.WEB_RESEARCH_API_KEY
       },
       body: JSON.stringify({ q: query }),
-      signal: controller.signal,
+      signal: controller.signal
     });
 
     if (!response.ok) {
@@ -453,7 +544,7 @@ async function fetchExternalInsights(keywordHints, env) {
       .map((item) => ({
         title: item.title || '',
         snippet: item.snippet || item.snippet_highlighted || '',
-        url: item.link || item.url || '',
+        url: item.link || item.url || ''
       }))
       .filter((item) => item.title || item.snippet || item.url);
 
@@ -481,13 +572,13 @@ async function fetchExternalInsights(keywordHints, env) {
 function enrichUserDataWithMetrics(userData, identifiedSigns) {
   const enriched = { ...userData };
   const numericContext = parseNumericContext(userData);
-  
+
   // Добавяне на BMI ако има данни за ръст и тегло
   if (numericContext.heightCm && numericContext.weightKg) {
     const heightMeters = numericContext.heightCm / 100;
     const bmi = numericContext.weightKg / (heightMeters * heightMeters);
     enriched.calculated_bmi = Math.round(bmi * 10) / 10;
-    
+
     // Интерпретация на BMI
     if (bmi < 18.5) {
       enriched.bmi_category = 'поднормено тегло';
@@ -499,7 +590,7 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
       enriched.bmi_category = 'затлъстяване';
     }
   }
-  
+
   // Добавяне на възрастова група за по-добра персонализация
   if (numericContext.ageYears) {
     if (numericContext.ageYears < 30) {
@@ -512,19 +603,19 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
       enriched.age_group = 'напреднала възраст';
     }
   }
-  
+
   // Оценка на общия риск според броя и интензитета на знаците
   if (identifiedSigns && Array.isArray(identifiedSigns)) {
     enriched.signs_count = identifiedSigns.length;
-    
+
     // Броене на знаци с висок интензитет
-    const highIntensitySigns = identifiedSigns.filter(sign => 
+    const highIntensitySigns = identifiedSigns.filter(sign =>
       sign && typeof sign === 'object' && 'intensity' in sign &&
       (sign.intensity === 'силен' || sign.intensity === 'high' || sign.intensity === 'severe')
     ).length;
-    
+
     enriched.high_intensity_signs_count = highIntensitySigns;
-    
+
     // Обща оценка на риска
     if (identifiedSigns.length === 0) {
       enriched.overall_risk_assessment = 'нисък риск';
@@ -535,7 +626,7 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
       enriched.overall_risk_assessment = 'умерен риск';
     }
   }
-  
+
   // Оценка на нивото на стрес
   if (numericContext.stressLevel !== undefined) {
     if (numericContext.stressLevel <= 3) {
@@ -546,7 +637,7 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
       enriched.stress_assessment = 'високо ниво на стрес';
     }
   }
-  
+
   // Оценка на съня
   if (numericContext.sleepHours !== undefined) {
     if (numericContext.sleepHours < 6) {
@@ -559,7 +650,7 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
       enriched.sleep_assessment = 'прекалено много сън';
     }
   }
-  
+
   // Оценка на хидратацията
   if (numericContext.waterLiters !== undefined) {
     if (numericContext.waterLiters < 1.5) {
@@ -570,7 +661,7 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
       enriched.hydration_assessment = 'добра хидратация';
     }
   }
-  
+
   return enriched;
 }
 
@@ -600,7 +691,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     ? normalizedWebInsights.slice(0, contextLimit)
     : fallbackExternalContext;
   const externalContextPayload = JSON.stringify(externalContextEntries, null, 2);
-  
+
   // Обогатяване на потребителските данни с изчислени метрики за по-добра персонализация
   const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
   const promptUserData = { ...enrichedUserData, keyword_hints: keywordHints };
@@ -630,7 +721,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   }
 
   if (!apiKey) throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
-  
+
   let apiUrl, requestBody, headers;
 
   if (config.provider === 'gemini') {
@@ -638,7 +729,7 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     headers = { 'Content-Type': 'application/json' };
     requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { "response_mime_type": "application/json" }
+      generationConfig: { 'response_mime_type': 'application/json' }
     };
   } else if (config.provider === 'openai') {
     if ((config.report_model || '').trim() === 'gpt-4o-search-preview') {
@@ -660,8 +751,8 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
     };
     requestBody = {
       model: config.report_model,
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' }
     };
   } else {
     throw new Error(`Доставчик '${config.provider}' не се поддържа.`);
@@ -672,12 +763,42 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   if (!response.ok) {
     const errorBody = await response.text();
     console.error(`Грешка от Text Generation API (${config.provider}): ${response.status}`, errorBody);
+
+    // Обработка на 429 Rate Limit грешка
+    if (response.status === 429) {
+      let retryAfter = 1000; // По подразбиране 1 секунда
+
+      try {
+        const errorData = JSON.parse(errorBody);
+        // Извличаме retry-after информация от отговора
+        if (errorData.error?.message) {
+          const match = errorData.error.message.match(/try again in (\d+\.?\d*)([ms])/i);
+          if (match) {
+            const value = parseFloat(match[1]);
+            const unit = match[2];
+            retryAfter = unit === 's' ? value * 1000 : value;
+          }
+        }
+      } catch (e) {
+        // Ако не можем да parse-нем грешката, използваме Retry-After header
+        const retryAfterHeader = response.headers.get('Retry-After');
+        if (retryAfterHeader) {
+          retryAfter = parseInt(retryAfterHeader, 10) * 1000;
+        }
+      }
+
+      throw new RateLimitError(
+        `Rate limit достигнат за ${config.provider}. Моля, изчакайте ${Math.ceil(retryAfter / 1000)} секунди.`,
+        retryAfter
+      );
+    }
+
     throw new Error('Неуспешно генериране на холистичен доклад.');
   }
 
   const data = await response.json();
   let jsonText;
-  
+
   if (config.provider === 'gemini') {
     const candidate = Array.isArray(data?.candidates) ? data.candidates[0] : undefined;
     jsonText = candidate?.content?.parts?.map((part) => part?.text || '').join('\n') ?? '';
@@ -689,10 +810,16 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
   jsonText = normalizeModelJsonText(jsonText).replace(/```json/g, '').replace(/```/g, '').trim();
 
   try {
-      return JSON.parse(jsonText);
+    return JSON.parse(jsonText);
   } catch(e) {
-      console.error("Грешка при парсване на JSON от AI (финален доклад):", jsonText);
-      throw new Error("AI моделът върна невалиден JSON формат за финалния доклад.");
+    // Логване на пълния отговор и грешката за debugging
+    console.error('Грешка при парсване на JSON от AI (финален доклад):');
+    console.error('Получен текст:', jsonText.substring(0, 500)); // Първите 500 символа
+    console.error('Parse грешка:', e.message);
+    throw new Error(
+      'AI моделът върна невалиден JSON формат за финалния доклад. ' +
+        `Получен отговор започва с: "${jsonText.substring(0, 100)}..."`
+    );
   }
 }
 
@@ -986,9 +1113,9 @@ function buildFallbackExternalContext(keywordHints, interpretationKnowledge, ide
 
   const signNames = Array.isArray(identifiedSigns)
     ? identifiedSigns
-        .map((sign) => (sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''))
-        .filter(Boolean)
-        .slice(0, 3)
+      .map((sign) => (sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''))
+      .filter(Boolean)
+      .slice(0, 3)
     : [];
 
   const summarySegments = [];
@@ -1055,12 +1182,12 @@ function normalizeExternalEntry(entry, bucket) {
     const summaryValue = typeof entry.summary === 'string' && entry.summary.trim()
       ? entry.summary
       : (() => {
-          try {
-            return JSON.stringify(entry);
-          } catch {
-            return String(entry);
-          }
-        })();
+        try {
+          return JSON.stringify(entry);
+        } catch {
+          return String(entry);
+        }
+      })();
 
     const normalized = { source, summary: summaryValue };
     if (typeof entry.url === 'string' && entry.url.trim()) {
@@ -1310,7 +1437,7 @@ function parseFloatValue(raw) {
     const normalized = raw
       .replace(/,/g, '.')
       .replace(/(cm|kg|l|литра|часа|ч|hrs?|hours?|kg|мм)/gi, '')
-      .replace(/[^0-9.\-]/g, ' ');
+      .replace(/[^0-9.-]/g, ' ');
     const match = normalized.match(/-?\d+(?:\.\d+)?/);
     if (!match) return undefined;
     const value = Number.parseFloat(match[0]);
@@ -1727,5 +1854,6 @@ export const __testables__ = {
   buildKeywordSet,
   selectRelevantInterpretationKnowledge,
   selectRelevantRemedyBase,
-  runSearchPreview
+  runSearchPreview,
+  retryWithBackoff
 };

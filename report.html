@@ -205,18 +205,26 @@
             background: #ffffff;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
         }
         .chart-container.small {
             max-width: 400px;
             height: 300px;
+            min-height: 300px;
         }
         .chart-container.medium {
             max-width: 600px;
-            height: 350px;
+            height: 400px;
+            min-height: 400px;
         }
         .chart-container.large {
             width: 100%;
             height: 400px;
+            min-height: 400px;
+        }
+        .chart-container canvas {
+            max-width: 100%;
+            max-height: 100%;
         }
         .chart-title {
             text-align: center;
@@ -595,7 +603,10 @@
         
         function createSystemBalanceChart(systemsData, containerId) {
             const ctx = document.getElementById(containerId);
-            if (!ctx) return;
+            if (!ctx) {
+                console.error('Canvas element not found:', containerId);
+                return;
+            }
             
             const systems = [];
             const values = [];
@@ -623,47 +634,76 @@
                 }
             });
             
-            if (systems.length === 0) return;
+            if (systems.length === 0) {
+                console.warn('No systems detected for chart');
+                return;
+            }
             
-            new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: systems,
-                    datasets: [{
-                        label: 'Приоритет за подкрепа',
-                        data: values,
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: colors,
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: colors,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 25,
-                                font: { size: 11 }
-                            },
-                            pointLabels: {
-                                font: { size: 12, weight: '600' }
+            try {
+                // Ensure canvas has proper dimensions
+                const container = ctx.parentElement;
+                if (container) {
+                    const width = container.offsetWidth || 600;
+                    const height = container.offsetHeight || 350;
+                    ctx.style.maxWidth = '100%';
+                    ctx.style.maxHeight = '100%';
+                }
+                
+                new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: systems,
+                        datasets: [{
+                            label: 'Приоритет за подкрепа',
+                            data: values,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: colors,
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: colors,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1.5,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    stepSize: 25,
+                                    font: { size: 11 },
+                                    backdropColor: 'transparent'
+                                },
+                                pointLabels: {
+                                    font: { size: 12, weight: '600' }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.parsed.r}%`;
+                                    }
+                                }
                             }
                         }
-                    },
-                    plugins: {
-                        legend: { display: false }
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error('Error creating radar chart:', error);
+            }
         }
         
         function createChannelComparisonChart(channelsData, containerId) {
