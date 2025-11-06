@@ -58,10 +58,12 @@ for item in "${KV_FILES[@]}"; do
     
     echo "   📝 Качване на $key от $filepath..."
     
-    if wrangler kv:key put --namespace-id="$NAMESPACE_ID" "$key" --path="$filepath" 2>&1; then
+    # Запазваме изхода за по-детайлна информация при грешка
+    if output=$(wrangler kv:key put --namespace-id="$NAMESPACE_ID" "$key" --path="$filepath" 2>&1); then
         echo "   ✓ $key е качен успешно"
     else
         echo "   ❌ Грешка при качване на $key"
+        echo "   Детайли: $output"
         exit 1
     fi
     

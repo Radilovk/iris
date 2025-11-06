@@ -65,7 +65,20 @@ if [ "$all_ok" = true ]; then
     echo "🔍 Проверка на критични настройки..."
     echo ""
     
-    config_value=$(wrangler kv:key get --namespace-id="$NAMESPACE_ID" "iris_config_kv" 2>/dev/null || echo "{}")
+    # Проверяваме дали можем да четем config_value
+    if ! config_value=$(wrangler kv:key get --namespace-id="$NAMESPACE_ID" "iris_config_kv" 2>&1); then
+        echo "   ⚠  Не можем да четем iris_config_kv"
+        echo "      Грешка: $config_value"
+        echo "      Моля, проверете достъпа до KV"
+        exit 1
+    fi
+    
+    # Проверяваме дали е валиден JSON
+    if ! echo "$config_value" | grep -q '^{'; then
+        echo "   ⚠  iris_config_kv не съдържа валиден JSON"
+        echo "      Получена стойност: $(echo "$config_value" | head -c 100)..."
+        exit 1
+    fi
     
     if echo "$config_value" | grep -q '"max_context_entries".*10'; then
         echo "   ✓ max_context_entries е настроен на 10"
