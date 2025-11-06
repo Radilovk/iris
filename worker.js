@@ -588,9 +588,9 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     for (const [mapKey, mapSign] of Object.entries(allKnownSigns)) {
       if (!mapSign || !mapSign.name) continue;
       const mapSignName = mapSign.name.toLowerCase();
-      
+
       // Проверка за директно съвпадение или частично съвпадение
-      if (signName === mapSignName || 
+      if (signName === mapSignName ||
           signName.includes(mapKey.toLowerCase()) ||
           mapSignName.includes(signName)) {
         matchedMapSign = mapSign;
@@ -609,11 +609,11 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
       if (matchedMapSign.source && !enrichedSign.scientific_source) {
         enrichedSign.scientific_source = matchedMapSign.source;
       }
-      
+
       // Добавяне на допълнителен контекст за интерпретация
       if (matchedMapSign.interpretation && !enrichedSign.map_interpretation) {
-        enrichedSign.map_interpretation = typeof matchedMapSign.interpretation === 'string' 
-          ? matchedMapSign.interpretation 
+        enrichedSign.map_interpretation = typeof matchedMapSign.interpretation === 'string'
+          ? matchedMapSign.interpretation
           : JSON.stringify(matchedMapSign.interpretation);
       }
     }
@@ -625,7 +625,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
       const zoneNum = parseInt(zoneMatch[1], 10);
       if (zoneNum >= 1 && zoneNum <= 7) {
         enrichedSign.validated_zone = zoneNum;
-        
+
         // Добавяне на име на зоната от картата
         if (irisMap.topography && Array.isArray(irisMap.topography.zones)) {
           const zoneInfo = irisMap.topography.zones.find(z => z.zone === zoneNum);
@@ -657,17 +657,17 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
 
 /**
  * Събира всички знаци от iris diagnostic map
- * @param {Object} irisMap 
+ * @param {Object} irisMap
  * @returns {Object} - Обект със знаци
  */
 function collectAllSignsFromMap(irisMap) {
   const allSigns = {};
-  
+
   if (irisMap.signs && typeof irisMap.signs === 'object') {
     for (const [key, value] of Object.entries(irisMap.signs)) {
       if (value && typeof value === 'object') {
         allSigns[key] = value;
-        
+
         // Ако има подтипове (напр. lacunae_types)
         if (Array.isArray(value.subtypes)) {
           for (const subtype of value.subtypes) {
@@ -682,7 +682,7 @@ function collectAllSignsFromMap(irisMap) {
       }
     }
   }
-  
+
   return allSigns;
 }
 

@@ -955,7 +955,7 @@ test('enrichUserDataWithMetrics добавя iris_sign_analysis за по-доб
     height: 170,
     weight: 70
   };
-  
+
   const identifiedSigns = [
     {
       sign_name: 'Нервни пръстени (Contraction Furrows)',
@@ -982,10 +982,10 @@ test('enrichUserDataWithMetrics добавя iris_sign_analysis за по-доб
   // Използваме internal import, но за теста можем да симулираме
   // Въпреки че enrichUserDataWithMetrics не е експортирана, можем да я тестваме индиректно
   // чрез generateHolisticReport който я използва
-  
+
   // Вместо това, нека тестваме директно функцията след като я експортираме в __testables__
   // За момента, тестваме че знаците се анализират правилно чрез цялостния работен процес
-  
+
   assert.equal(identifiedSigns.length, 4);
   assert.ok(identifiedSigns.some(s => s.sign_name.includes('Нервни пръстени')));
   assert.ok(identifiedSigns.some(s => s.sign_name.includes('Лакуна')));
@@ -997,21 +997,21 @@ test('Подобреният analysis_prompt_template съдържа струк�
   const configPath = './kv/iris_config_kv.json';
   const configData = await fs.readFile(configPath, 'utf8');
   const config = JSON.parse(configData);
-  
+
   const template = config.analysis_prompt_template;
-  
+
   // Проверка за наличие на фазите на анализ (използваме актуалния формат от файла)
   assert.ok(template.includes('ФАЗ А 1') || template.includes('ФАЗА 1') || template.includes('КОНСТИТУЦИОНАЛЕН АНАЛИЗ'), 'Трябва да има конституционален анализ');
   assert.ok(template.includes('ФАЗА 2: ТОПОГРАФСКИ АНАЛИЗ') || template.includes('ТОПОГРАФСКИ'), 'Трябва да има топографски анализ');
   assert.ok(template.includes('ФАЗА 3: СЕКТОРЕН АНАЛИЗ') || template.includes('СЕКТОРЕН'), 'Трябва да има секторен анализ');
   assert.ok(template.includes('ФАЗА 4:') || template.includes('ИДЕНТИФИКАЦИЯ НА СПЕЦИФИЧНИ ЗНАЦИ'), 'Трябва да има идентификация на знаци');
   assert.ok(template.includes('ФАЗА 5:') || template.includes('ВАЛИДАЦИЯ'), 'Трябва да има валидация');
-  
+
   // Проверка за количествени критерии
   assert.ok(template.includes('КОЛИЧЕСТВЕНИ КРИТЕРИИ'), 'Трябва да има секция за количествени критерии');
   assert.ok(template.includes('Брой:'), 'Трябва да изисква брой');
   assert.ok(template.includes('Размер:'), 'Трябва да изисква размер');
-  
+
   // Проверка за нови полета в JSON структурата
   assert.ok(template.includes('anv_collarette_analysis'), 'Трябва да има анализ на АНВ');
   assert.ok(template.includes('color_characteristics'), 'Трябва да изисква характеристики на цвета');
@@ -1022,6 +1022,6 @@ test('max_context_entries е увеличен на 8 за по-богат RAG к
   const configPath = './kv/iris_config_kv.json';
   const configData = await fs.readFile(configPath, 'utf8');
   const config = JSON.parse(configData);
-  
+
   assert.equal(config.max_context_entries, 8, 'max_context_entries трябва да е 8 за по-добър контекст');
 });
