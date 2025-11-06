@@ -671,7 +671,7 @@ function collectAllSignsFromMap(irisMap) {
         // Ако има подтипове (напр. lacunae_types)
         if (Array.isArray(value.subtypes)) {
           for (const subtype of value.subtypes) {
-            if (subtype && subtype.name) {
+            if (subtype && typeof subtype.name === 'string' && subtype.name) {
               allSigns[key + '_' + slugify(subtype.name)] = {
                 ...subtype,
                 parent: key
@@ -878,6 +878,20 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
   return enriched;
 }
 
+/**
+ * Генерира холистичен доклад базиран на анализите на двете очи
+ * @param {Record<string, unknown>} userData - Данни за потребителя
+ * @param {Object} leftEyeAnalysis - Анализ на лявото око
+ * @param {Object} rightEyeAnalysis - Анализ на дясното око
+ * @param {Object} interpretationKnowledge - База знания за интерпретация
+ * @param {Object} remedyBase - База с препоръки
+ * @param {Object} config - Конфигурация на AI модела
+ * @param {string} apiKey - API ключ
+ * @param {Object} env - Environment променливи
+ * @param {Object} irisMap - Iris diagnostic map за валидация
+ * @returns {Promise<Object>} - Генериран доклад
+ * @note Функцията има 9 параметъра. Бъдещо подобрение: групиране в config обект
+ */
 async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
   const rawIdentifiedSigns = [
     ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),

@@ -979,13 +979,6 @@ test('enrichUserDataWithMetrics добавя iris_sign_analysis за по-доб
     }
   ];
 
-  // Използваме internal import, но за теста можем да симулираме
-  // Въпреки че enrichUserDataWithMetrics не е експортирана, можем да я тестваме индиректно
-  // чрез generateHolisticReport който я използва
-
-  // Вместо това, нека тестваме директно функцията след като я експортираме в __testables__
-  // За момента, тестваме че знаците се анализират правилно чрез цялостния работен процес
-
   assert.equal(identifiedSigns.length, 4);
   assert.ok(identifiedSigns.some(s => s.sign_name.includes('Нервни пръстени')));
   assert.ok(identifiedSigns.some(s => s.sign_name.includes('Лакуна')));
