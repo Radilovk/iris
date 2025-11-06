@@ -908,15 +908,15 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
 function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSigns, rawSigns, userData) {
   // Базови метрики
   const totalSignsDetected = enrichedSigns.length;
-  const signsEnriched = enrichedSigns.filter(sign => 
+  const signsEnriched = enrichedSigns.filter(sign =>
     sign.validated_zone || sign.priority_level || sign.map_interpretation
   ).length;
-  
+
   // Брой знаци по приоритет
   const highPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'high').length;
   const mediumPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'medium').length;
   const lowPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'low').length;
-  
+
   // Анализ на зоните
   const analyzedZones = new Set();
   enrichedSigns.forEach(sign => {
@@ -924,24 +924,24 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
       analyzedZones.add(sign.validated_zone);
     }
   });
-  
+
   // Конституционален анализ
   const constitutionalDepth = {
     leftEye: calculateConstitutionalDepth(leftEyeAnalysis),
     rightEye: calculateConstitutionalDepth(rightEyeAnalysis)
   };
-  
+
   // Оценка на обогатяването
-  const enrichmentRate = totalSignsDetected > 0 
-    ? Math.round((signsEnriched / totalSignsDetected) * 100) 
+  const enrichmentRate = totalSignsDetected > 0
+    ? Math.round((signsEnriched / totalSignsDetected) * 100)
     : 0;
-  
+
   // Персонализация метрики
   const personalizationMetrics = calculatePersonalizationMetrics(userData);
-  
+
   // Оценка на прецизността
   const precisionScore = calculatePrecisionScore(enrichedSigns, constitutionalDepth);
-  
+
   return {
     timestamp: new Date().toISOString(),
     detection: {
@@ -966,9 +966,9 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
     personalization: personalizationMetrics,
     quality: {
       precision_score: precisionScore,
-      detail_level: precisionScore >= 85 ? 'Много висока' : 
-                    precisionScore >= 70 ? 'Висока' :
-                    precisionScore >= 50 ? 'Средна' : 'Базова',
+      detail_level: precisionScore >= 85 ? 'Много висока' :
+        precisionScore >= 70 ? 'Висока' :
+          precisionScore >= 50 ? 'Средна' : 'Базова',
       improvement_indicators: {
         enhanced_validation: signsEnriched > 0,
         zone_mapping: analyzedZones.size >= 3,
@@ -986,7 +986,7 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
  */
 function calculateConstitutionalDepth(eyeAnalysis) {
   if (!eyeAnalysis || !eyeAnalysis.constitutional_analysis) return 0;
-  
+
   // Константи за оценяване
   const FIELD_SCORE_FULL = 15;
   const FIELD_SCORE_PARTIAL = 5;
@@ -994,20 +994,20 @@ function calculateConstitutionalDepth(eyeAnalysis) {
   const CHANNEL_SCORE_MAX = 10;
   const CHANNEL_SCORE_PER_FILLED = 2;
   const MIN_CHANNEL_LENGTH = 10;
-  
+
   const analysis = eyeAnalysis.constitutional_analysis;
   let score = 0;
   let maxScore = 0;
-  
+
   const fields = [
     'level_1_constitution_color',
-    'level_2_disposition_structure', 
+    'level_2_disposition_structure',
     'level_3_diathesis_overlays',
     'density_assessment',
     'pupil_characteristics',
     'anv_collarette_analysis'
   ];
-  
+
   fields.forEach(field => {
     maxScore += FIELD_SCORE_FULL;
     if (analysis[field] && typeof analysis[field] === 'string' && analysis[field].length > MIN_FIELD_LENGTH) {
@@ -1016,7 +1016,7 @@ function calculateConstitutionalDepth(eyeAnalysis) {
       score += FIELD_SCORE_PARTIAL;
     }
   });
-  
+
   // Елиминативни канали
   if (eyeAnalysis.eliminative_channels_assessment) {
     maxScore += CHANNEL_SCORE_MAX;
@@ -1026,7 +1026,7 @@ function calculateConstitutionalDepth(eyeAnalysis) {
     ).length;
     score += Math.min(filledChannels * CHANNEL_SCORE_PER_FILLED, CHANNEL_SCORE_MAX);
   }
-  
+
   return maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 }
 
@@ -1043,22 +1043,22 @@ function calculatePersonalizationMetrics(userData) {
     risk_assessment_performed: false,
     lifestyle_factors_analyzed: 0
   };
-  
+
   if (userData.calculated_bmi !== undefined) {
     metrics.metrics_calculated++;
     metrics.bmi_calculated = true;
   }
-  
+
   if (userData.age_group) {
     metrics.metrics_calculated++;
     metrics.age_group_identified = true;
   }
-  
+
   if (userData.overall_risk_assessment) {
     metrics.metrics_calculated++;
     metrics.risk_assessment_performed = true;
   }
-  
+
   // Проверка на животен стил
   const lifestyleFactors = ['stress_assessment', 'sleep_assessment', 'hydration_assessment'];
   lifestyleFactors.forEach(factor => {
@@ -1067,7 +1067,7 @@ function calculatePersonalizationMetrics(userData) {
       metrics.lifestyle_factors_analyzed++;
     }
   });
-  
+
   return metrics;
 }
 
@@ -1085,44 +1085,44 @@ function calculatePrecisionScore(signs, constitutionalDepth) {
   const SIGN_INTERPRETATION_BONUS = 5;
   const SIGN_ZONE_NAME_BONUS = 3;
   const SIGN_INTENSITY_BONUS = 2;
-  const MAX_SIGN_SCORE = SIGN_BASE_SCORE + SIGN_VALIDATED_ZONE_BONUS + 
+  const MAX_SIGN_SCORE = SIGN_BASE_SCORE + SIGN_VALIDATED_ZONE_BONUS +
                          SIGN_PRIORITY_BONUS + SIGN_INTERPRETATION_BONUS +
                          SIGN_ZONE_NAME_BONUS + SIGN_INTENSITY_BONUS; // = 30
-  
+
   // Тегла за различните компоненти на оценката
   const SIGN_QUALITY_WEIGHT = 40;
   const CONSTITUTIONAL_WEIGHT = 30;
   const COVERAGE_WEIGHT = 30;
   const MIN_SIGNS_FOR_FULL_COVERAGE = 5;
-  
+
   let score = 0;
-  
+
   // 40% от оценката: качество на знаците
   const signQualityScore = signs.reduce((acc, sign) => {
     let signScore = SIGN_BASE_SCORE;
-    
+
     if (sign.validated_zone) signScore += SIGN_VALIDATED_ZONE_BONUS;
     if (sign.priority_level) signScore += SIGN_PRIORITY_BONUS;
     if (sign.map_interpretation) signScore += SIGN_INTERPRETATION_BONUS;
     if (sign.zone_name) signScore += SIGN_ZONE_NAME_BONUS;
     if (sign.intensity) signScore += SIGN_INTENSITY_BONUS;
-    
+
     return acc + signScore;
   }, 0);
-  
+
   const maxSignScore = signs.length * MAX_SIGN_SCORE;
   score += maxSignScore > 0 ? (signQualityScore / maxSignScore) * SIGN_QUALITY_WEIGHT : 0;
-  
+
   // 30% от оценката: конституционален анализ
   const avgConstitutional = (constitutionalDepth.leftEye + constitutionalDepth.rightEye) / 2;
   score += (avgConstitutional / 100) * CONSTITUTIONAL_WEIGHT;
-  
+
   // 30% от оценката: обхват на анализа
-  const coverageBonus = signs.length >= MIN_SIGNS_FOR_FULL_COVERAGE 
-    ? COVERAGE_WEIGHT 
+  const coverageBonus = signs.length >= MIN_SIGNS_FOR_FULL_COVERAGE
+    ? COVERAGE_WEIGHT
     : (signs.length / MIN_SIGNS_FOR_FULL_COVERAGE) * COVERAGE_WEIGHT;
   score += coverageBonus;
-  
+
   return Math.min(Math.round(score), 100);
 }
 
@@ -1141,6 +1141,114 @@ function calculatePrecisionScore(signs, constitutionalDepth) {
  * @note Функцията има 9 параметъра. Бъдещо подобрение: групиране в config обект
  */
 async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
+  // Проверка дали е активиран multi-query режим (по подразбиране е ИЗКЛЮЧЕН за обратна съвместимост)
+  const useMultiQuery = config.use_multi_query_report === true;
+
+  if (useMultiQuery) {
+    return await generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap);
+  }
+
+  // Стар подход - единична заявка (по подразбиране)
+  return await generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap);
+}
+
+/**
+ * Генерира доклад чрез множество фокусирани AI заявки (ново - подобрено качество)
+ * @param {Record<string, unknown>} userData - Данни за потребителя
+ * @param {Object} leftEyeAnalysis - Анализ на лявото око
+ * @param {Object} rightEyeAnalysis - Анализ на дясното око
+ * @param {Object} interpretationKnowledge - База знания за интерпретация
+ * @param {Object} remedyBase - База с препоръки
+ * @param {Object} config - Конфигурация на AI модела
+ * @param {string} apiKey - API ключ
+ * @param {Object} env - Environment променливи
+ * @param {Object} irisMap - Iris diagnostic map за валидация
+ * @returns {Promise<Object>} - Генериран доклад
+ */
+async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
+  const rawIdentifiedSigns = [
+    ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
+    ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
+  ];
+
+  const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
+
+  const analyticsMetrics = generateAnalyticsMetrics(
+    leftEyeAnalysis,
+    rightEyeAnalysis,
+    identifiedSigns,
+    rawIdentifiedSigns,
+    userData
+  );
+
+  const keywordSet = buildKeywordSet(identifiedSigns, userData);
+  const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
+  const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
+
+  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
+  const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
+    ? remedyBase.mandatory_disclaimer.text
+    : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
+
+  // СТЪПКА 1: Конституционален анализ и синтеза
+  const constitutionalAnalysis = await generateConstitutionalSynthesis(
+    leftEyeAnalysis,
+    rightEyeAnalysis,
+    enrichedUserData,
+    filteredKnowledge,
+    config,
+    apiKey
+  );
+
+  // СТЪПКА 2: Анализ на знаците и здравни импликации
+  const signsInterpretation = await generateSignsInterpretation(
+    identifiedSigns,
+    constitutionalAnalysis,
+    enrichedUserData,
+    filteredKnowledge,
+    config,
+    apiKey
+  );
+
+  // СТЪПКА 3: Персонализирани препоръки
+  const recommendations = await generatePersonalizedRecommendations(
+    signsInterpretation,
+    constitutionalAnalysis,
+    enrichedUserData,
+    relevantRemedyBase,
+    config,
+    apiKey
+  );
+
+  // СТЪПКА 4: Сглобяване на финалния доклад
+  const finalReport = await assembleFinalReport(
+    constitutionalAnalysis,
+    signsInterpretation,
+    recommendations,
+    enrichedUserData,
+    disclaimerText,
+    config,
+    apiKey
+  );
+
+  finalReport._analytics = analyticsMetrics;
+  return finalReport;
+}
+
+/**
+ * Стария подход - генериране на доклад с единична заявка
+ * @param {Record<string, unknown>} userData - Данни за потребителя
+ * @param {Object} leftEyeAnalysis - Анализ на лявото око
+ * @param {Object} rightEyeAnalysis - Анализ на дясното око
+ * @param {Object} interpretationKnowledge - База знания за интерпретация
+ * @param {Object} remedyBase - База с препоръки
+ * @param {Object} config - Конфигурация на AI модела
+ * @param {string} apiKey - API ключ
+ * @param {Object} env - Environment променливи
+ * @param {Object} irisMap - Iris diagnostic map за валидация
+ * @returns {Promise<Object>} - Генериран доклад
+ */
+async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
   const rawIdentifiedSigns = [
     ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
     ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
@@ -1148,12 +1256,12 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
 
   // Валидация и обогатяване на знаците с информация от diagnostic map
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
-  
+
   // Генериране на аналитична статистика
   const analyticsMetrics = generateAnalyticsMetrics(
-    leftEyeAnalysis, 
-    rightEyeAnalysis, 
-    identifiedSigns, 
+    leftEyeAnalysis,
+    rightEyeAnalysis,
+    identifiedSigns,
     rawIdentifiedSigns,
     userData
   );
@@ -2485,6 +2593,328 @@ function slugify(text) {
     .replace(/^_|_$/g, '');
 }
 
+// --- Функции за multi-query report generation ---
+
+/**
+ * Извършва AI заявка с даден prompt
+ * @param {string} prompt - Prompt за AI модела
+ * @param {Object} config - Конфигурация
+ * @param {string} apiKey - API ключ
+ * @param {boolean} expectJson - Дали се очаква JSON отговор
+ * @returns {Promise<string|Object>} - Отговор от AI
+ */
+async function queryAI(prompt, config, apiKey, expectJson = true) {
+  if (!apiKey) throw new Error(`API ключ за доставчик '${config.provider}' не е намерен.`);
+
+  let apiUrl, requestBody, headers;
+
+  if (config.provider === 'gemini') {
+    apiUrl = `${API_BASE_URLS.gemini}${config.report_model}:generateContent?key=${apiKey}`;
+    headers = { 'Content-Type': 'application/json' };
+    requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: expectJson ? { 'response_mime_type': 'application/json' } : {}
+    };
+  } else if (config.provider === 'openai') {
+    apiUrl = API_BASE_URLS.openai;
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    };
+    requestBody = {
+      model: config.report_model,
+      messages: [{ role: 'user', content: prompt }],
+      ...(expectJson ? { response_format: { type: 'json_object' } } : {})
+    };
+  } else {
+    throw new Error(`Доставчик '${config.provider}' не се поддържа.`);
+  }
+
+  const response = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(requestBody) });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(`Грешка от AI API (${config.provider}): ${response.status}`, errorBody);
+
+    if (response.status === 429) {
+      let retryAfter = 1000;
+      try {
+        const errorData = JSON.parse(errorBody);
+        if (errorData.error?.message) {
+          const match = errorData.error.message.match(/try again in (\d+\.?\d*)([ms])/i);
+          if (match) {
+            const value = parseFloat(match[1]);
+            const unit = match[2];
+            retryAfter = unit === 's' ? value * 1000 : value;
+          }
+        }
+      } catch (e) {
+        const retryAfterHeader = response.headers.get('Retry-After');
+        if (retryAfterHeader) {
+          retryAfter = parseInt(retryAfterHeader, 10) * 1000;
+        }
+      }
+
+      throw new RateLimitError(
+        `Rate limit достигнат за ${config.provider}. Моля, изчакайте ${Math.ceil(retryAfter / 1000)} секунди.`,
+        retryAfter
+      );
+    }
+
+    throw new Error('Неуспешна AI заявка.');
+  }
+
+  const data = await response.json();
+  let responseText;
+
+  if (config.provider === 'gemini') {
+    const candidate = Array.isArray(data?.candidates) ? data.candidates[0] : undefined;
+    responseText = candidate?.content?.parts?.map((part) => part?.text || '').join('\n') ?? '';
+  } else if (config.provider === 'openai') {
+    const choice = Array.isArray(data?.choices) ? data.choices[0] : undefined;
+    responseText = choice?.message?.content ?? '';
+  }
+
+  responseText = normalizeModelJsonText(responseText).replace(/```json/g, '').replace(/```/g, '').trim();
+
+  if (expectJson) {
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      console.error('Грешка при парсване на JSON от AI:', responseText.substring(0, 500));
+      throw new Error('AI моделът върна невалиден JSON формат.');
+    }
+  }
+
+  return responseText;
+}
+
+/**
+ * СТЪПКА 1: Генерира конституционална синтеза
+ */
+async function generateConstitutionalSynthesis(leftEyeAnalysis, rightEyeAnalysis, userData, knowledge, config, apiKey) {
+  const prompt = `Ти си експерт по ирисова диагностика. Твоята задача е да синтезираш конституционалния анализ на двете очи.
+
+**АНАЛИЗ НА ЛЯВОТО ОКО:**
+${JSON.stringify(leftEyeAnalysis.constitutional_analysis || {}, null, 2)}
+
+**АНАЛИЗ НА ДЯСНОТО ОКО:**
+${JSON.stringify(rightEyeAnalysis.constitutional_analysis || {}, null, 2)}
+
+**ПОТРЕБИТЕЛСКИ ДАННИ:**
+Име: ${userData.name || 'Не е посочено'}
+Възраст: ${userData.age || 'Не е посочена'}
+Цели: ${JSON.stringify(userData['main-goals'] || [])}
+Здравно състояние: ${JSON.stringify(userData['health-status'] || [])}
+
+**РЕЛЕВАНТНА БАЗА ЗНАНИЯ:**
+${JSON.stringify(knowledge, null, 2).substring(0, 3000)}
+
+**ЗАДАЧА:**
+Създай детайлна конституционална синтеза която обединява находките от двете очи. Фокусирай се върху:
+1. Основен конституционален тип (цвят, структура)
+2. Предразположения и слаби места
+3. Психологически профил
+4. Връзка с текущите оплаквания/цели на потребителя
+
+**ИЗХОД (JSON):**
+{
+  "constitutional_type": "Кратко описание на типа",
+  "detailed_analysis": "Детайлен параграф (150-200 думи) който интегрира находки от двете очи",
+  "predispositions": ["Списък от предразположения"],
+  "psychological_profile": "Кратко описание на психологическия профил",
+  "connection_to_goals": "Как конституцията се свързва с целите на потребителя"
+}`;
+
+  return await retryWithBackoff(() => queryAI(prompt, config, apiKey, true));
+}
+
+/**
+ * СТЪПКА 2: Генерира интерпретация на знаците
+ */
+async function generateSignsInterpretation(signs, constitutional, userData, knowledge, config, apiKey) {
+  const prompt = `Ти си експерт по ирисова диагностика. Анализирай идентифицираните знаци в контекста на конституцията.
+
+**КОНСТИТУЦИОНАЛНА СИНТЕЗА:**
+${JSON.stringify(constitutional, null, 2)}
+
+**ИДЕНТИФИЦИРАНИ ЗНАЦИ:**
+${JSON.stringify(signs, null, 2).substring(0, 4000)}
+
+**ПОТРЕБИТЕЛСКИ ДАННИ:**
+Цели: ${JSON.stringify(userData['main-goals'] || [])}
+Здравно състояние: ${JSON.stringify(userData['health-status'] || [])}
+Ниво на стрес (1-10): ${userData.stress || 'Не е посочено'}
+Сън (часа): ${userData.sleep || 'Не е посочено'}
+
+**РЕЛЕВАНТНА БАЗА ЗНАНИЯ:**
+${JSON.stringify(knowledge, null, 2).substring(0, 3000)}
+
+**ЗАДАЧА:**
+Интерпретирай здравните импликации на идентифицираните знаци. Фокусирай се върху:
+1. Приоритетни системи за подкрепа
+2. Елиминативни канали (черва, бъбреци, лимфа, бели дробове, кожа)
+3. Ключови находки и техните връзки
+4. Синергичен ефект между знаците
+
+**ИЗХОД (JSON):**
+{
+  "priority_systems": [
+    {
+      "system": "Име на системата",
+      "why_priority": "Защо е приоритет",
+      "related_signs": ["Свързани знаци"]
+    }
+  ],
+  "eliminative_channels": {
+    "intestines": "Оценка и препоръки",
+    "kidneys": "Оценка и препоръки",
+    "lymphatic": "Оценка и препоръки",
+    "lungs": "Оценка и препоръки",
+    "skin": "Оценка и препоръки"
+  },
+  "key_findings": [
+    {
+      "finding": "Име на находката",
+      "description": "Описание",
+      "connections": "Връзки с други находки"
+    }
+  ],
+  "synergistic_effect": "Как знаците работят заедно"
+}`;
+
+  return await retryWithBackoff(() => queryAI(prompt, config, apiKey, true));
+}
+
+/**
+ * СТЪПКА 3: Генерира персонализирани препоръки
+ */
+async function generatePersonalizedRecommendations(signsInterpretation, constitutional, userData, remedyBase, config, apiKey) {
+  const prompt = `Ти си холистичен здравен консултант. Създай КОНКРЕТНИ и ПРИЛАГАЕМИ препоръки базирани на анализа.
+
+**ИНТЕРПРЕТАЦИЯ НА ЗНАЦИТЕ:**
+${JSON.stringify(signsInterpretation, null, 2).substring(0, 3000)}
+
+**КОНСТИТУЦИОНАЛНА СИНТЕЗА:**
+${JSON.stringify(constitutional, null, 2)}
+
+**ПОТРЕБИТЕЛСКИ ДАННИ:**
+Име: ${userData.name || 'Не е посочено'}
+Възраст: ${userData.age || 'Не е посочена'}
+BMI: ${userData.calculated_bmi || 'Не е посочено'}
+Цели: ${JSON.stringify(userData['main-goals'] || [])}
+Ниво на стрес: ${userData.stress_assessment || userData.stress || 'Не е посочено'}
+Сън: ${userData.sleep_assessment || userData.sleep || 'Не е посочено'}
+Хидратация: ${userData.hydration_assessment || 'Не е посочена'}
+
+**БАЗА С ПРЕПОРЪКИ:**
+${JSON.stringify(remedyBase, null, 2).substring(0, 4000)}
+
+**ЗАДАЧА:**
+Създай детайлен план за действие с КРАТКИ, КОНКРЕТНИ препоръки (15-20 думи на изречение).
+
+**ИЗХОД (JSON):**
+{
+  "action_plan": {
+    "immediate": ["Действие 1", "Действие 2"],
+    "short_term": ["Действие 1", "Действие 2"],
+    "medium_term": ["Действие 1", "Действие 2"],
+    "progress_indicators": ["Индикатор 1", "Индикатор 2"]
+  },
+  "nutrition": {
+    "foods_to_limit": [
+      {
+        "food": "Име на храна",
+        "reason": "Защо да се ограничи"
+      }
+    ],
+    "foods_to_add": [
+      {
+        "food": "Име на храна",
+        "quantity": "Количество",
+        "benefit": "Ползи"
+      }
+    ]
+  },
+  "herbs_and_supplements": {
+    "herbs": [
+      {
+        "name": "Име на билка",
+        "dosage": "Дозировка",
+        "purpose": "Цел"
+      }
+    ],
+    "supplements": [
+      {
+        "name": "Име на добавка",
+        "form": "Форма",
+        "dosage": "Дозировка",
+        "purpose": "Цел"
+      }
+    ]
+  },
+  "holistic_recommendations": {
+    "fundamental_principles": ["Принцип 1", "Принцип 2"],
+    "targeted_recommendations": ["Препоръка 1", "Препоръка 2"],
+    "psychology_and_emotions": "Параграф за емоционалната връзка (100-150 думи)"
+  },
+  "follow_up": {
+    "after_1_month": "Какво да очаквате след 1 месец",
+    "after_3_months": "Какво да очаквате след 3 месеца",
+    "after_6_months": "Какво да очаквате след 6 месеца",
+    "what_to_monitor": ["Какво да наблюдавате"]
+  }
+}`;
+
+  return await retryWithBackoff(() => queryAI(prompt, config, apiKey, true));
+}
+
+/**
+ * СТЪПКА 4: Сглобява финалния доклад
+ */
+async function assembleFinalReport(constitutional, signsInterpretation, recommendations, userData, disclaimer, config, apiKey) {
+  const prompt = `Ти си експерт редактор на холистични доклади. Създай окончателния СТРУКТУРИРАН доклад.
+
+**КОМПОНЕНТИ:**
+
+1. КОНСТИТУЦИОНАЛЕН АНАЛИЗ:
+${JSON.stringify(constitutional, null, 2)}
+
+2. ИНТЕРПРЕТАЦИЯ НА ЗНАЦИТЕ:
+${JSON.stringify(signsInterpretation, null, 2)}
+
+3. ПРЕПОРЪКИ:
+${JSON.stringify(recommendations, null, 2)}
+
+**ПОТРЕБИТЕЛ:**
+Име: ${userData.name || 'Не е посочено'}
+
+**ЗАДАЧА:**
+Сглоби компонентите в един цялостен, лесен за четене доклад с:
+- Кратко резюме (2-3 изречения)
+- Ясна структура
+- КРАТКИ изречения (15-20 думи)
+- Фокус върху приложими действия
+
+**ИЗХОД (JSON):**
+{
+  "Име": "${userData.name || 'Не е посочено'}",
+  "Резюме на анализа": "2-3 изречения с най-важната находка и основна препоръка",
+  "Конституционален анализ (3-нивов)": "Текст от constitutional.detailed_analysis",
+  "Приоритетни елиминативни канали": "Въвод + форматиран текст от signsInterpretation.eliminative_channels",
+  "Приоритетни системи за подкрепа": "Форматиран списък от signsInterpretation.priority_systems",
+  "Ключови находки и тяхната връзка": "Форматиран текст от signsInterpretation.key_findings + synergistic_effect",
+  "План за действие": "Форматиран текст от recommendations.action_plan",
+  "Специални хранителни насоки": "Форматиран текст от recommendations.nutrition",
+  "Препоръки за билки и добавки": "Форматиран текст от recommendations.herbs_and_supplements",
+  "Холистични препоръки": "Форматиран текст от recommendations.holistic_recommendations",
+  "Препоръки за проследяване": "Форматиран текст от recommendations.follow_up",
+  "Задължителен отказ от отговорност": "${disclaimer}"
+}`;
+
+  return await retryWithBackoff(() => queryAI(prompt, config, apiKey, true));
+}
+
 // --- Други помощни функции (без промяна) ---
 
 /**
@@ -2503,6 +2933,8 @@ async function arrayBufferToBase64(buffer) {
 export const __testables__ = {
   analyzeImageWithVision,
   generateHolisticReport,
+  generateMultiQueryReport,
+  generateSingleQueryReport,
   buildKeywordSet,
   selectRelevantInterpretationKnowledge,
   selectRelevantRemedyBase,
@@ -2511,5 +2943,10 @@ export const __testables__ = {
   createConciseIrisMap,
   createEnrichedVisionContext,
   generateAnalyticsMetrics,
-  enrichUserDataWithMetrics
+  enrichUserDataWithMetrics,
+  queryAI,
+  generateConstitutionalSynthesis,
+  generateSignsInterpretation,
+  generatePersonalizedRecommendations,
+  assembleFinalReport
 };

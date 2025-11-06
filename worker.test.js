@@ -1030,27 +1030,27 @@ test('createConciseIrisMap намалява размера на diagnostic map �
   const fs = await import('fs/promises');
   const irisMapData = await fs.readFile('./kv/iris_diagnostic_map.txt', 'utf8');
   const fullIrisMap = JSON.parse(irisMapData);
-  
+
   const conciseMap = createConciseIrisMap(fullIrisMap);
-  
+
   const fullSize = JSON.stringify(fullIrisMap, null, 2).length;
   const conciseSize = JSON.stringify(conciseMap, null, 2).length;
-  
+
   // Проверяваме че има значително намаление (поне 40%)
   assert.ok(conciseSize < fullSize * 0.6, `Concise map трябва да е поне 40% по-малък. Full: ${fullSize}, Concise: ${conciseSize}`);
-  
+
   // Проверяваме че критичните секции са запазени
   assert.ok(conciseMap.constitutions, 'Трябва да има constitutions');
   assert.ok(conciseMap.zones, 'Трябва да има zones');
   assert.ok(conciseMap.signs, 'Трябва да има signs');
-  
+
   // Проверяваме че конституционалните типове са включени
   assert.ok(conciseMap.constitutions.color_types, 'Трябва да има color_types');
   assert.ok(conciseMap.constitutions.structural_types, 'Трябва да има structural_types');
-  
+
   // Проверяваме че има поне 5 зони
   assert.ok(Array.isArray(conciseMap.zones) && conciseMap.zones.length >= 5, 'Трябва да има поне 5 зони');
-  
+
   // Проверяваме че знаците имат само основната информация
   const firstSignKey = Object.keys(conciseMap.signs)[0];
   if (firstSignKey) {
@@ -1066,53 +1066,53 @@ test('createEnrichedVisionContext създава богат контекст с 
   const fs = await import('fs/promises');
   const knowledgeData = await fs.readFile('./kv/holistic_interpretation_knowledge.txt', 'utf8');
   const interpretationKnowledge = JSON.parse(knowledgeData);
-  
+
   const enrichedContext = createEnrichedVisionContext(interpretationKnowledge, 10);
-  
+
   // Проверяваме че връща JSON string
   assert.ok(typeof enrichedContext === 'string', 'Трябва да върне string');
-  
+
   const contextEntries = JSON.parse(enrichedContext);
-  
+
   // Проверяваме че има масив от записи
   assert.ok(Array.isArray(contextEntries), 'Трябва да върне масив');
   assert.ok(contextEntries.length > 0, 'Трябва да има поне един запис');
   assert.ok(contextEntries.length <= 10, 'Не трябва да надвишава максималния брой записи');
-  
+
   // Проверяваме структурата на записите
   const firstEntry = contextEntries[0];
   assert.ok(firstEntry.source, 'Всеки запис трябва да има source');
   assert.ok(firstEntry.summary, 'Всеки запис трябва да има summary');
-  
+
   // Проверяваме че приоритетните ключове са включени ако съществуват
   const sources = contextEntries.map(e => e.source);
   const sourcesStr = sources.join(' ');
-  
+
   // Поне един от приоритетните ключове трябва да е включен
   const hasPriorityKey = sourcesStr.includes('elimination_channels') ||
                         sourcesStr.includes('common_iris_signs') ||
                         sourcesStr.includes('lacunae_types') ||
                         sourcesStr.includes('nerve_rings');
-  
+
   assert.ok(hasPriorityKey, 'Трябва да включва поне един приоритетен ключ');
 });
 
 test('createEnrichedVisionContext работи дори при празна база знания', () => {
   const { createEnrichedVisionContext } = __testables__;
-  
+
   const enrichedContext = createEnrichedVisionContext({}, 5);
   const contextEntries = JSON.parse(enrichedContext);
-  
+
   // Дори при празна база, трябва да върне базови насоки
   assert.ok(Array.isArray(contextEntries), 'Трябва да върне масив');
   assert.ok(contextEntries.length > 0, 'Трябва да има поне базови насоки');
-  assert.ok(contextEntries[0].summary.includes('Фокусирай') || contextEntries[0].summary.includes('елиминатив'), 
+  assert.ok(contextEntries[0].summary.includes('Фокусирай') || contextEntries[0].summary.includes('елиминатив'),
     'Трябва да включва базови насоки');
 });
 
 test('generateHolisticReport добавя аналитични метрики към доклада', async () => {
   const { generateHolisticReport } = __testables__;
-  
+
   const mockLeftEyeAnalysis = {
     eye: 'ляво око',
     constitutional_analysis: {
@@ -1135,7 +1135,7 @@ test('generateHolisticReport добавя аналитични метрики к
       { sign_name: 'Нервен пръстен', location: 'зона 7', intensity: 'силен', description: 'Двоен пръстен' }
     ]
   };
-  
+
   const mockRightEyeAnalysis = {
     eye: 'дясно око',
     constitutional_analysis: {
@@ -1157,7 +1157,7 @@ test('generateHolisticReport добавя аналитични метрики к
       { sign_name: 'Радий', location: 'зона 4', intensity: 'лек', description: 'Тънък радий' }
     ]
   };
-  
+
   const mockUserData = {
     name: 'Тест Потребител',
     age: 35,
@@ -1165,26 +1165,26 @@ test('generateHolisticReport добавя аналитични метрики к
     weight: 70,
     stress: 6
   };
-  
+
   const mockInterpretationKnowledge = {
     lacunae_types: { name: 'Типове лакуни', description: 'Описание' }
   };
-  
+
   const mockRemedyBase = {
     mandatory_disclaimer: { text: 'Тестов дисклеймър' }
   };
-  
+
   const mockConfig = {
     provider: 'openai',
     report_model: 'gpt-4o',
     report_prompt_template: 'Test template {{USER_DATA}} {{LEFT_EYE_ANALYSIS}} {{RIGHT_EYE_ANALYSIS}} {{INTERPRETATION_KNOWLEDGE}} {{REMEDY_BASE}} {{EXTERNAL_CONTEXT}} {{PATIENT_NAME}} {{DISCLAIMER}}',
     max_context_entries: 6
   };
-  
+
   const mockApiKey = 'test-key';
-  
+
   const mockEnv = {};
-  
+
   const mockIrisMap = {
     topography: {
       zones: [
@@ -1197,7 +1197,7 @@ test('generateHolisticReport добавя аналитични метрики к
       lacunae: { name: 'Лакуна', type: 'structural', interpretation: 'Слабост' }
     }
   };
-  
+
   // Mock fetch за AI заявката
   global.fetch = async (url, options) => {
     return {
@@ -1215,7 +1215,7 @@ test('generateHolisticReport добавя аналитични метрики к
       })
     };
   };
-  
+
   const report = await generateHolisticReport(
     mockUserData,
     mockLeftEyeAnalysis,
@@ -1227,12 +1227,12 @@ test('generateHolisticReport добавя аналитични метрики к
     mockEnv,
     mockIrisMap
   );
-  
+
   // Проверяваме че докладът съдържа аналитични метрики
   assert.ok(report._analytics, 'Докладът трябва да съдържа _analytics обект');
-  
+
   const analytics = report._analytics;
-  
+
   // Проверяваме структурата на метриките
   assert.ok(analytics.timestamp, 'Трябва да има timestamp');
   assert.ok(analytics.detection, 'Трябва да има detection метрики');
@@ -1240,23 +1240,23 @@ test('generateHolisticReport добавя аналитични метрики к
   assert.ok(analytics.constitutional_analysis, 'Трябва да има constitutional_analysis метрики');
   assert.ok(analytics.personalization, 'Трябва да има personalization метрики');
   assert.ok(analytics.quality, 'Трябва да има quality метрики');
-  
+
   // Проверяваме detection метрики
   assert.ok(analytics.detection.total_signs >= 0, 'Трябва да брои открити знаци');
-  assert.ok(analytics.detection.enrichment_rate >= 0 && analytics.detection.enrichment_rate <= 100, 
+  assert.ok(analytics.detection.enrichment_rate >= 0 && analytics.detection.enrichment_rate <= 100,
     'Enrichment rate трябва да е между 0 и 100');
-  
+
   // Проверяваме coverage метрики
   assert.ok(analytics.coverage.zones_analyzed >= 0, 'Трябва да брои анализирани зони');
   assert.ok(analytics.coverage.coverage_percentage >= 0 && analytics.coverage.coverage_percentage <= 100,
     'Coverage percentage трябва да е между 0 и 100');
-  
+
   // Проверяваме quality метрики
   assert.ok(analytics.quality.precision_score >= 0 && analytics.quality.precision_score <= 100,
     'Precision score трябва да е между 0 и 100');
   assert.ok(analytics.quality.detail_level, 'Трябва да има detail_level');
   assert.ok(analytics.quality.improvement_indicators, 'Трябва да има improvement_indicators');
-  
+
   // Проверяваме improvement indicators
   assert.ok(typeof analytics.quality.improvement_indicators.enhanced_validation === 'boolean',
     'enhanced_validation трябва да е boolean');
@@ -1266,4 +1266,94 @@ test('generateHolisticReport добавя аналитични метрики к
     'priority_classification трябва да е boolean');
   assert.ok(typeof analytics.quality.improvement_indicators.personalized_metrics === 'boolean',
     'personalized_metrics трябва да е boolean');
+});
+
+test('generateMultiQueryReport извършва 4 фокусирани AI заявки', async () => {
+  const originalFetch = global.fetch;
+  const callsLog = [];
+
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    const prompt = body.messages ? body.messages[0].content : body.contents[0].parts[0].text;
+
+    // Логваме всяка заявка
+    if (prompt.includes('конституционална синтеза')) {
+      callsLog.push('constitutional');
+    } else if (prompt.includes('Интерпретирай здравните импликации')) {
+      callsLog.push('signs_interpretation');
+    } else if (prompt.includes('КОНКРЕТНИ и ПРИЛАГАЕМИ препоръки')) {
+      callsLog.push('recommendations');
+    } else if (prompt.includes('окончателния СТРУКТУРИРАН доклад')) {
+      callsLog.push('final_assembly');
+    }
+
+    const responsePayload = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              constitutional_type: 'Лимфатична',
+              detailed_analysis: 'Детайлен анализ...',
+              priority_systems: [{ system: 'Лимфна система', why_priority: 'Слабост' }],
+              eliminative_channels: { intestines: 'Добър' },
+              key_findings: [{ finding: 'Находка 1' }],
+              synergistic_effect: 'Ефект',
+              action_plan: { immediate: ['Действие 1'] },
+              nutrition: { foods_to_limit: [], foods_to_add: [] },
+              herbs_and_supplements: { herbs: [], supplements: [] },
+              holistic_recommendations: { fundamental_principles: [] },
+              follow_up: { after_1_month: 'Прогрес' },
+              'Име': 'Тест',
+              'Резюме на анализа': 'Резюме',
+              'Конституционален анализ (3-нивов)': 'Анализ',
+              'Приоритетни елиминативни канали': 'Канали',
+              'Приоритетни системи за подкрепа': 'Системи',
+              'Ключови находки и тяхната връзка': 'Находки',
+              'План за действие': 'План',
+              'Специални хранителни насоки': {},
+              'Препоръки за билки и добавки': {},
+              'Холистични препоръки': {},
+              'Препоръки за проследяване': 'Проследяване',
+              'Задължителен отказ от отговорност': 'Дисклеймър'
+            })
+          }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  const config = {
+    provider: 'openai',
+    report_model: 'gpt-4o',
+    use_multi_query_report: true
+  };
+
+  try {
+    const report = await __testables__.generateMultiQueryReport(
+      { name: 'Иван', age: 35 },
+      { constitutional_analysis: { level_1_constitution_color: 'Лимфатична' }, identified_signs: [] },
+      { constitutional_analysis: { level_1_constitution_color: 'Лимфатична' }, identified_signs: [] },
+      {},
+      { mandatory_disclaimer: { text: 'Дисклеймър' } },
+      config,
+      'test-key',
+      null,
+      {}
+    );
+
+    assert.equal(callsLog.length, 4, 'Очакваме 4 AI заявки');
+    assert.equal(callsLog[0], 'constitutional', 'Първа заявка за конституционална синтеза');
+    assert.equal(callsLog[1], 'signs_interpretation', 'Втора заявка за интерпретация на знаците');
+    assert.equal(callsLog[2], 'recommendations', 'Трета заявка за препоръки');
+    assert.equal(callsLog[3], 'final_assembly', 'Четвърта заявка за финално сглобяване');
+    assert.ok(report['Име'], 'Докладът съдържа име');
+    assert.ok(report._analytics, 'Докладът съдържа аналитика');
+  } finally {
+    global.fetch = originalFetch;
+  }
 });
