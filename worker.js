@@ -1970,18 +1970,42 @@ function parseWaterIntake(raw) {
   if (typeof raw === 'string') {
     const normalized = raw.toLowerCase().trim();
 
-    // Обработка на текстовите опции от формата (проверяваме за точни съвпадения)
-    if ((normalized.includes('под') || normalized.includes('under')) && normalized.includes('1') && !normalized.includes('1-2')) {
-      return 0.75; // "Под 1 литър" → 0.75 литра
+    // Обработка на текстовите опции от формата (точни съвпадения)
+    // Използваме lookup таблица за по-ясна и поддържаема логика
+    const waterOptions = {
+      'под 1 литър': 0.75,
+      'under 1 liter': 0.75,
+      '1-2 литра': 1.5,
+      '1–2 литра': 1.5, // различен тип тире
+      '1-2 liters': 1.5,
+      'над 2 литра': 2.5,
+      'over 2 liters': 2.5,
+      'above 2 liters': 2.5
+    };
+
+    // Проверка за точни съвпадения
+    if (waterOptions[normalized]) {
+      return waterOptions[normalized];
     }
-    if (normalized.includes('над') || normalized.includes('over') || normalized.includes('above')) {
-      if (normalized.includes('2')) {
-        return 2.5; // "Над 2 литра" → 2.5 литра
+
+    // Проверка за частични съвпадения с контекст за литри
+    const hasLiterContext = normalized.includes('литр') || normalized.includes('liter');
+
+    if (hasLiterContext) {
+      // "Под 1" варианти
+      if ((normalized.includes('под') || normalized.includes('under')) && normalized.includes('1')) {
+        return 0.75;
       }
-    }
-    // Проверка за диапазон "1-2" (трябва да съдържа тире или дефис)
-    if ((normalized.includes('1-2') || normalized.includes('1–2')) && normalized.includes('литр')) {
-      return 1.5; // "1-2 литра" → 1.5 литра (средната стойност)
+
+      // "1-2" диапазон
+      if (normalized.includes('1-2') || normalized.includes('1–2')) {
+        return 1.5;
+      }
+
+      // "Над 2" варианти
+      if ((normalized.includes('над') || normalized.includes('over') || normalized.includes('above')) && normalized.includes('2')) {
+        return 2.5;
+      }
     }
 
     // Ако не е една от текстовите опции, опитай да извлечеш число
