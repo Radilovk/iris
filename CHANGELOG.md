@@ -8,6 +8,11 @@
 ## [Unreleased]
 
 ### Added
+- **Deployment скриптове за KV конфигурация** (2025-11-06)
+  - `scripts/deploy-kv.sh` - Автоматизиран скрипт за деплойване на KV данни
+  - `scripts/verify-kv.sh` - Скрипт за верификация на KV конфигурация
+  - NPM scripts: `npm run deploy:kv` и `npm run verify:kv`
+  - `DEPLOYMENT_GUIDE.md` - Пълно ръководство за деплойване на подобренията
 - Конфигурируем CORS чрез `ALLOWED_ORIGIN` environment variable
 - Валидация на размера на качените файлове (макс 20MB)
 - ESLint конфигурация за code quality
@@ -23,11 +28,22 @@
 - `.gitignore` записи за linting cache файлове
 
 ### Changed
+- **README.md обновен с инструкции за деплойване на KV** (2025-11-06)
+  - Препоръки за използване на deployment скриптовете
+  - Важно предупреждение за деплойване на промени в KV файлове
+  - Референция към DEPLOYMENT_GUIDE.md
 - CORS headers сега използват environment variable вместо hardcoded `*`
 - README.md обновен с детайлни setup инструкции
 - `.env.example` обновен със security settings
 - `wrangler.toml` обновен с `ALLOWED_ORIGIN` variable
 - Подобрена структура на документацията
+
+### Fixed
+- **Проблем с деплойване на аналитични подобрения** (2025-11-06)
+  - Идентифициран проблем: подобренията в `kv/iris_config_kv.json` не се виждаха в продукция
+  - Причина: липса на процес за деплойване на KV данни
+  - Решение: създадени автоматизирани скриптове за деплойване и верификация
+  - Документиран процес за актуализиране на KV конфигурация
 
 ### Fixed
 - Security риск от неограничен CORS
