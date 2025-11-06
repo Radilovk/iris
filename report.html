@@ -439,7 +439,7 @@
                                     <strong>Анализирани зони:</strong> ${analytics.coverage.zones_analyzed} от ${analytics.coverage.total_zones_available}
                                 </li>
                                 <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
-                                    <strong>Засегнати зони:</strong> ${analytics.coverage.zones_affected.join(', ') || 'Няма данни'}
+                                    <strong>Засегнати зони:</strong> ${Array.isArray(analytics.coverage.zones_affected) && analytics.coverage.zones_affected.length > 0 ? analytics.coverage.zones_affected.join(', ') : 'Няма данни'}
                                 </li>
                                 <li style="padding: 0.4rem 0;">
                                     <strong>Обхват:</strong> 

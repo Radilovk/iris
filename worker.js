@@ -987,6 +987,14 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
 function calculateConstitutionalDepth(eyeAnalysis) {
   if (!eyeAnalysis || !eyeAnalysis.constitutional_analysis) return 0;
   
+  // Константи за оценяване
+  const FIELD_SCORE_FULL = 15;
+  const FIELD_SCORE_PARTIAL = 5;
+  const MIN_FIELD_LENGTH = 20;
+  const CHANNEL_SCORE_MAX = 10;
+  const CHANNEL_SCORE_PER_FILLED = 2;
+  const MIN_CHANNEL_LENGTH = 10;
+  
   const analysis = eyeAnalysis.constitutional_analysis;
   let score = 0;
   let maxScore = 0;
@@ -1001,20 +1009,22 @@ function calculateConstitutionalDepth(eyeAnalysis) {
   ];
   
   fields.forEach(field => {
-    maxScore += 15;
-    if (analysis[field] && typeof analysis[field] === 'string' && analysis[field].length > 20) {
-      score += 15;
+    maxScore += FIELD_SCORE_FULL;
+    if (analysis[field] && typeof analysis[field] === 'string' && analysis[field].length > MIN_FIELD_LENGTH) {
+      score += FIELD_SCORE_FULL;
     } else if (analysis[field]) {
-      score += 5;
+      score += FIELD_SCORE_PARTIAL;
     }
   });
   
   // Елиминативни канали
   if (eyeAnalysis.eliminative_channels_assessment) {
-    maxScore += 10;
+    maxScore += CHANNEL_SCORE_MAX;
     const channels = eyeAnalysis.eliminative_channels_assessment;
-    const filledChannels = Object.values(channels).filter(v => v && typeof v === 'string' && v.length > 10).length;
-    score += Math.min(filledChannels * 2, 10);
+    const filledChannels = Object.values(channels).filter(
+      v => v && typeof v === 'string' && v.length > MIN_CHANNEL_LENGTH
+    ).length;
+    score += Math.min(filledChannels * CHANNEL_SCORE_PER_FILLED, CHANNEL_SCORE_MAX);
   }
   
   return maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
@@ -1068,30 +1078,49 @@ function calculatePersonalizationMetrics(userData) {
  * @returns {number} - Оценка 0-100
  */
 function calculatePrecisionScore(signs, constitutionalDepth) {
+  // Константи за оценяване на знаци
+  const SIGN_BASE_SCORE = 10;
+  const SIGN_VALIDATED_ZONE_BONUS = 5;
+  const SIGN_PRIORITY_BONUS = 5;
+  const SIGN_INTERPRETATION_BONUS = 5;
+  const SIGN_ZONE_NAME_BONUS = 3;
+  const SIGN_INTENSITY_BONUS = 2;
+  const MAX_SIGN_SCORE = SIGN_BASE_SCORE + SIGN_VALIDATED_ZONE_BONUS + 
+                         SIGN_PRIORITY_BONUS + SIGN_INTERPRETATION_BONUS +
+                         SIGN_ZONE_NAME_BONUS + SIGN_INTENSITY_BONUS; // = 30
+  
+  // Тегла за различните компоненти на оценката
+  const SIGN_QUALITY_WEIGHT = 40;
+  const CONSTITUTIONAL_WEIGHT = 30;
+  const COVERAGE_WEIGHT = 30;
+  const MIN_SIGNS_FOR_FULL_COVERAGE = 5;
+  
   let score = 0;
   
   // 40% от оценката: качество на знаците
   const signQualityScore = signs.reduce((acc, sign) => {
-    let signScore = 10; // базов резултат за всеки знак
+    let signScore = SIGN_BASE_SCORE;
     
-    if (sign.validated_zone) signScore += 5;
-    if (sign.priority_level) signScore += 5;
-    if (sign.map_interpretation) signScore += 5;
-    if (sign.zone_name) signScore += 3;
-    if (sign.intensity) signScore += 2;
+    if (sign.validated_zone) signScore += SIGN_VALIDATED_ZONE_BONUS;
+    if (sign.priority_level) signScore += SIGN_PRIORITY_BONUS;
+    if (sign.map_interpretation) signScore += SIGN_INTERPRETATION_BONUS;
+    if (sign.zone_name) signScore += SIGN_ZONE_NAME_BONUS;
+    if (sign.intensity) signScore += SIGN_INTENSITY_BONUS;
     
     return acc + signScore;
   }, 0);
   
-  const maxSignScore = signs.length * 30;
-  score += maxSignScore > 0 ? (signQualityScore / maxSignScore) * 40 : 0;
+  const maxSignScore = signs.length * MAX_SIGN_SCORE;
+  score += maxSignScore > 0 ? (signQualityScore / maxSignScore) * SIGN_QUALITY_WEIGHT : 0;
   
   // 30% от оценката: конституционален анализ
   const avgConstitutional = (constitutionalDepth.leftEye + constitutionalDepth.rightEye) / 2;
-  score += (avgConstitutional / 100) * 30;
+  score += (avgConstitutional / 100) * CONSTITUTIONAL_WEIGHT;
   
   // 30% от оценката: обхват на анализа
-  const coverageBonus = signs.length >= 5 ? 30 : (signs.length / 5) * 30;
+  const coverageBonus = signs.length >= MIN_SIGNS_FOR_FULL_COVERAGE 
+    ? COVERAGE_WEIGHT 
+    : (signs.length / MIN_SIGNS_FOR_FULL_COVERAGE) * COVERAGE_WEIGHT;
   score += coverageBonus;
   
   return Math.min(Math.round(score), 100);
