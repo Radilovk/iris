@@ -1267,3 +1267,93 @@ test('generateHolisticReport добавя аналитични метрики к
   assert.ok(typeof analytics.quality.improvement_indicators.personalized_metrics === 'boolean',
     'personalized_metrics трябва да е boolean');
 });
+
+test('generateMultiQueryReport извършва 4 фокусирани AI заявки', async () => {
+  const originalFetch = global.fetch;
+  const callsLog = [];
+
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    const prompt = body.messages ? body.messages[0].content : body.contents[0].parts[0].text;
+    
+    // Логваме всяка заявка
+    if (prompt.includes('конституционална синтеза')) {
+      callsLog.push('constitutional');
+    } else if (prompt.includes('Интерпретирай здравните импликации')) {
+      callsLog.push('signs_interpretation');
+    } else if (prompt.includes('КОНКРЕТНИ и ПРИЛАГАЕМИ препоръки')) {
+      callsLog.push('recommendations');
+    } else if (prompt.includes('окончателния СТРУКТУРИРАН доклад')) {
+      callsLog.push('final_assembly');
+    }
+
+    const responsePayload = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              constitutional_type: 'Лимфатична',
+              detailed_analysis: 'Детайлен анализ...',
+              priority_systems: [{ system: 'Лимфна система', why_priority: 'Слабост' }],
+              eliminative_channels: { intestines: 'Добър' },
+              key_findings: [{ finding: 'Находка 1' }],
+              synergistic_effect: 'Ефект',
+              action_plan: { immediate: ['Действие 1'] },
+              nutrition: { foods_to_limit: [], foods_to_add: [] },
+              herbs_and_supplements: { herbs: [], supplements: [] },
+              holistic_recommendations: { fundamental_principles: [] },
+              follow_up: { after_1_month: 'Прогрес' },
+              'Име': 'Тест',
+              'Резюме на анализа': 'Резюме',
+              'Конституционален анализ (3-нивов)': 'Анализ',
+              'Приоритетни елиминативни канали': 'Канали',
+              'Приоритетни системи за подкрепа': 'Системи',
+              'Ключови находки и тяхната връзка': 'Находки',
+              'План за действие': 'План',
+              'Специални хранителни насоки': {},
+              'Препоръки за билки и добавки': {},
+              'Холистични препоръки': {},
+              'Препоръки за проследяване': 'Проследяване',
+              'Задължителен отказ от отговорност': 'Дисклеймър'
+            })
+          }
+        }
+      ]
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  const config = {
+    provider: 'openai',
+    report_model: 'gpt-4o',
+    use_multi_query_report: true
+  };
+
+  try {
+    const report = await __testables__.generateMultiQueryReport(
+      { name: 'Иван', age: 35 },
+      { constitutional_analysis: { level_1_constitution_color: 'Лимфатична' }, identified_signs: [] },
+      { constitutional_analysis: { level_1_constitution_color: 'Лимфатична' }, identified_signs: [] },
+      {},
+      { mandatory_disclaimer: { text: 'Дисклеймър' } },
+      config,
+      'test-key',
+      null,
+      {}
+    );
+
+    assert.equal(callsLog.length, 4, 'Очакваме 4 AI заявки');
+    assert.equal(callsLog[0], 'constitutional', 'Първа заявка за конституционална синтеза');
+    assert.equal(callsLog[1], 'signs_interpretation', 'Втора заявка за интерпретация на знаците');
+    assert.equal(callsLog[2], 'recommendations', 'Трета заявка за препоръки');
+    assert.equal(callsLog[3], 'final_assembly', 'Четвърта заявка за финално сглобяване');
+    assert.ok(report['Име'], 'Докладът съдържа име');
+    assert.ok(report._analytics, 'Докладът съдържа аналитика');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
