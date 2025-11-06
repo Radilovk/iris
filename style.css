@@ -709,6 +709,7 @@ details.report-section[open] summary .arrow {
     align-items: center;
   }
 }
+
 @media (max-width: 767px) {
   .container {
     padding: 1.5rem 1rem;
@@ -739,6 +740,239 @@ details.report-section[open] summary .arrow {
   }
   .report-header h2 {
     font-size: 2rem;
+  }
+}
+
+/* ====== MOBILE-SPECIFIC OPTIMIZATIONS (под 480px) ====== */
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+
+  .container {
+    padding: 1rem 0.75rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    border-radius: 16px;
+  }
+
+  /* Формуляр стъпки */
+  .stepper-nav {
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+  }
+
+  .step span {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .step p {
+    font-size: 0.8rem;
+  }
+
+  .step-line {
+    min-width: 20px;
+    margin: 0 0.25rem;
+  }
+
+  /* Форма полета */
+  .form-step h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .form-hint {
+    font-size: 0.85rem;
+  }
+
+  /* Checkbox групи */
+  .checkbox-group {
+    gap: 0.5rem;
+  }
+
+  .checkbox-item {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  /* Upload секция */
+  .upload-instructions {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .upload-instructions h4 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .upload-instructions ul {
+    font-size: 0.85rem;
+  }
+
+  .upload-instructions li {
+    margin-bottom: 0.4rem;
+  }
+
+  .upload-area-container {
+    gap: 1.5rem;
+  }
+
+  .upload-area .upload-preview {
+    width: 140px;
+    height: 140px;
+  }
+
+  .upload-area .upload-preview i {
+    font-size: 2.5rem;
+  }
+
+  .upload-area label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Бутони */
+  .btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    border-radius: 10px;
+  }
+
+  .button-group {
+    gap: 0.75rem;
+  }
+
+  /* Disclaimer */
+  .disclaimer-note {
+    padding: 0.75rem;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .disclaimer-note i {
+    font-size: 1.2rem;
+  }
+
+  .disclaimer-note p {
+    font-size: 0.85rem;
+  }
+
+  /* Доклад секции */
+  .report-header h2 {
+    font-size: 1.6rem;
+  }
+
+  .report-header p {
+    font-size: 0.95rem;
+  }
+
+  .report-hero {
+    padding: 1.25rem;
+  }
+
+  .report-hero .hero-icon {
+    font-size: 2rem;
+  }
+
+  .report-hero div h3 {
+    font-size: 1.2rem;
+  }
+
+  .report-hero div p {
+    font-size: 0.9rem;
+  }
+
+  .report-section {
+    margin-bottom: 1rem;
+  }
+
+  .report-section summary {
+    padding: 1rem 1rem;
+    font-size: 1rem;
+  }
+
+  .report-section .content {
+    padding: 0 1rem 1.25rem 1rem;
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .report-section summary .icon-circle {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .info-card {
+    padding: 1.25rem;
+  }
+
+  .info-card h4 {
+    font-size: 0.95rem;
+  }
+
+  /* Report grid на една колона за мобилен */
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tooltip подобрения за мобилен */
+  .tooltip-trigger {
+    width: 16px;
+    height: 16px;
+    font-size: 11px;
+  }
+
+  .tooltip-trigger:hover::after {
+    width: 180px;
+    max-width: 220px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  /* Details елементи */
+  .form-details summary {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .form-details .details-content {
+    padding: 1rem;
+  }
+
+  /* Бутони в report */
+  .button-group-report {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .button-group-report .btn {
+    width: 100%;
+  }
+
+  /* Message box */
+  #message-box {
+    margin: 1rem auto;
+    padding: 0.75rem;
+    font-size: 0.9rem;
   }
 }
 
