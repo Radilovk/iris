@@ -54,12 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
     messageBox.textContent = msg;
     messageBox.className = type === 'error' ? 'error-box' : (type === 'success' ? 'success-box' : 'info-box');
     setTimeout(() => {
-        if (messageBox.textContent === msg) {
-            messageBox.textContent = '';
-        }
+      if (messageBox.textContent === msg) {
+        messageBox.textContent = '';
+      }
     }, 5000);
   }
-  
+
   function updateUIFromConfig(config) {
     promptEditor.value = config.report_prompt_template || '';
     populateProviderOptions(config.provider);
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modelsListEditor.value = JSON.stringify(MODEL_OPTIONS, null, 2);
     } catch (err) {
       showMessage('Грешка при зареждане на списъка с модели: ' + err.message, 'error');
-      modelsListEditor.value = "{}";
+      modelsListEditor.value = '{}';
     }
   }
 
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!res.ok) throw new Error(`[${res.status}] ${await res.text()}`);
-      
+
       MODEL_OPTIONS = modelsJson;
       updateUIFromConfig(currentConfig);
       showMessage('Списъкът с модели е запазен успешно!', 'success');
@@ -116,11 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${WORKER_BASE_URL}/admin/keys`);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      
+
       const configs = data.keys
         .filter(k => k.name.startsWith('CONFIG:'))
         .map(k => k.name.slice(7));
-      
+
       configSelect.innerHTML = '<option value="">-- Избери конфигурация --</option>';
       configs.forEach(name => {
         const opt = document.createElement('option');
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=iris_config_kv`);
       if (!res.ok) throw new Error('Активната конфигурация `iris_config_kv` не е намерена.');
-      
+
       const data = await res.json();
       currentConfig = JSON.parse(data.value || '{}');
       updateUIFromConfig(currentConfig);
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/get?key=CONFIG:${encodeURIComponent(name)}`);
       if (!res.ok) throw new Error(await res.text());
-      
+
       const data = await res.json();
       currentConfig = JSON.parse(data.value || '{}');
       updateUIFromConfig(currentConfig);
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (!res.ok) throw new Error(await res.text());
   }
-  
+
   async function loadAllKV() {
     try {
       const res = await fetch(`${WORKER_BASE_URL}/admin/keys`);
@@ -254,8 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   savePromptBtn.addEventListener('click', async () => {
     if (!currentConfig.name) {
-        showMessage('Първо заредете или запишете конфигурация.', 'error');
-        return;
+      showMessage('Първо заредете или запишете конфигурация.', 'error');
+      return;
     }
     currentConfig.report_prompt_template = promptEditor.value;
     showLoading();
@@ -271,9 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   saveModelBtn.addEventListener('click', async () => {
-     if (!currentConfig.name) {
-        showMessage('Първо заредете или запишете конфигурация.', 'error');
-        return;
+    if (!currentConfig.name) {
+      showMessage('Първо заредете или запишете конфигурация.', 'error');
+      return;
     }
     currentConfig.provider = providerSelect.value;
     currentConfig.analysis_model = modelSelect.value;
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function initialLoad() {
     showLoading();
-    await loadModelsList(); 
+    await loadModelsList();
     await loadConfigList();
     await loadAllKV();
     hideLoading();

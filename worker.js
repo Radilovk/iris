@@ -908,15 +908,15 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
 function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSigns, rawSigns, userData) {
   // Базови метрики
   const totalSignsDetected = enrichedSigns.length;
-  const signsEnriched = enrichedSigns.filter(sign => 
+  const signsEnriched = enrichedSigns.filter(sign =>
     sign.validated_zone || sign.priority_level || sign.map_interpretation
   ).length;
-  
+
   // Брой знаци по приоритет
   const highPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'high').length;
   const mediumPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'medium').length;
   const lowPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'low').length;
-  
+
   // Анализ на зоните
   const analyzedZones = new Set();
   enrichedSigns.forEach(sign => {
@@ -924,24 +924,24 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
       analyzedZones.add(sign.validated_zone);
     }
   });
-  
+
   // Конституционален анализ
   const constitutionalDepth = {
     leftEye: calculateConstitutionalDepth(leftEyeAnalysis),
     rightEye: calculateConstitutionalDepth(rightEyeAnalysis)
   };
-  
+
   // Оценка на обогатяването
-  const enrichmentRate = totalSignsDetected > 0 
-    ? Math.round((signsEnriched / totalSignsDetected) * 100) 
+  const enrichmentRate = totalSignsDetected > 0
+    ? Math.round((signsEnriched / totalSignsDetected) * 100)
     : 0;
-  
+
   // Персонализация метрики
   const personalizationMetrics = calculatePersonalizationMetrics(userData);
-  
+
   // Оценка на прецизността
   const precisionScore = calculatePrecisionScore(enrichedSigns, constitutionalDepth);
-  
+
   return {
     timestamp: new Date().toISOString(),
     detection: {
@@ -966,9 +966,9 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
     personalization: personalizationMetrics,
     quality: {
       precision_score: precisionScore,
-      detail_level: precisionScore >= 85 ? 'Много висока' : 
-                    precisionScore >= 70 ? 'Висока' :
-                    precisionScore >= 50 ? 'Средна' : 'Базова',
+      detail_level: precisionScore >= 85 ? 'Много висока' :
+        precisionScore >= 70 ? 'Висока' :
+          precisionScore >= 50 ? 'Средна' : 'Базова',
       improvement_indicators: {
         enhanced_validation: signsEnriched > 0,
         zone_mapping: analyzedZones.size >= 3,
@@ -986,7 +986,7 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
  */
 function calculateConstitutionalDepth(eyeAnalysis) {
   if (!eyeAnalysis || !eyeAnalysis.constitutional_analysis) return 0;
-  
+
   // Константи за оценяване
   const FIELD_SCORE_FULL = 15;
   const FIELD_SCORE_PARTIAL = 5;
@@ -994,20 +994,20 @@ function calculateConstitutionalDepth(eyeAnalysis) {
   const CHANNEL_SCORE_MAX = 10;
   const CHANNEL_SCORE_PER_FILLED = 2;
   const MIN_CHANNEL_LENGTH = 10;
-  
+
   const analysis = eyeAnalysis.constitutional_analysis;
   let score = 0;
   let maxScore = 0;
-  
+
   const fields = [
     'level_1_constitution_color',
-    'level_2_disposition_structure', 
+    'level_2_disposition_structure',
     'level_3_diathesis_overlays',
     'density_assessment',
     'pupil_characteristics',
     'anv_collarette_analysis'
   ];
-  
+
   fields.forEach(field => {
     maxScore += FIELD_SCORE_FULL;
     if (analysis[field] && typeof analysis[field] === 'string' && analysis[field].length > MIN_FIELD_LENGTH) {
@@ -1016,7 +1016,7 @@ function calculateConstitutionalDepth(eyeAnalysis) {
       score += FIELD_SCORE_PARTIAL;
     }
   });
-  
+
   // Елиминативни канали
   if (eyeAnalysis.eliminative_channels_assessment) {
     maxScore += CHANNEL_SCORE_MAX;
@@ -1026,7 +1026,7 @@ function calculateConstitutionalDepth(eyeAnalysis) {
     ).length;
     score += Math.min(filledChannels * CHANNEL_SCORE_PER_FILLED, CHANNEL_SCORE_MAX);
   }
-  
+
   return maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 }
 
@@ -1043,22 +1043,22 @@ function calculatePersonalizationMetrics(userData) {
     risk_assessment_performed: false,
     lifestyle_factors_analyzed: 0
   };
-  
+
   if (userData.calculated_bmi !== undefined) {
     metrics.metrics_calculated++;
     metrics.bmi_calculated = true;
   }
-  
+
   if (userData.age_group) {
     metrics.metrics_calculated++;
     metrics.age_group_identified = true;
   }
-  
+
   if (userData.overall_risk_assessment) {
     metrics.metrics_calculated++;
     metrics.risk_assessment_performed = true;
   }
-  
+
   // Проверка на животен стил
   const lifestyleFactors = ['stress_assessment', 'sleep_assessment', 'hydration_assessment'];
   lifestyleFactors.forEach(factor => {
@@ -1067,7 +1067,7 @@ function calculatePersonalizationMetrics(userData) {
       metrics.lifestyle_factors_analyzed++;
     }
   });
-  
+
   return metrics;
 }
 
@@ -1085,44 +1085,44 @@ function calculatePrecisionScore(signs, constitutionalDepth) {
   const SIGN_INTERPRETATION_BONUS = 5;
   const SIGN_ZONE_NAME_BONUS = 3;
   const SIGN_INTENSITY_BONUS = 2;
-  const MAX_SIGN_SCORE = SIGN_BASE_SCORE + SIGN_VALIDATED_ZONE_BONUS + 
+  const MAX_SIGN_SCORE = SIGN_BASE_SCORE + SIGN_VALIDATED_ZONE_BONUS +
                          SIGN_PRIORITY_BONUS + SIGN_INTERPRETATION_BONUS +
                          SIGN_ZONE_NAME_BONUS + SIGN_INTENSITY_BONUS; // = 30
-  
+
   // Тегла за различните компоненти на оценката
   const SIGN_QUALITY_WEIGHT = 40;
   const CONSTITUTIONAL_WEIGHT = 30;
   const COVERAGE_WEIGHT = 30;
   const MIN_SIGNS_FOR_FULL_COVERAGE = 5;
-  
+
   let score = 0;
-  
+
   // 40% от оценката: качество на знаците
   const signQualityScore = signs.reduce((acc, sign) => {
     let signScore = SIGN_BASE_SCORE;
-    
+
     if (sign.validated_zone) signScore += SIGN_VALIDATED_ZONE_BONUS;
     if (sign.priority_level) signScore += SIGN_PRIORITY_BONUS;
     if (sign.map_interpretation) signScore += SIGN_INTERPRETATION_BONUS;
     if (sign.zone_name) signScore += SIGN_ZONE_NAME_BONUS;
     if (sign.intensity) signScore += SIGN_INTENSITY_BONUS;
-    
+
     return acc + signScore;
   }, 0);
-  
+
   const maxSignScore = signs.length * MAX_SIGN_SCORE;
   score += maxSignScore > 0 ? (signQualityScore / maxSignScore) * SIGN_QUALITY_WEIGHT : 0;
-  
+
   // 30% от оценката: конституционален анализ
   const avgConstitutional = (constitutionalDepth.leftEye + constitutionalDepth.rightEye) / 2;
   score += (avgConstitutional / 100) * CONSTITUTIONAL_WEIGHT;
-  
+
   // 30% от оценката: обхват на анализа
-  const coverageBonus = signs.length >= MIN_SIGNS_FOR_FULL_COVERAGE 
-    ? COVERAGE_WEIGHT 
+  const coverageBonus = signs.length >= MIN_SIGNS_FOR_FULL_COVERAGE
+    ? COVERAGE_WEIGHT
     : (signs.length / MIN_SIGNS_FOR_FULL_COVERAGE) * COVERAGE_WEIGHT;
   score += coverageBonus;
-  
+
   return Math.min(Math.round(score), 100);
 }
 
@@ -1143,11 +1143,11 @@ function calculatePrecisionScore(signs, constitutionalDepth) {
 async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
   // Проверка дали е активиран multi-query режим (по подразбиране е ИЗКЛЮЧЕН за обратна съвместимост)
   const useMultiQuery = config.use_multi_query_report === true;
-  
+
   if (useMultiQuery) {
     return await generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap);
   }
-  
+
   // Стар подход - единична заявка (по подразбиране)
   return await generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap);
 }
@@ -1172,11 +1172,11 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
   ];
 
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
-  
+
   const analyticsMetrics = generateAnalyticsMetrics(
-    leftEyeAnalysis, 
-    rightEyeAnalysis, 
-    identifiedSigns, 
+    leftEyeAnalysis,
+    rightEyeAnalysis,
+    identifiedSigns,
     rawIdentifiedSigns,
     userData
   );
@@ -1184,7 +1184,7 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
   const keywordSet = buildKeywordSet(identifiedSigns, userData);
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
-  
+
   const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
   const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
     ? remedyBase.mandatory_disclaimer.text
@@ -1192,8 +1192,8 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
 
   // СТЪПКА 1: Конституционален анализ и синтеза
   const constitutionalAnalysis = await generateConstitutionalSynthesis(
-    leftEyeAnalysis, 
-    rightEyeAnalysis, 
+    leftEyeAnalysis,
+    rightEyeAnalysis,
     enrichedUserData,
     filteredKnowledge,
     config,
@@ -1256,12 +1256,12 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
 
   // Валидация и обогатяване на знаците с информация от diagnostic map
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
-  
+
   // Генериране на аналитична статистика
   const analyticsMetrics = generateAnalyticsMetrics(
-    leftEyeAnalysis, 
-    rightEyeAnalysis, 
-    identifiedSigns, 
+    leftEyeAnalysis,
+    rightEyeAnalysis,
+    identifiedSigns,
     rawIdentifiedSigns,
     userData
   );
