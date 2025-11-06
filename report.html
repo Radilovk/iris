@@ -368,6 +368,183 @@
             });
             return processedBlocks.join('');
         }
+        
+        // Функция за създаване на аналитична секция
+        function createAnalyticsSection(analytics) {
+            const section = document.createElement('details');
+            section.className = 'report-section';
+            section.setAttribute('open', ''); // Отворена по подразбиране
+            
+            const qualityColor = analytics.quality.precision_score >= 85 ? '#10b981' : 
+                                 analytics.quality.precision_score >= 70 ? '#3b82f6' :
+                                 analytics.quality.precision_score >= 50 ? '#f59e0b' : '#64748b';
+            
+            const enrichmentColor = analytics.detection.enrichment_rate >= 80 ? '#10b981' :
+                                    analytics.detection.enrichment_rate >= 60 ? '#3b82f6' : '#f59e0b';
+            
+            section.innerHTML = `
+                <summary>
+                    <div class="summary-title">
+                        <span class="icon-circle" style="background-color: #6366f1;"><i class="fas fa-chart-line"></i></span>
+                        <span>Аналитична статистика и качество на анализа</span>
+                    </div>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </summary>
+                <div class="content">
+                    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem; border-left: 4px solid #0ea5e9;">
+                        <h4 style="margin-top: 0; color: #0c4a6e; font-size: 1.15rem;">
+                            <i class="fas fa-award" style="color: #0ea5e9; margin-right: 0.5rem;"></i>
+                            Обща оценка на анализа: <span style="color: ${qualityColor}; font-weight: 700;">${analytics.quality.precision_score}/100</span>
+                        </h4>
+                        <p style="margin: 0.5rem 0 0 0; color: #164e63; font-size: 0.95rem;">
+                            Ниво на детайлност: <strong>${analytics.quality.detail_level}</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="report-grid">
+                        <!-- Детекция на знаци -->
+                        <div class="info-card" style="border-left: 3px solid #8b5cf6;">
+                            <h4 style="color: #8b5cf6;">
+                                <i class="fas fa-search" style="margin-right: 0.5rem;"></i>
+                                Детекция на знаци
+                            </h4>
+                            <ul style="list-style: none; padding: 0; margin: 0.75rem 0;">
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Открити знаци:</strong> ${analytics.detection.total_signs}
+                                </li>
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Обогатени с данни:</strong> ${analytics.detection.signs_enriched}
+                                </li>
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Процент обогатяване:</strong> 
+                                    <span style="color: ${enrichmentColor}; font-weight: 600;">${analytics.detection.enrichment_rate}%</span>
+                                </li>
+                                <li style="padding: 0.4rem 0;">
+                                    <strong>Приоритизация:</strong>
+                                    <span style="color: #dc2626;">◆ ${analytics.detection.high_priority} високи</span>,
+                                    <span style="color: #f59e0b;">◆ ${analytics.detection.medium_priority} средни</span>,
+                                    <span style="color: #64748b;">◆ ${analytics.detection.low_priority} ниски</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Обхват на анализа -->
+                        <div class="info-card" style="border-left: 3px solid #0ea5e9;">
+                            <h4 style="color: #0ea5e9;">
+                                <i class="fas fa-layer-group" style="margin-right: 0.5rem;"></i>
+                                Обхват на анализа
+                            </h4>
+                            <ul style="list-style: none; padding: 0; margin: 0.75rem 0;">
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Анализирани зони:</strong> ${analytics.coverage.zones_analyzed} от ${analytics.coverage.total_zones_available}
+                                </li>
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Засегнати зони:</strong> ${analytics.coverage.zones_affected.join(', ') || 'Няма данни'}
+                                </li>
+                                <li style="padding: 0.4rem 0;">
+                                    <strong>Обхват:</strong> 
+                                    <div style="background: #e5e7eb; border-radius: 8px; height: 20px; overflow: hidden; margin-top: 0.3rem;">
+                                        <div style="background: linear-gradient(90deg, #0ea5e9, #06b6d4); height: 100%; width: ${analytics.coverage.coverage_percentage}%; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 600;">
+                                            ${analytics.coverage.coverage_percentage}%
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Конституционален анализ -->
+                        <div class="info-card" style="border-left: 3px solid #10b981;">
+                            <h4 style="color: #10b981;">
+                                <i class="fas fa-microscope" style="margin-right: 0.5rem;"></i>
+                                Конституционален анализ
+                            </h4>
+                            <ul style="list-style: none; padding: 0; margin: 0.75rem 0;">
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Ляво око:</strong> ${analytics.constitutional_analysis.left_eye_depth}%
+                                </li>
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Дясно око:</strong> ${analytics.constitutional_analysis.right_eye_depth}%
+                                </li>
+                                <li style="padding: 0.4rem 0;">
+                                    <strong>Обща дълбочина:</strong>
+                                    <div style="background: #e5e7eb; border-radius: 8px; height: 20px; overflow: hidden; margin-top: 0.3rem;">
+                                        <div style="background: linear-gradient(90deg, #10b981, #34d399); height: 100%; width: ${analytics.constitutional_analysis.combined_depth}%; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 600;">
+                                            ${analytics.constitutional_analysis.combined_depth}%
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Персонализация -->
+                        <div class="info-card" style="border-left: 3px solid #f59e0b;">
+                            <h4 style="color: #f59e0b;">
+                                <i class="fas fa-user-check" style="margin-right: 0.5rem;"></i>
+                                Персонализация
+                            </h4>
+                            <ul style="list-style: none; padding: 0; margin: 0.75rem 0;">
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    <strong>Изчислени метрики:</strong> ${analytics.personalization.metrics_calculated}
+                                </li>
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    ${analytics.personalization.bmi_calculated ? '<span style="color: #10b981;">✓</span>' : '<span style="color: #dc2626;">✗</span>'} 
+                                    BMI изчислен
+                                </li>
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    ${analytics.personalization.age_group_identified ? '<span style="color: #10b981;">✓</span>' : '<span style="color: #dc2626;">✗</span>'} 
+                                    Възрастова група
+                                </li>
+                                <li style="padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6;">
+                                    ${analytics.personalization.risk_assessment_performed ? '<span style="color: #10b981;">✓</span>' : '<span style="color: #dc2626;">✗</span>'} 
+                                    Оценка на риска
+                                </li>
+                                <li style="padding: 0.4rem 0;">
+                                    <strong>Анализирани фактори на живот:</strong> ${analytics.personalization.lifestyle_factors_analyzed}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Индикатори за подобрения -->
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 1.25rem; border-radius: 10px; margin-top: 1.5rem; border-left: 4px solid #22c55e;">
+                        <h4 style="margin-top: 0; color: #166534; font-size: 1.1rem;">
+                            <i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i>
+                            Приложени подобрения
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 1rem;">
+                            <div style="display: flex; align-items: center; color: #166534;">
+                                ${analytics.quality.improvement_indicators.enhanced_validation ? 
+                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Подобрена валидация</span>' : 
+                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Базова валидация</span>'}
+                            </div>
+                            <div style="display: flex; align-items: center; color: #166534;">
+                                ${analytics.quality.improvement_indicators.zone_mapping ? 
+                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Зонно картографиране</span>' : 
+                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Без зонно картографиране</span>'}
+                            </div>
+                            <div style="display: flex; align-items: center; color: #166534;">
+                                ${analytics.quality.improvement_indicators.priority_classification ? 
+                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Класификация по приоритет</span>' : 
+                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Без приоритизация</span>'}
+                            </div>
+                            <div style="display: flex; align-items: center; color: #166534;">
+                                ${analytics.quality.improvement_indicators.personalized_metrics ? 
+                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Персонализирани метрики</span>' : 
+                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Базови метрики</span>'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p style="margin-top: 1.5rem; font-size: 0.9rem; color: #64748b; font-style: italic;">
+                        <i class="fas fa-info-circle" style="margin-right: 0.3rem;"></i>
+                        Тази аналитична статистика показва капацитета и качеството на извършения анализ. 
+                        По-високите стойности означават по-детайлен и персонализиран доклад.
+                    </p>
+                </div>
+            `;
+            
+            return section;
+        }
 
         function renderReport(data) {
             const container = document.getElementById('report-container');
@@ -392,6 +569,12 @@
                     <div style="color: #78350f; font-size: 1.05rem; line-height: 1.7; text-align: left;">${formatTextContent(data["Резюме на анализа"])}</div>
                 `;
                 container.appendChild(summaryBox);
+            }
+            
+            // Добавяме аналитични метрики ако са налични
+            if (data._analytics) {
+                const analyticsSection = createAnalyticsSection(data._analytics);
+                container.appendChild(analyticsSection);
             }
 
             const sectionOrder = [
