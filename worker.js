@@ -1173,19 +1173,20 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
 
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
 
+  // Обогатяване на потребителските данни с изчислени метрики за да се използват в аналитиката
+  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
+
   const analyticsMetrics = generateAnalyticsMetrics(
     leftEyeAnalysis,
     rightEyeAnalysis,
     identifiedSigns,
     rawIdentifiedSigns,
-    userData
+    enrichedUserData
   );
 
-  const keywordSet = buildKeywordSet(identifiedSigns, userData);
+  const keywordSet = buildKeywordSet(identifiedSigns, enrichedUserData);
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
-
-  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
   const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
     ? remedyBase.mandatory_disclaimer.text
     : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
@@ -1257,16 +1258,19 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
   // Валидация и обогатяване на знаците с информация от diagnostic map
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
 
-  // Генериране на аналитична статистика
+  // Обогатяване на потребителските данни с изчислени метрики за да се използват в аналитиката
+  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
+
+  // Генериране на аналитична статистика с обогатените данни
   const analyticsMetrics = generateAnalyticsMetrics(
     leftEyeAnalysis,
     rightEyeAnalysis,
     identifiedSigns,
     rawIdentifiedSigns,
-    userData
+    enrichedUserData
   );
 
-  const keywordSet = buildKeywordSet(identifiedSigns, userData);
+  const keywordSet = buildKeywordSet(identifiedSigns, enrichedUserData);
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
@@ -1286,9 +1290,6 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
     ? normalizedWebInsights.slice(0, contextLimit)
     : fallbackExternalContext;
   const externalContextPayload = JSON.stringify(externalContextEntries, null, 2);
-
-  // Обогатяване на потребителските данни с изчислени метрики за по-добра персонализация
-  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
   const promptUserData = { ...enrichedUserData, keyword_hints: keywordHints };
 
   const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
@@ -1958,6 +1959,44 @@ function buildKeywordSet(identifiedSigns, userData = {}) {
   return keywords;
 }
 
+function parseWaterIntake(raw) {
+  if (raw == null) return undefined;
+
+  // Ако е число, просто го върни
+  if (typeof raw === 'number') {
+    return Number.isFinite(raw) ? raw : undefined;
+  }
+
+  if (typeof raw === 'string') {
+    const normalized = raw.toLowerCase().trim();
+
+    // Обработка на текстовите опции от формата
+    // Използваме lookup таблица за ясна и поддържаема логика
+    const waterOptions = {
+      'под 1 литър': 0.75,
+      'under 1 liter': 0.75,
+      '1-2 литра': 1.5,
+      '1-2 liters': 1.5,
+      'над 2 литра': 2.5,
+      'over 2 liters': 2.5,
+      'above 2 liters': 2.5
+    };
+
+    // Нормализираме различните видове тирета към стандартно тире
+    const normalizedDashes = normalized.replace(/–|—/g, '-');
+
+    // Проверка за точни съвпадения
+    if (waterOptions[normalizedDashes]) {
+      return waterOptions[normalizedDashes];
+    }
+
+    // Ако не е една от текстовите опции, опитай да извлечеш число
+    return parseFloatValue(raw);
+  }
+
+  return undefined;
+}
+
 function addKeywordVariants(set, value) {
   const normalized = value.toLowerCase();
   if (normalized) set.add(normalized);
@@ -2008,7 +2047,7 @@ function parseNumericContext(source) {
     context.ageYears = age;
   }
 
-  const water = parseFloatValue(source.water ?? source['water-intake']);
+  const water = parseWaterIntake(source.water ?? source['water-intake']);
   if (isValidRange(water, 0, 12)) {
     context.waterLiters = water;
   }
@@ -2900,8 +2939,8 @@ ${JSON.stringify(recommendations, null, 2)}
 {
   "Име": "${userData.name || 'Не е посочено'}",
   "Резюме на анализа": "2-3 изречения с най-важната находка и основна препоръка",
-  "Конституционален анализ (3-нивов)": "Текст от constitutional.detailed_analysis",
-  "Приоритетни елиминативни канали": "Въвод + форматиран текст от signsInterpretation.eliminative_channels",
+  "Конституционален анализ": "Текст от constitutional.detailed_analysis",
+  "Анализ на елиминативните канали": "Въвод + форматиран текст от signsInterpretation.eliminative_channels",
   "Приоритетни системи за подкрепа": "Форматиран списък от signsInterpretation.priority_systems",
   "Ключови находки и тяхната връзка": "Форматиран текст от signsInterpretation.key_findings + synergistic_effect",
   "План за действие": "Форматиран текст от recommendations.action_plan",
