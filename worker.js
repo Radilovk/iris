@@ -2939,8 +2939,8 @@ ${JSON.stringify(recommendations, null, 2)}
 {
   "Име": "${userData.name || 'Не е посочено'}",
   "Резюме на анализа": "2-3 изречения с най-важната находка и основна препоръка",
-  "Конституционален анализ (3-нивов)": "Текст от constitutional.detailed_analysis",
-  "Приоритетни елиминативни канали": "Въвод + форматиран текст от signsInterpretation.eliminative_channels",
+  "Конституционален анализ": "Текст от constitutional.detailed_analysis",
+  "Анализ на елиминативните канали": "Въвод + форматиран текст от signsInterpretation.eliminative_channels",
   "Приоритетни системи за подкрепа": "Форматиран списък от signsInterpretation.priority_systems",
   "Ключови находки и тяхната връзка": "Форматиран текст от signsInterpretation.key_findings + synergistic_effect",
   "План за действие": "Форматиран текст от recommendations.action_plan",
