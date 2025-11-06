@@ -2142,6 +2142,16 @@ function createConciseIrisMap(irisMap) {
   return concise;
 }
 
+// Приоритетни ключове за vision context - включват се винаги когато са налични
+const VISION_CONTEXT_PRIORITY_KEYS = [
+  'elimination_channels',
+  'constitutional_signs_summary',
+  'common_iris_signs',
+  'lacunae_types',
+  'nerve_rings',
+  'radii_solaris'
+];
+
 /**
  * Създава обогатен external context за визуалния анализ
  * Вместо да разчита само на userData keywords, добавя ключова информация за
@@ -2153,19 +2163,9 @@ function createConciseIrisMap(irisMap) {
 function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
   const contextEntries = [];
 
-  // Винаги включваме ключовата информация за елиминативните канали
-  const priorityKeys = [
-    'elimination_channels',
-    'constitutional_signs_summary',
-    'common_iris_signs',
-    'lacunae_types',
-    'nerve_rings',
-    'radii_solaris'
-  ];
-
   if (interpretationKnowledge && typeof interpretationKnowledge === 'object') {
     // Първо добавяме приоритетните ключове
-    for (const key of priorityKeys) {
+    for (const key of VISION_CONTEXT_PRIORITY_KEYS) {
       if (interpretationKnowledge[key]) {
         const value = interpretationKnowledge[key];
         let summary;
@@ -2173,9 +2173,8 @@ function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
         if (typeof value === 'string') {
           summary = value.length > 300 ? value.substring(0, 297) + '...' : value;
         } else if (typeof value === 'object') {
-          summary = JSON.stringify(value).length > 300
-            ? JSON.stringify(value).substring(0, 297) + '...'
-            : JSON.stringify(value);
+          const jsonStr = JSON.stringify(value);
+          summary = jsonStr.length > 300 ? jsonStr.substring(0, 297) + '...' : jsonStr;
         } else {
           summary = String(value);
         }
@@ -2194,7 +2193,7 @@ function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
     // Ако имаме още място, добавяме допълнителна информация
     if (contextEntries.length < maxEntries) {
       const additionalKeys = Object.keys(interpretationKnowledge)
-        .filter(k => !priorityKeys.includes(k))
+        .filter(k => !VISION_CONTEXT_PRIORITY_KEYS.includes(k))
         .slice(0, maxEntries - contextEntries.length);
 
       for (const key of additionalKeys) {
@@ -2203,10 +2202,11 @@ function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
 
         if (typeof value === 'string') {
           summary = value.length > 300 ? value.substring(0, 297) + '...' : value;
+        } else if (typeof value === 'object') {
+          const jsonStr = JSON.stringify(value);
+          summary = jsonStr.length > 300 ? jsonStr.substring(0, 297) + '...' : jsonStr;
         } else {
-          summary = typeof value === 'object'
-            ? JSON.stringify(value).substring(0, 297) + '...'
-            : String(value);
+          summary = String(value);
         }
 
         contextEntries.push({
