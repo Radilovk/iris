@@ -342,7 +342,7 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
 
   const finalReport = await retryWithBackoff(() => generateHolisticReport(
     userData, leftEyeAnalysisResult, rightEyeAnalysisResult,
-    interpretationKnowledge, remedyBase, config, apiKey, env
+    interpretationKnowledge, remedyBase, config, apiKey, env, irisMap
   ));
 
   return new Response(JSON.stringify(finalReport), {
@@ -564,6 +564,129 @@ async function fetchExternalInsights(keywordHints, env) {
 }
 
 /**
+ * Валидира и обогатява идентифицирани знаци с информация от diagnostic map
+ * @param {unknown[]} identifiedSigns - Знаци идентифицирани от AI
+ * @param {Object} irisMap - Iris diagnostic map от KV
+ * @returns {unknown[]} - Валидирани и обогатени знаци
+ */
+function validateAndEnrichSigns(identifiedSigns, irisMap) {
+  if (!Array.isArray(identifiedSigns) || !irisMap || typeof irisMap !== 'object') {
+    return identifiedSigns || [];
+  }
+
+  const enrichedSigns = [];
+  const allKnownSigns = collectAllSignsFromMap(irisMap);
+
+  for (const sign of identifiedSigns) {
+    if (!sign || typeof sign !== 'object') continue;
+
+    const enrichedSign = { ...sign };
+    const signName = (sign.sign_name || '').toLowerCase();
+
+    // Търсене на съвпадение в diagnostic map за допълнителна информация
+    let matchedMapSign = null;
+    for (const [mapKey, mapSign] of Object.entries(allKnownSigns)) {
+      if (!mapSign || !mapSign.name) continue;
+      const mapSignName = mapSign.name.toLowerCase();
+      
+      // Проверка за директно съвпадение или частично съвпадение
+      if (signName === mapSignName || 
+          signName.includes(mapKey.toLowerCase()) ||
+          mapSignName.includes(signName)) {
+        matchedMapSign = mapSign;
+        break;
+      }
+    }
+
+    if (matchedMapSign) {
+      // Обогатяване с информация от картата
+      if (matchedMapSign.type && !enrichedSign.sign_type) {
+        enrichedSign.sign_type = matchedMapSign.type;
+      }
+      if (matchedMapSign.remedy_link && !enrichedSign.remedy_link) {
+        enrichedSign.remedy_link = matchedMapSign.remedy_link;
+      }
+      if (matchedMapSign.source && !enrichedSign.scientific_source) {
+        enrichedSign.scientific_source = matchedMapSign.source;
+      }
+      
+      // Добавяне на допълнителен контекст за интерпретация
+      if (matchedMapSign.interpretation && !enrichedSign.map_interpretation) {
+        enrichedSign.map_interpretation = typeof matchedMapSign.interpretation === 'string' 
+          ? matchedMapSign.interpretation 
+          : JSON.stringify(matchedMapSign.interpretation);
+      }
+    }
+
+    // Валидация на зона (1-7)
+    const location = (sign.location || '').toLowerCase();
+    const zoneMatch = location.match(/зона\s*(\d+)/i);
+    if (zoneMatch) {
+      const zoneNum = parseInt(zoneMatch[1], 10);
+      if (zoneNum >= 1 && zoneNum <= 7) {
+        enrichedSign.validated_zone = zoneNum;
+        
+        // Добавяне на име на зоната от картата
+        if (irisMap.topography && Array.isArray(irisMap.topography.zones)) {
+          const zoneInfo = irisMap.topography.zones.find(z => z.zone === zoneNum);
+          if (zoneInfo) {
+            enrichedSign.zone_name = zoneInfo.name;
+            enrichedSign.zone_description = zoneInfo.description;
+          }
+        }
+      }
+    }
+
+    // Валидиране и обогатяване на интензитет
+    if (sign.intensity) {
+      const intensity = sign.intensity.toLowerCase();
+      if (intensity.includes('силен') || intensity.includes('high') || intensity.includes('severe')) {
+        enrichedSign.priority_level = 'high';
+      } else if (intensity.includes('умерен') || intensity.includes('moderate')) {
+        enrichedSign.priority_level = 'medium';
+      } else {
+        enrichedSign.priority_level = 'low';
+      }
+    }
+
+    enrichedSigns.push(enrichedSign);
+  }
+
+  return enrichedSigns;
+}
+
+/**
+ * Събира всички знаци от iris diagnostic map
+ * @param {Object} irisMap 
+ * @returns {Object} - Обект със знаци
+ */
+function collectAllSignsFromMap(irisMap) {
+  const allSigns = {};
+  
+  if (irisMap.signs && typeof irisMap.signs === 'object') {
+    for (const [key, value] of Object.entries(irisMap.signs)) {
+      if (value && typeof value === 'object') {
+        allSigns[key] = value;
+        
+        // Ако има подтипове (напр. lacunae_types)
+        if (Array.isArray(value.subtypes)) {
+          for (const subtype of value.subtypes) {
+            if (subtype && subtype.name) {
+              allSigns[key + '_' + slugify(subtype.name)] = {
+                ...subtype,
+                parent: key
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return allSigns;
+}
+
+/**
  * Обогатява потребителските данни с изчислени метрики за по-добра персонализация
  * @param {Record<string, unknown>} userData - Оригинални потребителски данни
  * @param {unknown[]} identifiedSigns - Идентифицирани знаци от двете очи
@@ -662,14 +785,107 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
     }
   }
 
+  // Анализ на типове знаци за по-добро насочване на RAG контекста
+  if (identifiedSigns && Array.isArray(identifiedSigns)) {
+    const signTypes = {
+      lacunae: 0,
+      rings: 0,
+      radii: 0,
+      pigments: 0,
+      toxic_rings: 0,
+      lymphatic: 0
+    };
+
+    const affectedZones = new Set();
+    const affectedOrgans = new Set();
+
+    for (const sign of identifiedSigns) {
+      if (!sign || typeof sign !== 'object') continue;
+
+      const signName = (sign.sign_name || '').toLowerCase();
+      const location = (sign.location || '').toLowerCase();
+
+      // Категоризиране на типове знаци
+      if (signName.includes('лакун') || signName.includes('lacun')) {
+        signTypes.lacunae++;
+      }
+      if (signName.includes('пръстен') || signName.includes('ring') || signName.includes('furrow')) {
+        signTypes.rings++;
+      }
+      if (signName.includes('радиар') || signName.includes('radii') || signName.includes('solaris')) {
+        signTypes.radii++;
+      }
+      if (signName.includes('пигмент') || signName.includes('pigment') || signName.includes('spot')) {
+        signTypes.pigments++;
+      }
+      if (signName.includes('scurf') || signName.includes('sodium') || signName.includes('arcus')) {
+        signTypes.toxic_rings++;
+      }
+      if (signName.includes('лимфн') || signName.includes('lymph') || signName.includes('розет')) {
+        signTypes.lymphatic++;
+      }
+
+      // Извличане на засегнати зони
+      const zoneMatch = location.match(/зона\s*(\d+)/i);
+      if (zoneMatch) {
+        affectedZones.add(parseInt(zoneMatch[1], 10));
+      }
+
+      // Извличане на органни проекции
+      const organKeywords = [
+        'черен дроб', 'liver', 'бъбрек', 'kidney', 'панкреас', 'pancreas',
+        'сърце', 'heart', 'бял дроб', 'lung', 'далак', 'spleen',
+        'щитовидна', 'thyroid', 'мозък', 'brain', 'черво', 'intestin'
+      ];
+
+      for (const organ of organKeywords) {
+        if (location.includes(organ)) {
+          affectedOrgans.add(organ);
+        }
+      }
+    }
+
+    enriched.iris_sign_analysis = {
+      sign_types: signTypes,
+      total_unique_zones_affected: affectedZones.size,
+      affected_zones: Array.from(affectedZones).sort(),
+      total_organs_implicated: affectedOrgans.size,
+      affected_organs: Array.from(affectedOrgans)
+    };
+
+    // Приоритизиране на системи за подкрепа базирано на находките
+    const systemPriorities = [];
+
+    if (signTypes.toxic_rings > 0 || affectedZones.has(7)) {
+      systemPriorities.push('detoxification_priority');
+    }
+    if (signTypes.lacunae > 2) {
+      systemPriorities.push('organ_support_priority');
+    }
+    if (signTypes.rings > 3) {
+      systemPriorities.push('nervous_system_priority');
+    }
+    if (signTypes.lymphatic > 0 || affectedZones.has(6)) {
+      systemPriorities.push('lymphatic_drainage_priority');
+    }
+    if (affectedZones.has(1) || affectedZones.has(2)) {
+      systemPriorities.push('digestive_health_priority');
+    }
+
+    enriched.iris_system_priorities = systemPriorities;
+  }
+
   return enriched;
 }
 
-async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env) {
-  const identifiedSigns = [
+async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
+  const rawIdentifiedSigns = [
     ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
     ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
   ];
+
+  // Валидация и обогатяване на знаците с информация от diagnostic map
+  const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
 
   const keywordSet = buildKeywordSet(identifiedSigns, userData);
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
