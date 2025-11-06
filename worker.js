@@ -59,6 +59,24 @@ class RateLimitError extends Error {
   }
 }
 
+// --- Type Definitions ---
+
+/**
+ * @typedef {Object} IrisSign
+ * @property {string} [sign_name] - Име на знака
+ * @property {string} [location] - Локация на знака
+ * @property {string} [intensity] - Интензитет на знака
+ * @property {string} [description] - Описание на знака
+ * @property {string} [sign_type] - Тип на знака
+ * @property {string} [remedy_link] - Линк към препоръка
+ * @property {string} [scientific_source] - Научен източник
+ * @property {string} [map_interpretation] - Интерпретация от картата
+ * @property {number} [validated_zone] - Валидирана зона (1-7)
+ * @property {string} [zone_name] - Име на зоната
+ * @property {string} [zone_description] - Описание на зоната
+ * @property {string} [priority_level] - Ниво на приоритет (high/medium/low)
+ */
+
 // --- Помощна функция за retry с експоненциално backoff ---
 
 /**
@@ -565,9 +583,9 @@ async function fetchExternalInsights(keywordHints, env) {
 
 /**
  * Валидира и обогатява идентифицирани знаци с информация от diagnostic map
- * @param {unknown[]} identifiedSigns - Знаци идентифицирани от AI
+ * @param {IrisSign[]} identifiedSigns - Знаци идентифицирани от AI
  * @param {Object} irisMap - Iris diagnostic map от KV
- * @returns {unknown[]} - Валидирани и обогатени знаци
+ * @returns {IrisSign[]} - Валидирани и обогатени знаци
  */
 function validateAndEnrichSigns(identifiedSigns, irisMap) {
   if (!Array.isArray(identifiedSigns) || !irisMap || typeof irisMap !== 'object') {
@@ -581,7 +599,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     if (!sign || typeof sign !== 'object') continue;
 
     const enrichedSign = { ...sign };
-    const signName = (sign.sign_name || '').toLowerCase();
+    const signName = (/** @type {IrisSign} */ (sign).sign_name || '').toLowerCase();
 
     // Търсене на съвпадение в diagnostic map за допълнителна информация
     let matchedMapSign = null;
@@ -619,7 +637,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     }
 
     // Валидация на зона (1-7)
-    const location = (sign.location || '').toLowerCase();
+    const location = (/** @type {IrisSign} */ (sign).location || '').toLowerCase();
     const zoneMatch = location.match(/зона\s*(\d+)/i);
     if (zoneMatch) {
       const zoneNum = parseInt(zoneMatch[1], 10);
@@ -638,8 +656,8 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     }
 
     // Валидиране и обогатяване на интензитет
-    if (sign.intensity) {
-      const intensity = sign.intensity.toLowerCase();
+    if (/** @type {IrisSign} */ (sign).intensity) {
+      const intensity = /** @type {IrisSign} */ (sign).intensity.toLowerCase();
       if (intensity.includes('силен') || intensity.includes('high') || intensity.includes('severe')) {
         enrichedSign.priority_level = 'high';
       } else if (intensity.includes('умерен') || intensity.includes('moderate')) {
@@ -689,7 +707,7 @@ function collectAllSignsFromMap(irisMap) {
 /**
  * Обогатява потребителските данни с изчислени метрики за по-добра персонализация
  * @param {Record<string, unknown>} userData - Оригинални потребителски данни
- * @param {unknown[]} identifiedSigns - Идентифицирани знаци от двете очи
+ * @param {IrisSign[]} identifiedSigns - Идентифицирани знаци от двете очи
  * @returns {Record<string, unknown>} - Обогатени данни
  */
 function enrichUserDataWithMetrics(userData, identifiedSigns) {
@@ -802,8 +820,8 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
     for (const sign of identifiedSigns) {
       if (!sign || typeof sign !== 'object') continue;
 
-      const signName = (sign.sign_name || '').toLowerCase();
-      const location = (sign.location || '').toLowerCase();
+      const signName = (/** @type {IrisSign} */ (sign).sign_name || '').toLowerCase();
+      const location = (/** @type {IrisSign} */ (sign).location || '').toLowerCase();
 
       // Категоризиране на типове знаци
       if (signName.includes('лакун') || signName.includes('lacun')) {
