@@ -640,7 +640,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     if (!sign || typeof sign !== 'object') continue;
 
     const enrichedSign = { ...sign };
-    const signName = /** @type {IrisSign} */ (sign.sign_name || '').toLowerCase();
+    const signName = /** @type {string} */ (sign.sign_name || '').toLowerCase();
 
     // Търсене на съвпадение в diagnostic map за допълнителна информация
     let matchedMapSign = null;
@@ -677,7 +677,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     }
 
     // Валидация на зона (1-7)
-    const location = /** @type {IrisSign} */ (sign.location || '').toLowerCase();
+    const location = /** @type {string} */ (sign.location || '').toLowerCase();
     const zoneMatch = location.match(/зона\s*(\d+)/i);
     if (zoneMatch) {
       const zoneNum = parseInt(zoneMatch[1], 10);
@@ -696,8 +696,8 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     }
 
     // Валидиране и обогатяване на интензитет
-    if (/** @type {IrisSign} */ (sign).intensity) {
-      const intensity = /** @type {IrisSign} */ (sign).intensity.toLowerCase();
+    if (sign.intensity) {
+      const intensity = /** @type {string} */ (sign.intensity).toLowerCase();
       if (intensity.includes('силен') || intensity.includes('high') || intensity.includes('severe')) {
         enrichedSign.priority_level = 'high';
       } else if (intensity.includes('умерен') || intensity.includes('moderate')) {
@@ -863,8 +863,8 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
     for (const sign of identifiedSigns) {
       if (!sign || typeof sign !== 'object') continue;
 
-      const signName = /** @type {IrisSign} */ (sign.sign_name || '').toLowerCase();
-      const location = /** @type {IrisSign} */ (sign.location || '').toLowerCase();
+      const signName = /** @type {string} */ (sign.sign_name || '').toLowerCase();
+      const location = /** @type {string} */ (sign.location || '').toLowerCase();
 
       // Категоризиране на типове знаци
       if (signName.includes('лакун') || signName.includes('lacun')) {
