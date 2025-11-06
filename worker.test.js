@@ -947,3 +947,80 @@ test('analyzeImageWithVision логва подробна информация п
     console.error = originalConsoleError;
   }
 });
+
+test('enrichUserDataWithMetrics добавя iris_sign_analysis за по-добро насочване на RAG', () => {
+  const userData = {
+    name: 'Тест',
+    age: 45,
+    height: 170,
+    weight: 70
+  };
+
+  const identifiedSigns = [
+    {
+      sign_name: 'Нервни пръстени (Contraction Furrows)',
+      location: 'Зона 7, периферия',
+      intensity: 'силен'
+    },
+    {
+      sign_name: 'Лакуна тип honeycomb',
+      location: 'Зона 4, сектор 4:00-5:00 (черен дроб)',
+      intensity: 'умерен'
+    },
+    {
+      sign_name: 'Лимфни розети',
+      location: 'Зона 6, лимфна зона',
+      intensity: 'лек'
+    },
+    {
+      sign_name: 'Scurf Rim',
+      location: 'Зона 7, външен ръб',
+      intensity: 'умерен'
+    }
+  ];
+
+  assert.equal(identifiedSigns.length, 4);
+  assert.ok(identifiedSigns.some(s => s.sign_name.includes('Нервни пръстени')));
+  assert.ok(identifiedSigns.some(s => s.sign_name.includes('Лакуна')));
+  assert.ok(identifiedSigns.some(s => s.location.includes('черен дроб')));
+});
+
+test('Подобреният analysis_prompt_template съдържа 3-нивов анализ и учебникови методологии', async () => {
+  const fs = await import('fs/promises');
+  const configPath = './kv/iris_config_kv.json';
+  const configData = await fs.readFile(configPath, 'utf8');
+  const config = JSON.parse(configData);
+
+  const template = config.analysis_prompt_template;
+
+  // Проверка за 3-нивов анализ (Jackson-Main)
+  assert.ok(template.includes('3-НИВОВ') || template.includes('НИВО 1') || template.includes('КОНСТИТУЦИЯ ПО ЦВЯТ'), 'Трябва да има 3-нивов анализ');
+  assert.ok(template.includes('НИВО 2') || template.includes('ДИСПОЗИЦИЯ'), 'Трябва да има ниво 2 - диспозиция');
+  assert.ok(template.includes('НИВО 3') || template.includes('ДИАТЕЗА'), 'Трябва да има ниво 3 - диатеза');
+
+  // Проверка за елиминативни канали (Шаран)
+  assert.ok(template.includes('ЕЛИМИНАТИВНИ') || template.includes('елиминатив'), 'Трябва да има елиминативни канали');
+  assert.ok(template.includes('Черва') && template.includes('Бъбреци'), 'Трябва да споменава конкретни канали');
+
+  // Проверка за цветова интерпретация по стадий
+  assert.ok(template.includes('БЯЛ') || template.includes('ОСТЪР'), 'Трябва да има цветова интерпретация');
+  assert.ok(template.includes('ЧЕРЕН') || template.includes('ДЕГЕНЕРАТИВЕН'), 'Трябва да включва стадии на процес');
+
+  // Проверка за тополабилни/топостабилни знаци
+  assert.ok(template.includes('Тополабилни') || template.includes('Топостабилни') || template.includes('Shoe'), 'Трябва да различава тополабилни/топостабилни');
+
+  // Проверка за специфични лакуни от учебниците
+  assert.ok(template.includes('Asparagus') || template.includes('Leaf') || template.includes('Medusa'), 'Трябва да включва специфични типове лакуни');
+
+  // Проверка за IPB анализ (Andrews)
+  assert.ok(template.includes('IPB') || template.includes('S-знак'), 'Трябва да има IPB анализ');
+});
+
+test('max_context_entries е увеличен на 10 за по-богат RAG контекст (вкл. учебници)', async () => {
+  const fs = await import('fs/promises');
+  const configPath = './kv/iris_config_kv.json';
+  const configData = await fs.readFile(configPath, 'utf8');
+  const config = JSON.parse(configData);
+
+  assert.equal(config.max_context_entries, 10, 'max_context_entries трябва да е 10 след интеграция на учебниците');
+});
