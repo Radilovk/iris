@@ -1357,3 +1357,135 @@ test('generateMultiQueryReport извършва 4 фокусирани AI зая
     global.fetch = originalFetch;
   }
 });
+
+test('calculateKnowledgeSourceMetrics изчислява правилно разпределението на източници', () => {
+  const { calculateKnowledgeSourceMetrics } = __testables__;
+
+  const filteredKnowledge = {
+    lacunae_interpretation: { description: 'Информация за лакуни' },
+    nerve_rings: { description: 'Информация за нервни пръстени' },
+    elimination_channels: { description: 'Елиминативни канали' }
+  };
+
+  const relevantRemedyBase = {
+    detoxification: { protocol: 'Детокс протокол' },
+    herbs: { list: ['Билка 1', 'Билка 2'] }
+  };
+
+  const webInsights = [
+    { title: 'Източник 1', snippet: 'Информация 1', url: 'http://example.com/1' },
+    { title: 'Източник 2', snippet: 'Информация 2', url: 'http://example.com/2' }
+  ];
+
+  const metrics = calculateKnowledgeSourceMetrics(
+    filteredKnowledge,
+    relevantRemedyBase,
+    webInsights,
+    7,
+    true
+  );
+
+  assert.ok(metrics.sources_used, 'Метриките съдържат информация за използвани източници');
+  assert.ok(metrics.sources_used.rag_memory, 'Съдържа информация за RAG памет');
+  assert.ok(metrics.sources_used.remedy_base, 'Съдържа информация за база с препоръки');
+  assert.ok(metrics.sources_used.internet_search, 'Съдържа информация за интернет търсене');
+  assert.ok(metrics.sources_used.llm_knowledge, 'Съдържа информация за LLM знания');
+
+  assert.equal(metrics.sources_used.rag_memory.used, true, 'RAG памет е използвана');
+  assert.equal(metrics.sources_used.rag_memory.entries_count, 3, 'RAG има 3 записа');
+
+  assert.equal(metrics.sources_used.remedy_base.used, true, 'Remedy base е използвана');
+  assert.equal(metrics.sources_used.remedy_base.entries_count, 2, 'Remedy base има 2 записа');
+
+  assert.equal(metrics.sources_used.internet_search.used, true, 'Интернет търсене е използвано');
+  assert.equal(metrics.sources_used.internet_search.enabled, true, 'Интернет търсене е активирано');
+  assert.equal(metrics.sources_used.internet_search.entries_count, 2, 'Интернет търсене има 2 записа');
+
+  assert.equal(metrics.sources_used.llm_knowledge.used, true, 'LLM знания винаги са използвани');
+  assert.equal(metrics.sources_used.llm_knowledge.percentage, 25, 'LLM добавя 25% синтеза');
+
+  assert.ok(metrics.analysis_flow, 'Съдържа информация за последователността на анализа');
+  assert.ok(Array.isArray(metrics.analysis_flow.sequence), 'Последователността е масив от стъпки');
+  assert.equal(metrics.analysis_flow.sequence.length, 5, 'Има 5 стъпки в анализа');
+  assert.equal(metrics.analysis_flow.logic_validation.is_correct, true, 'Логиката е валидна');
+
+  assert.ok(metrics.percentage_breakdown, 'Съдържа процентно разпределение');
+  assert.ok(metrics.percentage_breakdown.rag_memory, 'Има процент за RAG памет');
+  assert.ok(metrics.percentage_breakdown.remedy_base, 'Има процент за база с препоръки');
+  assert.ok(metrics.percentage_breakdown.internet_search, 'Има процент за интернет търсене');
+  assert.ok(metrics.percentage_breakdown.llm_knowledge, 'Има процент за LLM знания');
+});
+
+test('calculateKnowledgeSourceMetrics работи правилно без интернет търсене', () => {
+  const { calculateKnowledgeSourceMetrics } = __testables__;
+
+  const filteredKnowledge = {
+    lacunae: { info: 'Информация' }
+  };
+
+  const relevantRemedyBase = {
+    herbs: { list: [] }
+  };
+
+  const metrics = calculateKnowledgeSourceMetrics(
+    filteredKnowledge,
+    relevantRemedyBase,
+    [],
+    2,
+    false
+  );
+
+  assert.equal(metrics.sources_used.internet_search.used, false, 'Интернет търсене не е използвано');
+  assert.equal(metrics.sources_used.internet_search.enabled, false, 'Интернет търсене не е активирано');
+  assert.equal(metrics.sources_used.internet_search.entries_count, 0, 'Няма записи от интернет търсене');
+  assert.equal(metrics.sources_used.internet_search.percentage, 0, 'Интернет търсене е 0%');
+
+  assert.ok(metrics.sources_used.rag_memory.percentage > 0, 'RAG памет има процент > 0');
+  assert.ok(metrics.sources_used.llm_knowledge.used, 'LLM знания все още са използвани');
+});
+
+test('generateAnalyticsMetrics включва метрики за източници на знания', () => {
+  const { generateAnalyticsMetrics } = __testables__;
+
+  const leftEye = {
+    constitutional_analysis: { level_1_constitution_color: 'Хематогенна' }
+  };
+
+  const rightEye = {
+    constitutional_analysis: { level_1_constitution_color: 'Лимфатична' }
+  };
+
+  const enrichedSigns = [
+    { sign_name: 'Лакуна', validated_zone: 3, priority_level: 'high' }
+  ];
+
+  const rawSigns = [
+    { sign_name: 'Лакуна' }
+  ];
+
+  const userData = {
+    name: 'Тест',
+    age: 45
+  };
+
+  const sourceMetrics = {
+    sources_used: {
+      rag_memory: { used: true, percentage: 50 },
+      llm_knowledge: { used: true, percentage: 25 }
+    }
+  };
+
+  const analytics = generateAnalyticsMetrics(
+    leftEye,
+    rightEye,
+    enrichedSigns,
+    rawSigns,
+    userData,
+    sourceMetrics
+  );
+
+  assert.ok(analytics.knowledge_sources, 'Аналитиката включва метрики за източници на знания');
+  assert.ok(analytics.knowledge_sources.sources_used, 'Съдържа информация за използвани източници');
+  assert.ok(analytics.knowledge_sources.sources_used.rag_memory, 'Съдържа RAG метрики');
+  assert.ok(analytics.knowledge_sources.sources_used.llm_knowledge, 'Съдържа LLM метрики');
+});
