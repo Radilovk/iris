@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function populateProviderOptions(selected) {
     providerSelect.innerHTML = '';
     const providers = Object.keys(MODEL_OPTIONS);
-    providers.forEach(p => {
+    providers.forEach((p) => {
       const opt = document.createElement('option');
       opt.value = p;
       opt.textContent = p;
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function populateModelOptions(provider, selected) {
     modelSelect.innerHTML = '';
     const models = MODEL_OPTIONS[provider] || [];
-    models.forEach(m => {
+    models.forEach((m) => {
       const opt = document.createElement('option');
       opt.value = m;
       opt.textContent = m;
@@ -48,11 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
     modelSelect.value = selected && models.includes(selected) ? selected : models[0] || '';
   }
 
-  function showLoading() { loadingEl.style.display = 'flex'; }
-  function hideLoading() { loadingEl.style.display = 'none'; }
+  function showLoading() {
+    loadingEl.style.display = 'flex';
+  }
+  function hideLoading() {
+    loadingEl.style.display = 'none';
+  }
   function showMessage(msg, type = 'info') {
     messageBox.textContent = msg;
-    messageBox.className = type === 'error' ? 'error-box' : (type === 'success' ? 'success-box' : 'info-box');
+    messageBox.className = type === 'error' ? 'error-box' : type === 'success' ? 'success-box' : 'info-box';
     setTimeout(() => {
       if (messageBox.textContent === msg) {
         messageBox.textContent = '';
@@ -103,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
       MODEL_OPTIONS = modelsJson;
       updateUIFromConfig(currentConfig);
       showMessage('Списъкът с модели е запазен успешно!', 'success');
-
     } catch (err) {
       showMessage('Грешка при запис на списъка с модели: ' + err.message, 'error');
     } finally {
@@ -117,12 +120,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
-      const configs = data.keys
-        .filter(k => k.name.startsWith('CONFIG:'))
-        .map(k => k.name.slice(7));
+      const configs = data.keys.filter((k) => k.name.startsWith('CONFIG:')).map((k) => k.name.slice(7));
 
       configSelect.innerHTML = '<option value="">-- Избери конфигурация --</option>';
-      configs.forEach(name => {
+      configs.forEach((name) => {
         const opt = document.createElement('option');
         opt.value = name;
         opt.textContent = name;
@@ -197,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${WORKER_BASE_URL}/admin/keys`);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      const keys = data.keys.map(k => k.name);
+      const keys = data.keys.map((k) => k.name);
       viewer.textContent = JSON.stringify(keys, null, 2);
     } catch (err) {
       showMessage('Грешка при извличане на KV данните: ' + err.message, 'error');

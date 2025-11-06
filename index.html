@@ -1,630 +1,718 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iris-Holistica AI | Вашият Био-индивидуален Анализ</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Iris-Holistica AI използва напреднал AI анализ на ирисовите изображения за персонализирани здравни препоръки. Открийте вашата уникална конституция и получете индивидуален план.">
-    <meta name="keywords" content="иридология, AI анализ, холистично здраве, персонализирана медицина, ирис анализ, биоиндивидуален подход">
-    <meta name="author" content="Iris-Holistica AI">
-    <meta name="robots" content="index, follow">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://radilovk.github.io/iris/">
-    <meta property="og:title" content="Iris-Holistica AI | Вашият Био-индивидуален Анализ">
-    <meta property="og:description" content="Персонализиран AI анализ на ирисови изображения за холистични здравни препоръки.">
-    <meta property="og:image" content="https://radilovk.github.io/iris/res/iris-biometrics.jpg">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://radilovk.github.io/iris/">
-    <meta property="twitter:title" content="Iris-Holistica AI | Вашият Био-индивидуален Анализ">
-    <meta property="twitter:description" content="Персонализиран AI анализ на ирисови изображения за холистични здравни препоръки.">
-    <meta property="twitter:image" content="https://radilovk.github.io/iris/res/iris-biometrics.jpg">
-    
-    <!-- Fonts and Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Iris-Holistica AI | Вашият Био-индивидуален Анализ</title>
 
-    <style>
-        /* --- General Setup & Variables --- */
-        :root {
-            --primary-color: #3a7bd5;
-            --secondary-color: #3aaced;
-            --text-color: #333;
-            --text-light: #666;
-            --bg-color: #f4f7f6;
-            --card-bg: rgba(255, 255, 255, 0.5);
-            --white: #ffffff;
-            --border-color: rgba(255, 255, 255, 0.3);
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
-            --gradient: linear-gradient(120deg, var(--primary-color), var(--secondary-color));
-        }
+        <!-- SEO Meta Tags -->
+        <meta
+            name="description"
+            content="Iris-Holistica AI използва напреднал AI анализ на ирисовите изображения за персонализирани здравни препоръки. Открийте вашата уникална конституция и получете индивидуален план."
+        />
+        <meta
+            name="keywords"
+            content="иридология, AI анализ, холистично здраве, персонализирана медицина, ирис анализ, биоиндивидуален подход"
+        />
+        <meta name="author" content="Iris-Holistica AI" />
+        <meta name="robots" content="index, follow" />
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            scroll-behavior: smooth;
-        }
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://radilovk.github.io/iris/" />
+        <meta property="og:title" content="Iris-Holistica AI | Вашият Био-индивидуален Анализ" />
+        <meta
+            property="og:description"
+            content="Персонализиран AI анализ на ирисови изображения за холистични здравни препоръки."
+        />
+        <meta
+            property="og:image"
+            content="https://radilovk.github.io/iris/res/iris-biometrics.jpg"
+        />
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://radilovk.github.io/iris/" />
+        <meta
+            property="twitter:title"
+            content="Iris-Holistica AI | Вашият Био-индивидуален Анализ"
+        />
+        <meta
+            property="twitter:description"
+            content="Персонализиран AI анализ на ирисови изображения за холистични здравни препоръки."
+        />
+        <meta
+            property="twitter:image"
+            content="https://radilovk.github.io/iris/res/iris-biometrics.jpg"
+        />
 
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+        <!-- Fonts and Icons -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        />
 
-        /* --- Animations --- */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-        }
+        <style>
+            /* --- General Setup & Variables --- */
+            :root {
+                --primary-color: #3a7bd5;
+                --secondary-color: #3aaced;
+                --text-color: #333;
+                --text-light: #666;
+                --bg-color: #f4f7f6;
+                --card-bg: rgba(255, 255, 255, 0.5);
+                --white: #ffffff;
+                --border-color: rgba(255, 255, 255, 0.3);
+                --shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+                --gradient: linear-gradient(120deg, var(--primary-color), var(--secondary-color));
+            }
 
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                scroll-behavior: smooth;
+            }
 
-        /* --- Hero Section --- */
-        .hero {
-            position: relative;
-            height: 100vh;
-            min-height: 700px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: var(--white);
-            overflow: hidden;
-        }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-color);
+                line-height: 1.7;
+                overflow-x: hidden;
+            }
 
-        /* --- MODIFIED HERO BACKGROUND --- */
-        .hero-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* The new image is set as the background, with a semi-transparent gradient on top for text readability */
-            background: linear-gradient(120deg, rgba(58, 123, 213, 0.7), rgba(58, 172, 237, 0.7)), url('https://radilovk.github.io/iris/res/iris-biometrics.jpg');
-            background-size: cover;
-            background-position: center;
-            z-index: -1;
-        }
-        /* The old ::after pseudo-element is no longer needed */
-        
+            .container {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
 
-        .hero-content {
-            max-width: 800px;
-            padding: 20px;
-        }
+            /* --- Animations --- */
+            .fade-in {
+                opacity: 0;
+                transform: translateY(30px);
+                transition:
+                    opacity 0.8s ease-out,
+                    transform 0.8s ease-out;
+            }
 
-        .hero h1 {
-            font-size: 2.8rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            line-height: 1.2;
-            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
+            .fade-in.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
 
-        .hero p {
-            font-size: 1.2rem;
-            font-weight: 300;
-            margin-bottom: 40px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
+            /* --- Hero Section --- */
+            .hero {
+                position: relative;
+                height: 100vh;
+                min-height: 700px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                color: var(--white);
+                overflow: hidden;
+            }
 
-        .cta-button {
-            display: inline-block;
-            background: var(--white);
-            color: var(--primary-color);
-            padding: 15px 35px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 1rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
+            /* --- MODIFIED HERO BACKGROUND --- */
+            .hero-bg {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                /* The new image is set as the background, with a semi-transparent gradient on top for text readability */
+                background:
+                    linear-gradient(120deg, rgba(58, 123, 213, 0.7), rgba(58, 172, 237, 0.7)),
+                    url('https://radilovk.github.io/iris/res/iris-biometrics.jpg');
+                background-size: cover;
+                background-position: center;
+                z-index: -1;
+            }
+            /* The old ::after pseudo-element is no longer needed */
 
-        .cta-button:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 25px rgba(0,0,0,0.15);
-        }
-        
-        .scroll-down {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--white);
-            font-size: 1.5rem;
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
-            40% { transform: translate(-50%, -15px); }
-            60% { transform: translate(-50%, -5px); }
-        }
+            .hero-content {
+                max-width: 800px;
+                padding: 20px;
+            }
 
-        /* --- Section Styling --- */
-        .section {
-            padding: 80px 0;
-        }
-        
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-header h2 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            position: relative;
-            display: inline-block;
-        }
-        
-        .section-header h2::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: var(--gradient);
-            border-radius: 2px;
-        }
-
-        .section-header p {
-            font-size: 1.1rem;
-            color: var(--text-light);
-            max-width: 700px;
-            margin: 20px auto 0;
-        }
-
-        /* --- Problem Section --- */
-        .problem-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .problem-item {
-            background: var(--white);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            transition: transform 0.3s ease;
-        }
-        
-        .problem-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .problem-item i {
-            font-size: 1.5rem;
-            color: #ff6b6b; /* Reddish for problem */
-            background-color: #ff6b6b22;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-        }
-        
-        .problem-item h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        /* --- Solution Section (Glassmorphism) --- */
-        .solution-section {
-            background: var(--gradient);
-            color: var(--white);
-        }
-        
-        .solution-section .section-header h2, .solution-section .section-header p {
-            color: var(--white);
-        }
-        
-        .solution-section .section-header h2::after {
-            background: var(--white);
-        }
-
-        .solution-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .solution-card {
-            background: var(--white);
-            border: 1px solid rgba(58, 123, 213, 0.2);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
-            text-align: center;
-        }
-
-        .solution-card i {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            display: block;
-            color: var(--primary-color);
-        }
-
-        .solution-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: var(--text-color);
-        }
-
-        .solution-card p {
-            font-weight: 300;
-            color: var(--text-light);
-        }
-
-        /* --- Benefits Section --- */
-        .benefits-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-        }
-
-        .benefit-card {
-            background: var(--white);
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .benefit-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .benefit-icon {
-            padding: 40px;
-            text-align: center;
-            background: var(--gradient);
-            color: var(--white);
-        }
-
-        .benefit-icon i {
-            font-size: 3.5rem;
-        }
-
-        .benefit-content {
-            padding: 30px;
-        }
-
-        .benefit-content h3 {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            font-weight: 700;
-        }
-
-        .benefit-content p {
-            color: var(--text-light);
-        }
-        
-        /* --- How It Works Section --- */
-        .how-it-works-steps {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 40px;
-            position: relative;
-        }
-        
-        .step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            max-width: 300px;
-        }
-
-        .step-number {
-            width: 70px;
-            height: 70px;
-            background: var(--gradient);
-            color: var(--white);
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            border: 4px solid var(--white);
-            box-shadow: 0 0 0 4px var(--secondary-color);
-        }
-        
-        .step h3 {
-            font-size: 1.3rem;
-            margin-bottom: 10px;
-        }
-        
-        .step p {
-            color: var(--text-light);
-        }
-        
-        /* --- Footer --- */
-        footer {
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            padding: 60px 0 20px;
-            text-align: center;
-        }
-        
-        footer .cta-button {
-            background: var(--gradient);
-            color: var(--white);
-            box-shadow: none;
-        }
-
-        footer h3 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
-        
-        footer p {
-            max-width: 600px;
-            margin: 0 auto 40px;
-            color: #bdc3c7;
-        }
-
-        .copyright {
-            margin-top: 60px;
-            font-size: 0.9rem;
-            color: #7f8c8d;
-        }
-
-        /* --- Media Queries for larger screens --- */
-        @media (min-width: 768px) {
             .hero h1 {
-                font-size: 4rem;
+                font-size: 2.8rem;
+                font-weight: 800;
+                margin-bottom: 20px;
+                line-height: 1.2;
+                text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             }
 
             .hero p {
-                font-size: 1.3rem;
+                font-size: 1.2rem;
+                font-weight: 300;
+                margin-bottom: 40px;
+                max-width: 600px;
+                margin-left: auto;
+                margin-right: auto;
             }
-            
+
+            .cta-button {
+                display: inline-block;
+                background: var(--white);
+                color: var(--primary-color);
+                padding: 15px 35px;
+                border-radius: 50px;
+                text-decoration: none;
+                font-weight: 700;
+                font-size: 1rem;
+                transition:
+                    transform 0.3s ease,
+                    box-shadow 0.3s ease;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            }
+
+            .cta-button:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
+            }
+
+            .scroll-down {
+                position: absolute;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: var(--white);
+                font-size: 1.5rem;
+                animation: bounce 2s infinite;
+            }
+
+            @keyframes bounce {
+                0%,
+                20%,
+                50%,
+                80%,
+                100% {
+                    transform: translate(-50%, 0);
+                }
+                40% {
+                    transform: translate(-50%, -15px);
+                }
+                60% {
+                    transform: translate(-50%, -5px);
+                }
+            }
+
+            /* --- Section Styling --- */
+            .section {
+                padding: 80px 0;
+            }
+
+            .section-header {
+                text-align: center;
+                margin-bottom: 60px;
+            }
+
             .section-header h2 {
-                font-size: 2.8rem;
+                font-size: 2.2rem;
+                font-weight: 700;
+                margin-bottom: 10px;
+                position: relative;
+                display: inline-block;
+            }
+
+            .section-header h2::after {
+                content: '';
+                position: absolute;
+                bottom: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 60px;
+                height: 3px;
+                background: var(--gradient);
+                border-radius: 2px;
+            }
+
+            .section-header p {
+                font-size: 1.1rem;
+                color: var(--text-light);
+                max-width: 700px;
+                margin: 20px auto 0;
+            }
+
+            /* --- Problem Section --- */
+            .problem-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 20px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .problem-item {
+                background: var(--white);
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: var(--shadow);
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                transition: transform 0.3s ease;
+            }
+
+            .problem-item:hover {
+                transform: translateY(-5px);
+            }
+
+            .problem-item i {
+                font-size: 1.5rem;
+                color: #ff6b6b; /* Reddish for problem */
+                background-color: #ff6b6b22;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+            }
+
+            .problem-item h3 {
+                font-size: 1.1rem;
+                font-weight: 600;
+                margin: 0;
+            }
+
+            /* --- Solution Section (Glassmorphism) --- */
+            .solution-section {
+                background: var(--gradient);
+                color: var(--white);
+            }
+
+            .solution-section .section-header h2,
+            .solution-section .section-header p {
+                color: var(--white);
+            }
+
+            .solution-section .section-header h2::after {
+                background: var(--white);
             }
 
             .solution-grid {
-                grid-template-columns: repeat(2, 1fr);
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 30px;
+                margin-top: 40px;
             }
-            
+
+            .solution-card {
+                background: var(--white);
+                border: 1px solid rgba(58, 123, 213, 0.2);
+                border-radius: 20px;
+                padding: 30px;
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+                text-align: center;
+            }
+
+            .solution-card i {
+                font-size: 3rem;
+                margin-bottom: 20px;
+                display: block;
+                color: var(--primary-color);
+            }
+
+            .solution-card h3 {
+                font-size: 1.5rem;
+                margin-bottom: 10px;
+                color: var(--text-color);
+            }
+
+            .solution-card p {
+                font-weight: 300;
+                color: var(--text-light);
+            }
+
+            /* --- Benefits Section --- */
             .benefits-grid {
-                grid-template-columns: repeat(3, 1fr);
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 30px;
             }
-            
+
+            .benefit-card {
+                background: var(--white);
+                border-radius: 15px;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+                transition:
+                    transform 0.3s ease,
+                    box-shadow 0.3s ease;
+            }
+
+            .benefit-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            }
+
+            .benefit-icon {
+                padding: 40px;
+                text-align: center;
+                background: var(--gradient);
+                color: var(--white);
+            }
+
+            .benefit-icon i {
+                font-size: 3.5rem;
+            }
+
+            .benefit-content {
+                padding: 30px;
+            }
+
+            .benefit-content h3 {
+                font-size: 1.4rem;
+                margin-bottom: 15px;
+                font-weight: 700;
+            }
+
+            .benefit-content p {
+                color: var(--text-light);
+            }
+
+            /* --- How It Works Section --- */
             .how-it-works-steps {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: flex-start;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 40px;
+                position: relative;
             }
-            
-            .how-it-works-steps::before {
-                content: '';
-                position: absolute;
-                top: 35px;
-                left: 10%;
-                width: 80%;
-                height: 2px;
-                background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-                opacity: 0.3;
-                z-index: -1;
+
+            .step {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                max-width: 300px;
             }
-        }
-        
-        @media (min-width: 1024px) {
-            .problem-grid {
-                grid-template-columns: repeat(2, 1fr);
+
+            .step-number {
+                width: 70px;
+                height: 70px;
+                background: var(--gradient);
+                color: var(--white);
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                font-size: 2rem;
+                font-weight: 700;
+                margin-bottom: 20px;
+                border: 4px solid var(--white);
+                box-shadow: 0 0 0 4px var(--secondary-color);
             }
-        }
 
-    </style>
-</head>
-<body>
+            .step h3 {
+                font-size: 1.3rem;
+                margin-bottom: 10px;
+            }
 
-    <!-- HERO SECTION -->
-    <header class="hero" role="banner">
-        <div class="hero-bg" role="presentation"></div>
-        <div class="container hero-content">
-            <h1 class="fade-in">IRIS-AI биоскенер</h1>
-            <p class="fade-in" style="transition-delay: 0.2s;">
-                Iris-AI анализира очите ви, за да създаде Вашият специализиран план.
-            </p>
-            <a href="analysis.html" class="cta-button fade-in" style="transition-delay: 0.4s;" aria-label="Стартирай AI анализ на ирисови изображения">Стартирай анализ <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-        </div>
-        <a href="#problem-section" class="scroll-down" aria-label="Превъртете надолу за повече информация">
-             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-        </a>
-    </header>
+            .step p {
+                color: var(--text-light);
+            }
 
-    <main role="main">
+            /* --- Footer --- */
+            footer {
+                background-color: #2c3e50;
+                color: #ecf0f1;
+                padding: 60px 0 20px;
+                text-align: center;
+            }
 
-        <!-- PROBLEM SECTION -->
-        <section id="problem-section" class="section">
-            <div class="container">
-                <div class="section-header fade-in">
-                    <h2>Универсалните съвети не работят.</h2>
-                    <p>Здравето изисква персонален подход. Масовите принципи не вземат предвид вашата индивидуална генетика.</p>
+            footer .cta-button {
+                background: var(--gradient);
+                color: var(--white);
+                box-shadow: none;
+            }
+
+            footer h3 {
+                font-size: 2rem;
+                font-weight: 700;
+                margin-bottom: 20px;
+            }
+
+            footer p {
+                max-width: 600px;
+                margin: 0 auto 40px;
+                color: #bdc3c7;
+            }
+
+            .copyright {
+                margin-top: 60px;
+                font-size: 0.9rem;
+                color: #7f8c8d;
+            }
+
+            /* --- Media Queries for larger screens --- */
+            @media (min-width: 768px) {
+                .hero h1 {
+                    font-size: 4rem;
+                }
+
+                .hero p {
+                    font-size: 1.3rem;
+                }
+
+                .section-header h2 {
+                    font-size: 2.8rem;
+                }
+
+                .solution-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .benefits-grid {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+
+                .how-it-works-steps {
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                }
+
+                .how-it-works-steps::before {
+                    content: '';
+                    position: absolute;
+                    top: 35px;
+                    left: 10%;
+                    width: 80%;
+                    height: 2px;
+                    background: linear-gradient(
+                        to right,
+                        var(--primary-color),
+                        var(--secondary-color)
+                    );
+                    opacity: 0.3;
+                    z-index: -1;
+                }
+            }
+
+            @media (min-width: 1024px) {
+                .problem-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- HERO SECTION -->
+        <header class="hero" role="banner">
+            <div class="hero-bg" role="presentation"></div>
+            <div class="container hero-content">
+                <h1 class="fade-in">IRIS-AI биоскенер</h1>
+                <p class="fade-in" style="transition-delay: 0.2s">
+                    Iris-AI анализира очите ви, за да създаде Вашият специализиран план.
+                </p>
+                <a
+                    href="analysis.html"
+                    class="cta-button fade-in"
+                    style="transition-delay: 0.4s"
+                    aria-label="Стартирай AI анализ на ирисови изображения"
+                    >Стартирай анализ <i class="fa-solid fa-arrow-right" aria-hidden="true"></i
+                ></a>
+            </div>
+            <a
+                href="#problem-section"
+                class="scroll-down"
+                aria-label="Превъртете надолу за повече информация"
+            >
+                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </a>
+        </header>
+
+        <main role="main">
+            <!-- PROBLEM SECTION -->
+            <section id="problem-section" class="section">
+                <div class="container">
+                    <div class="section-header fade-in">
+                        <h2>Универсалните съвети не работят.</h2>
+                        <p>
+                            Здравето изисква персонален подход. Масовите принципи не вземат предвид
+                            вашата индивидуална генетика.
+                        </p>
+                    </div>
+                    <div class="problem-grid">
+                        <div class="problem-item fade-in">
+                            <i class="fa-solid fa-scale-unbalanced-flip"></i>
+                            <h3>Циклични диети без траен резултат.</h3>
+                        </div>
+                        <div class="problem-item fade-in" style="transition-delay: 0.1s">
+                            <i class="fa-solid fa-puzzle-piece"></i>
+                            <h3>Неясни симптоми и липса на връзка.</h3>
+                        </div>
+                        <div class="problem-item fade-in" style="transition-delay: 0.2s">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                            <h3>Признаци на ускорено стареене.</h3>
+                        </div>
+                        <div class="problem-item fade-in" style="transition-delay: 0.3s">
+                            <i class="fa-solid fa-battery-quarter"></i>
+                            <h3>Хронична умора и липса на фокус.</h3>
+                        </div>
+                    </div>
                 </div>
-                <div class="problem-grid">
-                    <div class="problem-item fade-in">
-                        <i class="fa-solid fa-scale-unbalanced-flip"></i>
-                        <h3>Циклични диети без траен резултат.</h3>
+            </section>
+
+            <!-- SOLUTION SECTION -->
+            <section class="section solution-section">
+                <div class="container">
+                    <div class="section-header fade-in">
+                        <h2>Всичко е изписано в очите Ви.</h2>
+                        <p>
+                            Нашата технология и IRIS-AI алгоритъм разшифроват вашите генетичните
+                            предразположения и моментното състояние на организма Ви.
+                        </p>
                     </div>
-                    <div class="problem-item fade-in" style="transition-delay: 0.1s;">
-                        <i class="fa-solid fa-puzzle-piece"></i>
-                        <h3>Неясни симптоми и липса на връзка.</h3>
+                    <div class="solution-grid">
+                        <div class="solution-card fade-in" style="transition-delay: 0.1s">
+                            <i class="fa-solid fa-dna"></i>
+                            <h3>Ирис: Генетичен Код</h3>
+                            <p>
+                                Ирисът разкрива вродената ви конституция – генетичните силни страни
+                                и наследствени предразположения. Това е вашата основа.
+                            </p>
+                        </div>
+                        <div class="solution-card fade-in" style="transition-delay: 0.3s">
+                            <i class="fa-solid fa-stopwatch"></i>
+                            <h3>Склера: Моментно Състояние</h3>
+                            <p>
+                                Склерата (бялото на окото) показва текущи процеси – възпаление,
+                                стрес и натоварване на органи.
+                            </p>
+                        </div>
                     </div>
-                    <div class="problem-item fade-in" style="transition-delay: 0.2s;">
-                         <i class="fa-solid fa-hourglass-half"></i>
-                        <h3>Признаци на ускорено стареене.</h3>
+                </div>
+            </section>
+
+            <!-- BENEFITS SECTION -->
+            <section class="section">
+                <div class="container">
+                    <div class="section-header fade-in">
+                        <h2>Вашият План за Действие.</h2>
+                        <p>
+                            Ще получите конкретни, базирани на прецизен анализ насоки, за да
+                            постигнете целите си.
+                        </p>
                     </div>
-                     <div class="problem-item fade-in" style="transition-delay: 0.3s;">
-                        <i class="fa-solid fa-battery-quarter"></i>
-                        <h3>Хронична умора и липса на фокус.</h3>
+                    <div class="benefits-grid">
+                        <div class="benefit-card fade-in">
+                            <div class="benefit-icon">
+                                <i class="fa-solid fa-person-running"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h3>Подобряване на Метаболизма</h3>
+                                <p>
+                                    След анализ на Вашият метаболитен профил и блокажи ще
+                                    разполагате с хранителен план за ефективно регулиране на
+                                    теглото.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="benefit-card fade-in" style="transition-delay: 0.2s">
+                            <div class="benefit-icon">
+                                <i class="fa-solid fa-seedling"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h3>Намаляване на биологичната възраст</h3>
+                                <p>
+                                    Оценете нивата на оксидативен стрес и възпаление. Научете как да
+                                    подкрепите клетъчното здраве и да забавите стареенето.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="benefit-card fade-in" style="transition-delay: 0.4s">
+                            <div class="benefit-icon">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h3>Повишаване на Настроение и Енергия</h3>
+                                <p>
+                                    Открийте кои системи са най-засегнати от хроничния стрес и
+                                    получете насоки за подкрепа на нервната система.
+                                </p>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- HOW IT WORKS SECTION -->
+            <section class="section" style="background-color: var(--white)">
+                <div class="container">
+                    <div class="section-header fade-in">
+                        <h2>Процес в 3 стъпки</h2>
+                        <p>Направете своя AI анализ бързо и лесно.</p>
+                    </div>
+                    <div class="how-it-works-steps">
+                        <div class="step fade-in">
+                            <div class="step-number">1</div>
+                            <h3>Снимайте</h3>
+                            <p>Качете ясни снимки на двете очи.</p>
+                        </div>
+                        <div class="step fade-in" style="transition-delay: 0.2s">
+                            <div class="step-number">2</div>
+                            <h3>Попълнете</h3>
+                            <p>Отговорете на няколко въпроса за цел и начин на живот.</p>
+                        </div>
+                        <div class="step fade-in" style="transition-delay: 0.4s">
+                            <div class="step-number">3</div>
+                            <h3>Получавате</h3>
+                            <p>Ще разполагате с персонален доклад и конкретни препоръки.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <!-- FOOTER / FINAL CTA -->
+        <footer>
+            <div class="container fade-in">
+                <h3>Ключът е в личният подход?</h3>
+                <p>
+                    Не игнорирайте вашата индивидуалност. Ние ще създадем персонален план за
+                    постигане на вашата цел, базиран на вашите уникални био-маркери.
+                </p>
+                <a href="analysis.html" class="cta-button"
+                    >Искам своя персонален анализ <i class="fa-solid fa-arrow-right"></i
+                ></a>
+                <div style="margin-top: 30px">
+                    <a href="about.html" class="cta-button">Повече за &quot;IRIS-AI&quot;</a>
+                </div>
+                <div class="copyright">
+                    &copy; 2025 Iris-Holistica AI. Всички права запазени. Анализът не представлява
+                    медицинска диагноза.
                 </div>
             </div>
-        </section>
+        </footer>
 
-        <!-- SOLUTION SECTION -->
-        <section class="section solution-section">
-            <div class="container">
-                <div class="section-header fade-in">
-                    <h2>Всичко е изписано в очите Ви.</h2>
-                    <p>Нашата технология и IRIS-AI алгоритъм разшифроват вашите генетичните предразположения и моментното състояние на организма Ви.</p>
-                </div>
-                <div class="solution-grid">
-                    <div class="solution-card fade-in" style="transition-delay: 0.1s;">
-                        <i class="fa-solid fa-dna"></i>
-                        <h3>Ирис: Генетичен Код</h3>
-                        <p>Ирисът разкрива вродената ви конституция – генетичните силни страни и наследствени предразположения. Това е вашата основа.</p>
-                    </div>
-                    <div class="solution-card fade-in" style="transition-delay: 0.3s;">
-                        <i class="fa-solid fa-stopwatch"></i>
-                        <h3>Склера: Моментно Състояние</h3>
-                        <p>Склерата (бялото на окото) показва текущи процеси – възпаление, стрес и натоварване на органи.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- BENEFITS SECTION -->
-        <section class="section">
-            <div class="container">
-                <div class="section-header fade-in">
-                    <h2>Вашият План за Действие.</h2>
-                    <p>Ще получите конкретни, базирани на прецизен анализ насоки, за да постигнете целите си.</p>
-                </div>
-                <div class="benefits-grid">
-                    <div class="benefit-card fade-in">
-                        <div class="benefit-icon">
-                            <i class="fa-solid fa-person-running"></i>
-                        </div>
-                        <div class="benefit-content">
-                            <h3>Подобряване на Метаболизма</h3>
-                            <p>След анализ на Вашият метаболитен профил и блокажи ще разполагате с хранителен план за ефективно регулиране на теглото.</p>
-                        </div>
-                    </div>
-                    <div class="benefit-card fade-in" style="transition-delay: 0.2s;">
-                        <div class="benefit-icon">
-                            <i class="fa-solid fa-seedling"></i>
-                        </div>
-                        <div class="benefit-content">
-                            <h3>Намаляване на биологичната възраст</h3>
-                            <p>Оценете нивата на оксидативен стрес и възпаление. Научете как да подкрепите клетъчното здраве и да забавите стареенето.</p>
-                        </div>
-                    </div>
-                    <div class="benefit-card fade-in" style="transition-delay: 0.4s;">
-                        <div class="benefit-icon">
-                            <i class="fa-solid fa-bolt"></i>
-                        </div>
-                        <div class="benefit-content">
-                            <h3>Повишаване на Настроение и Енергия</h3>
-                            <p>Открийте кои системи са най-засегнати от хроничния стрес и получете насоки за подкрепа на нервната система.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- HOW IT WORKS SECTION -->
-        <section class="section" style="background-color: var(--white);">
-            <div class="container">
-                <div class="section-header fade-in">
-                    <h2>Процес в 3 стъпки</h2>
-                    <p>Направете своя AI анализ бързо и лесно.</p>
-                </div>
-                <div class="how-it-works-steps">
-                    <div class="step fade-in">
-                        <div class="step-number">1</div>
-                        <h3>Снимайте</h3>
-                        <p>Качете ясни снимки на двете очи.</p>
-                    </div>
-                    <div class="step fade-in" style="transition-delay: 0.2s;">
-                        <div class="step-number">2</div>
-                        <h3>Попълнете</h3>
-                        <p>Отговорете на няколко въпроса за цел и начин на живот.</p>
-                    </div>
-                    <div class="step fade-in" style="transition-delay: 0.4s;">
-                        <div class="step-number">3</div>
-                        <h3>Получавате</h3>
-                        <p>Ще разполагате с персонален доклад и конкретни препоръки.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-    <!-- FOOTER / FINAL CTA -->
-    <footer>
-        <div class="container fade-in">
-            <h3>Ключът е в личният подход?</h3>
-            <p>Не игнорирайте вашата индивидуалност. Ние ще създадем персонален план за постигане на вашата цел, базиран на вашите уникални био-маркери.</p>
-            <a href="analysis.html" class="cta-button">Искам своя персонален анализ <i class="fa-solid fa-arrow-right"></i></a>
-            <div style="margin-top: 30px;">
-                <a href="about.html" class="cta-button">Повече за &quot;IRIS-AI&quot;</a>
-            </div>
-            <div class="copyright">
-                &copy; 2025 Iris-Holistica AI. Всички права запазени. Анализът не представлява медицинска диагноза.
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // JavaScript for Scroll Animations (Intersection Observer)
-        document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
+        <script>
+            // JavaScript for Scroll Animations (Intersection Observer)
+            document.addEventListener('DOMContentLoaded', () => {
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('visible');
+                            }
+                        });
+                    },
+                    {
+                        threshold: 0.1 // Trigger when 10% of the element is visible
                     }
-                });
-            }, {
-                threshold: 0.1 // Trigger when 10% of the element is visible
+                );
+
+                const elementsToAnimate = document.querySelectorAll('.fade-in');
+                elementsToAnimate.forEach((el) => observer.observe(el));
             });
-
-            const elementsToAnimate = document.querySelectorAll('.fade-in');
-            elementsToAnimate.forEach(el => observer.observe(el));
-        });
-    </script>
-
-</body>
+        </script>
+    </body>
 </html>

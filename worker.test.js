@@ -7,12 +7,12 @@ const env = {
     get: (key) =>
       key === 'iris_config_kv'
         ? Promise.resolve({
-          provider: 'gemini',
-          analysis_prompt: '',
-          analysis_model: 'gemini-1.5-flash-latest',
-          report_prompt: '',
-          report_model: 'gemini-1.5-flash-latest'
-        })
+            provider: 'gemini',
+            analysis_prompt: '',
+            analysis_model: 'gemini-1.5-flash-latest',
+            report_prompt: '',
+            report_model: 'gemini-1.5-flash-latest'
+          })
         : Promise.resolve(null)
   }
 };
@@ -25,21 +25,21 @@ test('Worker не използва браузърни API', () => {
 
 test('OPTIONS заявка връща CORS хедъри', async () => {
   const req = new Request('https://example.com', { method: 'OPTIONS' });
-  const res = await worker.fetch(req, env, { waitUntil(){} });
+  const res = await worker.fetch(req, env, { waitUntil() {} });
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('Access-Control-Allow-Origin'), '*');
 });
 
 test('GET заявка връща 405', async () => {
   const req = new Request('https://example.com', { method: 'GET' });
-  const res = await worker.fetch(req, env, { waitUntil(){} });
+  const res = await worker.fetch(req, env, { waitUntil() {} });
   assert.equal(res.status, 405);
 });
 
 test('POST без снимки връща 400', async () => {
   const form = new FormData();
   const req = new Request('https://example.com', { method: 'POST', body: form });
-  const res = await worker.fetch(req, env, { waitUntil(){} });
+  const res = await worker.fetch(req, env, { waitUntil() {} });
   assert.equal(res.status, 400);
 });
 
@@ -72,11 +72,14 @@ test('POST връща 503 при липса на AI модели в конфиг
   };
 
   try {
-    const res = await worker.fetch(req, missingModelsEnv, { waitUntil(){} });
+    const res = await worker.fetch(req, missingModelsEnv, { waitUntil() {} });
     assert.equal(res.status, 503);
 
     const payload = await res.json();
-    assert.equal(payload.error, 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.');
+    assert.equal(
+      payload.error,
+      'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.'
+    );
     assert.ok(capturedLog.includes('analysis_model'), 'Очаквахме да се логне предупреждение за липсващи модели.');
   } finally {
     console.error = originalError;
@@ -117,9 +120,7 @@ test('analyzeImageWithVision използва външен контекст вм
       analysis_prompt_template: 'Око: {{EYE_IDENTIFIER}}\nКонтекст: {{EXTERNAL_CONTEXT}}'
     };
 
-    const externalContextPayload = JSON.stringify([
-      { source: 'Serper', summary: 'B12 deficiency link' }
-    ]);
+    const externalContextPayload = JSON.stringify([{ source: 'Serper', summary: 'B12 deficiency link' }]);
 
     // Нов аргумент externalContextPayload гарантира, че Vision промптът вижда реалните данни.
     await __testables__.analyzeImageWithVision(
@@ -206,9 +207,7 @@ test('analyzeImageWithVision приема масив от части в content'
       choices: [
         {
           message: {
-            content: [
-              { type: 'text', text: '{"ok":1}' }
-            ]
+            content: [{ type: 'text', text: '{"ok":1}' }]
           }
         }
       ]
@@ -276,21 +275,24 @@ test('analyzeImageWithVision с gpt-4o-search-preview активира web_searc
     }
 
     if (typeof url === 'string' && url.includes('/messages')) {
-      return new Response(JSON.stringify({
-        data: [
-          {
-            id: 'msg_test',
-            role: 'assistant',
-            run_id: 'run_test',
-            content: [
-              { type: 'output_text', text: { value: JSON.stringify({ eye: 'ляво око', identified_signs: [] }) } }
-            ]
-          }
-        ]
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: 'msg_test',
+              role: 'assistant',
+              run_id: 'run_test',
+              content: [
+                { type: 'output_text', text: { value: JSON.stringify({ eye: 'ляво око', identified_signs: [] }) } }
+              ]
+            }
+          ]
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     throw new Error(`Непознат URL: ${url}`);
@@ -309,8 +311,8 @@ test('analyzeImageWithVision с gpt-4o-search-preview активира web_searc
       'key'
     );
 
-    const runCall = calls.find((call) =>
-      typeof call.url === 'string' && call.url.includes('/runs') && call.options.method === 'POST'
+    const runCall = calls.find(
+      (call) => typeof call.url === 'string' && call.url.includes('/runs') && call.options.method === 'POST'
     );
 
     assert.ok(runCall, 'Очаквахме POST към /runs.');
@@ -353,21 +355,22 @@ test('runSearchPreview връща нормализиран JSON от assistant',
     }
 
     if (typeof url === 'string' && url.includes('/messages')) {
-      return new Response(JSON.stringify({
-        data: [
-          {
-            id: 'msg_direct',
-            role: 'assistant',
-            run_id: 'run_direct',
-            content: [
-              { type: 'output_text', text: { value: '{"ok":true}' } }
-            ]
-          }
-        ]
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: 'msg_direct',
+              role: 'assistant',
+              run_id: 'run_direct',
+              content: [{ type: 'output_text', text: { value: '{"ok":true}' } }]
+            }
+          ]
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     if (typeof url === 'string' && url.endsWith('/assistants')) {
@@ -390,7 +393,9 @@ test('runSearchPreview връща нормализиран JSON от assistant',
     assert.deepEqual(result, { ok: true });
 
     const runPayload = JSON.parse(
-      payloads.find((call) => typeof call.url === 'string' && call.url.includes('/runs') && call.options.method === 'POST').options.body
+      payloads.find(
+        (call) => typeof call.url === 'string' && call.url.includes('/runs') && call.options.method === 'POST'
+      ).options.body
     );
 
     assert.equal(runPayload.web_search.enable, true);
@@ -412,14 +417,13 @@ test('Цел „Диабет тип 2“ връща насочени секци�
     }
   };
 
-  const { filteredKnowledge, matchedRemedyLinks } =
-    __testables__.selectRelevantInterpretationKnowledge(knowledge, keywords);
+  const { filteredKnowledge, matchedRemedyLinks } = __testables__.selectRelevantInterpretationKnowledge(
+    knowledge,
+    keywords
+  );
 
   assert.equal(filteredKnowledge.type_2_diabetes.summary, 'Персонални насоки при диабет тип 2.');
-  assert.ok(
-    !filteredKnowledge.summary ||
-      !filteredKnowledge.summary.includes('Няма директно открити секции в базата')
-  );
+  assert.ok(!filteredKnowledge.summary || !filteredKnowledge.summary.includes('Няма директно открити секции в базата'));
 
   const remedyBase = {
     foundational_principles: ['Винаги се консултирай с лекар.'],
@@ -430,11 +434,7 @@ test('Цел „Диабет тип 2“ връща насочени секци�
     summary: 'Това е общ fallback, който не трябва да се връща.'
   };
 
-  const filteredRemedy = __testables__.selectRelevantRemedyBase(
-    remedyBase,
-    matchedRemedyLinks,
-    keywords
-  );
+  const filteredRemedy = __testables__.selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywords);
 
   assert.equal(filteredRemedy.type_2_diabetes.name, 'Подход за диабет тип 2');
   assert.ok(
@@ -477,9 +477,7 @@ test('generateHolisticReport подава релевантни секции и �
   const leftEyeAnalysis = {
     eye: 'ляво око',
     constitutional_analysis: {},
-    identified_signs: [
-      { sign_name: 'Нервни пръстени', location: 'Зона 7', description: 'Три отчетливи пръстена' }
-    ]
+    identified_signs: [{ sign_name: 'Нервни пръстени', location: 'Зона 7', description: 'Три отчетливи пръстена' }]
   };
 
   const rightEyeAnalysis = {
@@ -622,10 +620,7 @@ test('generateHolisticReport зарежда протокол само от ан�
   const config = {
     provider: 'openai',
     report_model: 'gpt-test',
-    report_prompt_template: [
-      'Потребител: {{USER_DATA}}',
-      'Препоръки: {{REMEDY_BASE}}'
-    ].join('\n')
+    report_prompt_template: ['Потребител: {{USER_DATA}}', 'Препоръки: {{REMEDY_BASE}}'].join('\n')
   };
 
   try {
@@ -775,10 +770,7 @@ test('generateHolisticReport попълва описателен fallback, ко�
   const config = {
     provider: 'openai',
     report_model: 'gpt-test',
-    report_prompt_template: [
-      'Контекст: {{EXTERNAL_CONTEXT}}',
-      'Данни: {{USER_DATA}}'
-    ].join('\n')
+    report_prompt_template: ['Контекст: {{EXTERNAL_CONTEXT}}', 'Данни: {{USER_DATA}}'].join('\n')
   };
 
   try {
@@ -849,10 +841,7 @@ test('retryWithBackoff не прави retry при ValidationError', async () =
     throw new ValidationError('Invalid input');
   };
 
-  await assert.rejects(
-    async () => retryWithBackoff(mockFn, 3, 10),
-    { name: 'ValidationError' }
-  );
+  await assert.rejects(async () => retryWithBackoff(mockFn, 3, 10), { name: 'ValidationError' });
   assert.equal(attempts, 1);
 });
 
@@ -864,10 +853,7 @@ test('retryWithBackoff хвърля грешка след изчерпване �
     throw new Error('Persistent error');
   };
 
-  await assert.rejects(
-    async () => retryWithBackoff(mockFn, 2, 10),
-    { message: 'Persistent error' }
-  );
+  await assert.rejects(async () => retryWithBackoff(mockFn, 2, 10), { message: 'Persistent error' });
   assert.equal(attempts, 3); // начален + 2 retry
 });
 
@@ -879,13 +865,14 @@ test('analyzeImageWithVision хвърля RateLimitError при 429 отгово
     global.fetch = async () => ({
       ok: false,
       status: 429,
-      text: async () => JSON.stringify({
-        error: {
-          message: 'Rate limit reached. Please try again in 450ms.',
-          type: 'tokens',
-          code: 'rate_limit_exceeded'
-        }
-      }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Rate limit reached. Please try again in 450ms.',
+            type: 'tokens',
+            code: 'rate_limit_exceeded'
+          }
+        }),
       headers: new Map()
     });
 
@@ -896,10 +883,9 @@ test('analyzeImageWithVision хвърля RateLimitError при 429 отгово
       analysis_prompt_template: 'Test {{EYE_IDENTIFIER}} {{IRIS_MAP}} {{EXTERNAL_CONTEXT}}'
     };
 
-    await assert.rejects(
-      async () => analyzeImageWithVision(file, 'test', {}, config, 'test-key'),
-      { name: 'RateLimitError' }
-    );
+    await assert.rejects(async () => analyzeImageWithVision(file, 'test', {}, config, 'test-key'), {
+      name: 'RateLimitError'
+    });
   } finally {
     global.fetch = originalFetch;
   }
@@ -918,10 +904,12 @@ test('analyzeImageWithVision логва подробна информация п
       ok: true,
       status: 200,
       json: async () => ({
-        choices: [{
-          message: { content: 'invalid json {' },
-          finish_reason: 'stop'
-        }]
+        choices: [
+          {
+            message: { content: 'invalid json {' },
+            finish_reason: 'stop'
+          }
+        ]
       })
     });
 
@@ -935,13 +923,12 @@ test('analyzeImageWithVision логва подробна информация п
     await assert.rejects(
       async () => analyzeImageWithVision(file, 'test', {}, config, 'test-key'),
       (err) => {
-        return err.message.includes('невалиден JSON формат') &&
-               err.message.includes('invalid json');
+        return err.message.includes('невалиден JSON формат') && err.message.includes('invalid json');
       }
     );
 
-    assert.ok(consoleLogs.some(log => log.includes('Грешка при парсване на JSON')));
-    assert.ok(consoleLogs.some(log => log.includes('Получен текст:')));
+    assert.ok(consoleLogs.some((log) => log.includes('Грешка при парсване на JSON')));
+    assert.ok(consoleLogs.some((log) => log.includes('Получен текст:')));
   } finally {
     global.fetch = originalFetch;
     console.error = originalConsoleError;
@@ -980,9 +967,9 @@ test('enrichUserDataWithMetrics добавя iris_sign_analysis за по-доб
   ];
 
   assert.equal(identifiedSigns.length, 4);
-  assert.ok(identifiedSigns.some(s => s.sign_name.includes('Нервни пръстени')));
-  assert.ok(identifiedSigns.some(s => s.sign_name.includes('Лакуна')));
-  assert.ok(identifiedSigns.some(s => s.location.includes('черен дроб')));
+  assert.ok(identifiedSigns.some((s) => s.sign_name.includes('Нервни пръстени')));
+  assert.ok(identifiedSigns.some((s) => s.sign_name.includes('Лакуна')));
+  assert.ok(identifiedSigns.some((s) => s.location.includes('черен дроб')));
 });
 
 test('Подобреният analysis_prompt_template съдържа 3-нивов анализ и учебникови методологии', async () => {
@@ -994,7 +981,10 @@ test('Подобреният analysis_prompt_template съдържа 3-ниво�
   const template = config.analysis_prompt_template;
 
   // Проверка за 3-нивов анализ (Jackson-Main)
-  assert.ok(template.includes('3-НИВОВ') || template.includes('НИВО 1') || template.includes('КОНСТИТУЦИЯ ПО ЦВЯТ'), 'Трябва да има 3-нивов анализ');
+  assert.ok(
+    template.includes('3-НИВОВ') || template.includes('НИВО 1') || template.includes('КОНСТИТУЦИЯ ПО ЦВЯТ'),
+    'Трябва да има 3-нивов анализ'
+  );
   assert.ok(template.includes('НИВО 2') || template.includes('ДИСПОЗИЦИЯ'), 'Трябва да има ниво 2 - диспозиция');
   assert.ok(template.includes('НИВО 3') || template.includes('ДИАТЕЗА'), 'Трябва да има ниво 3 - диатеза');
 
@@ -1007,10 +997,16 @@ test('Подобреният analysis_prompt_template съдържа 3-ниво�
   assert.ok(template.includes('ЧЕРЕН') || template.includes('ДЕГЕНЕРАТИВЕН'), 'Трябва да включва стадии на процес');
 
   // Проверка за тополабилни/топостабилни знаци
-  assert.ok(template.includes('Тополабилни') || template.includes('Топостабилни') || template.includes('Shoe'), 'Трябва да различава тополабилни/топостабилни');
+  assert.ok(
+    template.includes('Тополабилни') || template.includes('Топостабилни') || template.includes('Shoe'),
+    'Трябва да различава тополабилни/топостабилни'
+  );
 
   // Проверка за специфични лакуни от учебниците
-  assert.ok(template.includes('Asparagus') || template.includes('Leaf') || template.includes('Medusa'), 'Трябва да включва специфични типове лакуни');
+  assert.ok(
+    template.includes('Asparagus') || template.includes('Leaf') || template.includes('Medusa'),
+    'Трябва да включва специфични типове лакуни'
+  );
 
   // Проверка за IPB анализ (Andrews)
   assert.ok(template.includes('IPB') || template.includes('S-знак'), 'Трябва да има IPB анализ');
@@ -1037,7 +1033,10 @@ test('createConciseIrisMap намалява размера на diagnostic map �
   const conciseSize = JSON.stringify(conciseMap, null, 2).length;
 
   // Проверяваме че има значително намаление (поне 40%)
-  assert.ok(conciseSize < fullSize * 0.6, `Concise map трябва да е поне 40% по-малък. Full: ${fullSize}, Concise: ${conciseSize}`);
+  assert.ok(
+    conciseSize < fullSize * 0.6,
+    `Concise map трябва да е поне 40% по-малък. Full: ${fullSize}, Concise: ${conciseSize}`
+  );
 
   // Проверяваме че критичните секции са запазени
   assert.ok(conciseMap.constitutions, 'Трябва да има constitutions');
@@ -1085,14 +1084,15 @@ test('createEnrichedVisionContext създава богат контекст с 
   assert.ok(firstEntry.summary, 'Всеки запис трябва да има summary');
 
   // Проверяваме че приоритетните ключове са включени ако съществуват
-  const sources = contextEntries.map(e => e.source);
+  const sources = contextEntries.map((e) => e.source);
   const sourcesStr = sources.join(' ');
 
   // Поне един от приоритетните ключове трябва да е включен
-  const hasPriorityKey = sourcesStr.includes('elimination_channels') ||
-                        sourcesStr.includes('common_iris_signs') ||
-                        sourcesStr.includes('lacunae_types') ||
-                        sourcesStr.includes('nerve_rings');
+  const hasPriorityKey =
+    sourcesStr.includes('elimination_channels') ||
+    sourcesStr.includes('common_iris_signs') ||
+    sourcesStr.includes('lacunae_types') ||
+    sourcesStr.includes('nerve_rings');
 
   assert.ok(hasPriorityKey, 'Трябва да включва поне един приоритетен ключ');
 });
@@ -1106,8 +1106,10 @@ test('createEnrichedVisionContext работи дори при празна ба
   // Дори при празна база, трябва да върне базови насоки
   assert.ok(Array.isArray(contextEntries), 'Трябва да върне масив');
   assert.ok(contextEntries.length > 0, 'Трябва да има поне базови насоки');
-  assert.ok(contextEntries[0].summary.includes('Фокусирай') || contextEntries[0].summary.includes('елиминатив'),
-    'Трябва да включва базови насоки');
+  assert.ok(
+    contextEntries[0].summary.includes('Фокусирай') || contextEntries[0].summary.includes('елиминатив'),
+    'Трябва да включва базови насоки'
+  );
 });
 
 test('generateHolisticReport добавя аналитични метрики към доклада', async () => {
@@ -1153,9 +1155,7 @@ test('generateHolisticReport добавя аналитични метрики к
       lungs: 'Добро',
       skin: 'Добро'
     },
-    identified_signs: [
-      { sign_name: 'Радий', location: 'зона 4', intensity: 'лек', description: 'Тънък радий' }
-    ]
+    identified_signs: [{ sign_name: 'Радий', location: 'зона 4', intensity: 'лек', description: 'Тънък радий' }]
   };
 
   const mockUserData = {
@@ -1177,7 +1177,8 @@ test('generateHolisticReport добавя аналитични метрики к
   const mockConfig = {
     provider: 'openai',
     report_model: 'gpt-4o',
-    report_prompt_template: 'Test template {{USER_DATA}} {{LEFT_EYE_ANALYSIS}} {{RIGHT_EYE_ANALYSIS}} {{INTERPRETATION_KNOWLEDGE}} {{REMEDY_BASE}} {{EXTERNAL_CONTEXT}} {{PATIENT_NAME}} {{DISCLAIMER}}',
+    report_prompt_template:
+      'Test template {{USER_DATA}} {{LEFT_EYE_ANALYSIS}} {{RIGHT_EYE_ANALYSIS}} {{INTERPRETATION_KNOWLEDGE}} {{REMEDY_BASE}} {{EXTERNAL_CONTEXT}} {{PATIENT_NAME}} {{DISCLAIMER}}',
     max_context_entries: 6
   };
 
@@ -1203,15 +1204,17 @@ test('generateHolisticReport добавя аналитични метрики к
     return {
       ok: true,
       json: async () => ({
-        choices: [{
-          message: {
-            content: JSON.stringify({
-              'Име': 'Тест Потребител',
-              'Резюме на анализа': 'Тестово резюме',
-              'Задължителен отказ от отговорност': 'Тестов дисклеймър'
-            })
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                Име: 'Тест Потребител',
+                'Резюме на анализа': 'Тестово резюме',
+                'Задължителен отказ от отговорност': 'Тестов дисклеймър'
+              })
+            }
           }
-        }]
+        ]
       })
     };
   };
@@ -1243,29 +1246,43 @@ test('generateHolisticReport добавя аналитични метрики к
 
   // Проверяваме detection метрики
   assert.ok(analytics.detection.total_signs >= 0, 'Трябва да брои открити знаци');
-  assert.ok(analytics.detection.enrichment_rate >= 0 && analytics.detection.enrichment_rate <= 100,
-    'Enrichment rate трябва да е между 0 и 100');
+  assert.ok(
+    analytics.detection.enrichment_rate >= 0 && analytics.detection.enrichment_rate <= 100,
+    'Enrichment rate трябва да е между 0 и 100'
+  );
 
   // Проверяваме coverage метрики
   assert.ok(analytics.coverage.zones_analyzed >= 0, 'Трябва да брои анализирани зони');
-  assert.ok(analytics.coverage.coverage_percentage >= 0 && analytics.coverage.coverage_percentage <= 100,
-    'Coverage percentage трябва да е между 0 и 100');
+  assert.ok(
+    analytics.coverage.coverage_percentage >= 0 && analytics.coverage.coverage_percentage <= 100,
+    'Coverage percentage трябва да е между 0 и 100'
+  );
 
   // Проверяваме quality метрики
-  assert.ok(analytics.quality.precision_score >= 0 && analytics.quality.precision_score <= 100,
-    'Precision score трябва да е между 0 и 100');
+  assert.ok(
+    analytics.quality.precision_score >= 0 && analytics.quality.precision_score <= 100,
+    'Precision score трябва да е между 0 и 100'
+  );
   assert.ok(analytics.quality.detail_level, 'Трябва да има detail_level');
   assert.ok(analytics.quality.improvement_indicators, 'Трябва да има improvement_indicators');
 
   // Проверяваме improvement indicators
-  assert.ok(typeof analytics.quality.improvement_indicators.enhanced_validation === 'boolean',
-    'enhanced_validation трябва да е boolean');
-  assert.ok(typeof analytics.quality.improvement_indicators.zone_mapping === 'boolean',
-    'zone_mapping трябва да е boolean');
-  assert.ok(typeof analytics.quality.improvement_indicators.priority_classification === 'boolean',
-    'priority_classification трябва да е boolean');
-  assert.ok(typeof analytics.quality.improvement_indicators.personalized_metrics === 'boolean',
-    'personalized_metrics трябва да е boolean');
+  assert.ok(
+    typeof analytics.quality.improvement_indicators.enhanced_validation === 'boolean',
+    'enhanced_validation трябва да е boolean'
+  );
+  assert.ok(
+    typeof analytics.quality.improvement_indicators.zone_mapping === 'boolean',
+    'zone_mapping трябва да е boolean'
+  );
+  assert.ok(
+    typeof analytics.quality.improvement_indicators.priority_classification === 'boolean',
+    'priority_classification трябва да е boolean'
+  );
+  assert.ok(
+    typeof analytics.quality.improvement_indicators.personalized_metrics === 'boolean',
+    'personalized_metrics трябва да е boolean'
+  );
 });
 
 test('generateMultiQueryReport извършва 4 фокусирани AI заявки', async () => {
@@ -1303,7 +1320,7 @@ test('generateMultiQueryReport извършва 4 фокусирани AI зая
               herbs_and_supplements: { herbs: [], supplements: [] },
               holistic_recommendations: { fundamental_principles: [] },
               follow_up: { after_1_month: 'Прогрес' },
-              'Име': 'Тест',
+              Име: 'Тест',
               'Резюме на анализа': 'Резюме',
               'Конституционален анализ (3-нивов)': 'Анализ',
               'Приоритетни елиминативни канали': 'Канали',

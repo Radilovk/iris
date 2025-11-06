@@ -1,388 +1,587 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вашият Ирисологичен Доклад - Iris-Holistica AI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
-    <!-- Персонализирани стилове САМО за тази страница -->
-    <style>
-        :root {
-            /* Дефинираме цветове тук, за да са достъпни */
-            --white: #ffffff;
-            --gradient: linear-gradient(135deg, #437dcb 0%, #2e5a9b 100%);
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Вашият Ирисологичен Доклад - Iris-Holistica AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-        body { 
-            background: var(--gradient);
-        }
-
-        .report-header {
-             text-align: center; 
-             margin-bottom: 2rem; 
-        }
-        .report-header h2 {
-            font-size: 2.5rem;
-            color: var(--white);
-            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            margin-bottom: 0.5rem;
-        }
-        .report-header p {
-            font-size: 1.1rem;
-            color: var(--white);
-            opacity: 0.9;
-        }
-
-        #report-container { 
-            background: transparent; 
-            box-shadow: none; 
-            padding: 0; 
-            border: none; 
-        }
-        
-        .report-hero {
-            background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
-            border-radius: 12px;
-            padding: 2rem 2.5rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            border: 1px solid #e0e7ff;
-        }
-        .report-hero h3 { font-size: 1.5rem; font-weight: 600; color: #1a253c; margin: 0; }
-        .report-hero p { font-size: 1rem; color: #5a647e; margin: 0.25rem 0 0; }
-        
-        .report-section {
-            background-color: #ffffff;
-            border: 1px solid #e8eef7;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 8px 16px rgba(10, 40, 100, 0.05);
-            transition: all 0.3s ease;
-        }
-        details.report-section { overflow: hidden; }
-        details.report-section[open] { border-color: #cdd9f1; }
-        
-        .report-section summary {
-            padding: 1.25rem 1.75rem;
-            font-weight: 600;
-            font-size: 1.2rem;
-            color: #1a253c;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            list-style: none;
-        }
-        .report-section summary::-webkit-details-marker { display: none; }
-
-        .report-section summary .summary-title { display: flex; align-items: center; flex-grow: 1; margin-right: 1rem;}
-        .report-section summary .icon-circle {
-            min-width: 40px; height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            margin-right: 1rem;
-            font-size: 1rem;
-            color: #fff;
-            flex-shrink: 0; /* Предотвратява смачкване на иконата */
-        }
-        details.report-section summary .arrow { 
-            transition: transform 0.3s ease; 
-            flex-shrink: 0; /* Предотвратява смачкване на стрелката */
-        }
-        details.report-section[open] summary .arrow { transform: rotate(180deg); }
-
-        /* КЛЮЧОВА ПРОМЯНА: Подравняване на текста вляво и подобрени стилове */
-        .report-section .content {
-            padding: 0 1.75rem 1.5rem 1.75rem;
-            border-top: 1px solid #e8eef7;
-            color: #333d52;
-            line-height: 1.7;
-            text-align: left; /* ВАЖНО: Подравняване вляво */
-        }
-        .report-section .content ul,
-        .report-section .content ol {
-            padding-left: 1.25rem; /* По-добро отстояние за списъци */
-            margin-top: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .report-section .content li {
-            margin-bottom: 0.6rem;
-            line-height: 1.6;
-        }
-        .report-section .content p {
-            margin-bottom: 0.75rem;
-            line-height: 1.7;
-        }
-        .report-section .content p:last-child {
-            margin-bottom: 0;
-        }
-        .report-section .content h4 {
-            margin-top: 1.5rem;
-            margin-bottom: 0.75rem;
-            color: #1a253c;
-            font-size: 1.1rem;
-        }
-        .report-section .content strong {
-            color: #1a253c;
-            font-weight: 600;
-        }
-
-        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-        .info-card { 
-            background: #fdfdff; 
-            border-radius: 10px; 
-            padding: 1.5rem; 
-            border: 1px solid #e8eef7;
-            transition: all 0.3s ease;
-        }
-        .info-card:hover {
-            box-shadow: 0 4px 12px rgba(10, 40, 100, 0.08);
-            border-color: #cdd9f1;
-        }
-        .info-card h4 { 
-            font-weight: 600; 
-            margin-bottom: 0.75rem; 
-            color: #1a253c; 
-            display: flex; 
-            align-items: center;
-            font-size: 1.1rem;
-        }
-        .info-card ul, .info-card ol {
-            margin-top: 0.5rem;
-        }
-        .info-card ul li, .info-card ol li {
-            margin-bottom: 0.5rem;
-            line-height: 1.6;
-        }
-        
-        .channel-analysis-item { 
-            display: flex; 
-            align-items: center; 
-            margin-bottom: 0.75rem;
-            padding: 0.5rem 0;
-        }
-        .channel-analysis-item span { 
-            width: 110px; 
-            font-weight: 500; 
-            flex-shrink: 0;
-            color: #333d52;
-        }
-        .channel-analysis-item .bar { 
-            flex-grow: 1; 
-            height: 12px; 
-            border-radius: 6px; 
-            overflow: hidden; 
-            background: #e9ecef;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .channel-analysis-item .bar-fill { 
-            border-radius: 6px;
-            transition: width 0.8s ease-out;
-        }
-        .channel-analysis-item .bar-fill.low { 
-            background: linear-gradient(90deg, #28a745, #34ce57);
-        }
-        .channel-analysis-item .bar-fill.medium { 
-            background: linear-gradient(90deg, #ffc107, #ffcd38);
-        }
-        .channel-analysis-item .bar-fill.high { 
-            background: linear-gradient(90deg, #dc3545, #e74c5c);
-        }
-
-        /* Chart containers */
-        .chart-container {
-            position: relative;
-            margin: 1.5rem auto;
-            padding: 2rem 1.5rem;
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            border-radius: 16px;
-            box-shadow: 
-                0 4px 6px -1px rgba(0, 0, 0, 0.05),
-                0 10px 20px -5px rgba(0, 0, 0, 0.04),
-                0 0 0 1px rgba(99, 102, 241, 0.1);
-            overflow: visible;
-            transition: all 0.3s ease;
-        }
-        .chart-container:hover {
-            box-shadow: 
-                0 10px 15px -3px rgba(0, 0, 0, 0.08),
-                0 20px 30px -5px rgba(0, 0, 0, 0.06),
-                0 0 0 1px rgba(99, 102, 241, 0.2);
-            transform: translateY(-2px);
-        }
-        .chart-container.small {
-            max-width: 450px;
-            min-height: 350px;
-        }
-        .chart-container.medium {
-            max-width: 650px;
-            min-height: 450px;
-        }
-        .chart-container.large {
-            width: 100%;
-            min-height: 450px;
-        }
-        .chart-container canvas {
-            max-width: 100%;
-            max-height: 100%;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.03));
-        }
-        .chart-title {
-            text-align: center;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 1.5rem;
-            font-size: 1.25rem;
-            letter-spacing: -0.02em;
-        }
-
-        .button-group-report {
-            margin-top: 2rem;
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        .report-disclaimer { display: flex; align-items: flex-start; gap: 1rem; background-color: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border-left: 4px solid #3b82f6; text-align: left;}
-        .report-disclaimer i { color: #3b82f6; font-size: 1.5rem; margin-top: 3px; }
-        .report-disclaimer p { font-size: 0.9rem; margin: 0; }
-
-
-        /* КЛЮЧОВА ПРОМЯНА: Медийни заявки за мобилна визия */
-        @media (max-width: 767px) {
-            .container { padding: 1rem; }
-            .report-header h2 { font-size: 2rem; }
-            .report-hero { padding: 1.5rem; }
-            .report-section summary { padding: 1rem 1.25rem; font-size: 1.1rem; }
-            .report-section .content { padding: 0 1.25rem 1.25rem 1.25rem; }
-            .info-card { padding: 1.25rem; }
-            .channel-analysis-item span { width: 90px; font-size: 0.9rem; }
-            .report-disclaimer { padding: 1rem; }
-        }
-
-        /* Print styles for PDF export */
-        @media print {
-            body { background: white; }
-            .container { padding: 0; max-width: 100%; }
-            .button-group-report { display: none; }
-            .report-header { color: #1a253c; }
-            .report-header h2, .report-header p { color: #1a253c; text-shadow: none; }
-            details.report-section { border: 1px solid #ddd; }
-            details.report-section summary { page-break-inside: avoid; }
-            details.report-section .content { page-break-inside: avoid; }
-            .report-section { page-break-inside: avoid; margin-bottom: 1rem; }
-            .info-card { page-break-inside: avoid; }
-        }
-
-    </style>
-</head>
-<body>
-    <div class="container">
-        <section class="analysis-section" style="padding-top: 2rem;">
-            <header class="report-header">
-                <h2 class="fade-in-up">Иридиологичен Доклад</h2>
-                <p class="fade-in-up delay-1">Пътят към вашето здраве започва тук.</p>
-            </header>
-
-            <article id="report-container" class="fade-in-up delay-2">
-                <!-- Съдържанието се генерира от JavaScript -->
-            </article>
-
-            <div id="message-box"></div>
-            
-            <div class="button-group-report">
-                <button id="print-btn" class="btn btn-primary fade-in-up delay-3" title="Принтирайте или запазете като PDF">
-                    <i class="fas fa-file-pdf"></i> Запази PDF
-                </button>
-                <button id="re-analyze-btn" class="btn btn-secondary fade-in-up delay-3">Повтори анализа</button>
-                <a href="analysis.html" class="btn btn-secondary fade-in-up delay-3">Нов анализ</a>
-            </div>
-        </section>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
-    <script type="module">
-        import { WORKER_URL } from './config.js';
-
-        // *** КЛЮЧОВА ПРОМЯНА: Актуализирана конфигурация на секциите ***
-        const ICONS_CONFIG = {
-            "Резюме на анализа": { icon: "fa-file-medical", color: "#06b6d4" },
-            "Конституционален анализ": { icon: "fa-shield-halved", color: "#3b82f6" },
-            "Приоритетни системи за подкрепа": { icon: "fa-heart-pulse", color: "#ef4444" },
-            "Анализ на елиминативните канали": { icon: "fa-recycle", color: "#10b981" },
-            "Ключови находки и тяхната връзка": { icon: "fa-project-diagram", color: "#8b5cf6" },
-            "План за действие": { icon: "fa-list-check", color: "#14b8a6" },
-            "Специални хранителни насоки": { icon: "fa-apple-alt", color: "#f97316" },
-            "Препоръки за билки и добавки": { icon: "fa-leaf", color: "#059669" },
-            "Холистични препоръки": { icon: "fa-seedling", color: "#f59e0b" },
-            "Фундаментални принципи": { icon: "fa-lightbulb", color: "#1d4ed8" },
-            "Целенасочени препоръки": { icon: "fa-bullseye", color: "#c2410c" },
-            "Психология и емоции": { icon: "fa-brain", color: "#be185d" },
-            "Препоръки за проследяване": { icon: "fa-calendar-check", color: "#7c3aed" },
-            "default": { icon: "fa-circle-info", color: "#6b7280" }
-        };
-
-        // Функция за форматиране на Markdown към HTML
-        function formatTextContent(text) {
-            if (text == null) return '';
-            if (Array.isArray(text)) {
-                return `<ul>${text.map(item => `<li>${formatTextContent(item)}</li>`).join('')}</ul>`;
+        <!-- Персонализирани стилове САМО за тази страница -->
+        <style>
+            :root {
+                /* Дефинираме цветове тук, за да са достъпни */
+                --white: #ffffff;
+                --gradient: linear-gradient(135deg, #437dcb 0%, #2e5a9b 100%);
             }
-            if (typeof text === 'object') {
-                const main = formatTextContent(text.text || Object.values(text).join(' '));
-                const source = text.source ? `<p><em>Източник: ${DOMPurify.sanitize(text.source)}</em></p>` : '';
-                return main + source;
+
+            body {
+                background: var(--gradient);
             }
-            let sanitizedText = DOMPurify.sanitize(String(text), { USE_PROFILES: { html: false } });
-            // Replace escaped newlines with actual newlines
-            sanitizedText = sanitizedText.replace(/\\n/g, '\n');
-            // Replace ** with <strong> for bold text
-            let html = sanitizedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            const blocks = html.split(/\n\s*\n/);
-            const processedBlocks = blocks.map(block => {
-                block = block.trim();
-                if (!block) return '';
-                const isUnorderedList = /^\*/.test(block);
-                const isOrderedList = /^\d+\./.test(block);
-                if (isUnorderedList) {
-                    const items = block.split('\n').map(line => `<li>${line.replace(/^\*\s*/, '').trim()}</li>`).join('');
-                    return `<ul>${items}</ul>`;
-                } else if (isOrderedList) {
-                    const items = block.split('\n').map(line => `<li>${line.replace(/^\d+\.\s*/, '').trim()}</li>`).join('');
-                    return `<ol>${items}</ol>`;
-                } else {
-                    return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+
+            .report-header {
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+            .report-header h2 {
+                font-size: 2.5rem;
+                color: var(--white);
+                text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                margin-bottom: 0.5rem;
+            }
+            .report-header p {
+                font-size: 1.1rem;
+                color: var(--white);
+                opacity: 0.9;
+            }
+
+            #report-container {
+                background: transparent;
+                box-shadow: none;
+                padding: 0;
+                border: none;
+            }
+
+            .report-hero {
+                background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
+                border-radius: 12px;
+                padding: 2rem 2.5rem;
+                text-align: center;
+                margin-bottom: 2rem;
+                border: 1px solid #e0e7ff;
+            }
+            .report-hero h3 {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #1a253c;
+                margin: 0;
+            }
+            .report-hero p {
+                font-size: 1rem;
+                color: #5a647e;
+                margin: 0.25rem 0 0;
+            }
+
+            .report-section {
+                background-color: #ffffff;
+                border: 1px solid #e8eef7;
+                border-radius: 12px;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 8px 16px rgba(10, 40, 100, 0.05);
+                transition: all 0.3s ease;
+            }
+            details.report-section {
+                overflow: hidden;
+            }
+            details.report-section[open] {
+                border-color: #cdd9f1;
+            }
+
+            .report-section summary {
+                padding: 1.25rem 1.75rem;
+                font-weight: 600;
+                font-size: 1.2rem;
+                color: #1a253c;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                list-style: none;
+            }
+            .report-section summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .report-section summary .summary-title {
+                display: flex;
+                align-items: center;
+                flex-grow: 1;
+                margin-right: 1rem;
+            }
+            .report-section summary .icon-circle {
+                min-width: 40px;
+                height: 40px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                margin-right: 1rem;
+                font-size: 1rem;
+                color: #fff;
+                flex-shrink: 0; /* Предотвратява смачкване на иконата */
+            }
+            details.report-section summary .arrow {
+                transition: transform 0.3s ease;
+                flex-shrink: 0; /* Предотвратява смачкване на стрелката */
+            }
+            details.report-section[open] summary .arrow {
+                transform: rotate(180deg);
+            }
+
+            /* КЛЮЧОВА ПРОМЯНА: Подравняване на текста вляво и подобрени стилове */
+            .report-section .content {
+                padding: 0 1.75rem 1.75rem 1.75rem;
+                border-top: 1px solid #e8eef7;
+                color: #334155;
+                line-height: 1.8;
+                text-align: left; /* ВАЖНО: Подравняване вляво */
+                font-size: 1.02rem;
+            }
+            .report-section .content ul,
+            .report-section .content ol {
+                padding-left: 1.5rem;
+                margin-top: 0.75rem;
+                margin-bottom: 1.25rem;
+            }
+            .report-section .content li {
+                margin-bottom: 0.75rem;
+                line-height: 1.75;
+                padding-left: 0.25rem;
+            }
+            .report-section .content li::marker {
+                color: #3b82f6;
+                font-weight: 700;
+            }
+            .report-section .content p {
+                margin-bottom: 1rem;
+                line-height: 1.8;
+                text-align: justify;
+                hyphens: auto;
+            }
+            .report-section .content p:last-child {
+                margin-bottom: 0;
+            }
+            .report-section .content h4 {
+                margin-top: 2rem;
+                margin-bottom: 1rem;
+                color: #1e293b;
+                font-size: 1.15rem;
+                font-weight: 700;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #e2e8f0;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .report-section .content h4::before {
+                content: '▸';
+                color: #3b82f6;
+                font-size: 1.2rem;
+                font-weight: 900;
+            }
+            .report-section .content strong {
+                color: #1e3a8a;
+                font-weight: 700;
+                background: linear-gradient(
+                    135deg,
+                    rgba(59, 130, 246, 0.08) 0%,
+                    rgba(59, 130, 246, 0.03) 100%
+                );
+                padding: 0.1rem 0.35rem;
+                border-radius: 3px;
+            }
+            .report-section .content em {
+                color: #64748b;
+                font-style: italic;
+                font-weight: 500;
+            }
+
+            .report-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1.5rem;
+            }
+            .info-card {
+                background: linear-gradient(135deg, #fefeff 0%, #f8fafc 100%);
+                border-radius: 14px;
+                padding: 1.75rem;
+                border: 1px solid #e2e8f0;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+                position: relative;
+                overflow: hidden;
+            }
+            .info-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 4px;
+                height: 0;
+                background: linear-gradient(180deg, #3b82f6, #60a5fa);
+                transition: height 0.3s ease;
+            }
+            .info-card:hover {
+                box-shadow: 0 8px 20px rgba(59, 130, 246, 0.12);
+                border-color: #bfdbfe;
+                transform: translateY(-4px);
+            }
+            .info-card:hover::before {
+                height: 100%;
+            }
+            .info-card h4 {
+                font-weight: 700;
+                margin-bottom: 1rem;
+                color: #1e293b;
+                display: flex;
+                align-items: center;
+                font-size: 1.15rem;
+                gap: 0.75rem;
+            }
+            .info-card h4 i {
+                font-size: 1.3rem;
+            }
+            .info-card ul,
+            .info-card ol {
+                margin-top: 0.75rem;
+                padding-left: 1.25rem;
+            }
+            .info-card ul li,
+            .info-card ol li {
+                margin-bottom: 0.6rem;
+                line-height: 1.7;
+                color: #475569;
+            }
+            .info-card ul li::marker {
+                color: #3b82f6;
+            }
+            .info-card p {
+                color: #475569;
+                line-height: 1.7;
+            }
+
+            .channel-analysis-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 0.75rem;
+                padding: 0.5rem 0;
+            }
+            .channel-analysis-item span {
+                width: 110px;
+                font-weight: 500;
+                flex-shrink: 0;
+                color: #333d52;
+            }
+            .channel-analysis-item .bar {
+                flex-grow: 1;
+                height: 12px;
+                border-radius: 6px;
+                overflow: hidden;
+                background: #e9ecef;
+                box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            .channel-analysis-item .bar-fill {
+                border-radius: 6px;
+                transition: width 0.8s ease-out;
+            }
+            .channel-analysis-item .bar-fill.low {
+                background: linear-gradient(90deg, #28a745, #34ce57);
+            }
+            .channel-analysis-item .bar-fill.medium {
+                background: linear-gradient(90deg, #ffc107, #ffcd38);
+            }
+            .channel-analysis-item .bar-fill.high {
+                background: linear-gradient(90deg, #dc3545, #e74c5c);
+            }
+
+            /* Chart containers */
+            .chart-container {
+                position: relative;
+                margin: 1.5rem auto;
+                padding: 2.5rem 2rem;
+                background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 50%, #ffffff 100%);
+                border-radius: 20px;
+                box-shadow:
+                    0 8px 16px -4px rgba(59, 130, 246, 0.1),
+                    0 4px 8px -2px rgba(0, 0, 0, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(59, 130, 246, 0.15);
+                overflow: visible;
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .chart-container:hover {
+                box-shadow:
+                    0 20px 30px -8px rgba(59, 130, 246, 0.18),
+                    0 8px 16px -4px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+                transform: translateY(-4px) scale(1.01);
+                border-color: rgba(59, 130, 246, 0.3);
+            }
+            .chart-container.small {
+                max-width: 500px;
+                min-height: 380px;
+            }
+            .chart-container.medium {
+                max-width: 700px;
+                min-height: 480px;
+            }
+            .chart-container.large {
+                width: 100%;
+                min-height: 500px;
+            }
+            .chart-container canvas {
+                max-width: 100%;
+                max-height: 100%;
+                filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.08));
+            }
+            .chart-title {
+                text-align: center;
+                font-weight: 700;
+                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                margin-bottom: 2rem;
+                font-size: 1.35rem;
+                letter-spacing: -0.03em;
+                position: relative;
+                padding-bottom: 0.75rem;
+            }
+            .chart-title::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 80px;
+                height: 4px;
+                background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+                border-radius: 2px;
+            }
+
+            .button-group-report {
+                margin-top: 2rem;
+                text-align: center;
+                display: flex;
+                justify-content: center;
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+
+            .report-disclaimer {
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                background-color: #f8f9fa;
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin-top: 2rem;
+                border-left: 4px solid #3b82f6;
+                text-align: left;
+            }
+            .report-disclaimer i {
+                color: #3b82f6;
+                font-size: 1.5rem;
+                margin-top: 3px;
+            }
+            .report-disclaimer p {
+                font-size: 0.9rem;
+                margin: 0;
+            }
+
+            /* КЛЮЧОВА ПРОМЯНА: Медийни заявки за мобилна визия */
+            @media (max-width: 767px) {
+                .container {
+                    padding: 1rem;
                 }
-            });
-            return processedBlocks.join('');
-        }
-        
-        // Функция за създаване на аналитична секция
-        function createAnalyticsSection(analytics) {
-            const section = document.createElement('details');
-            section.className = 'report-section';
-            section.setAttribute('open', ''); // Отворена по подразбиране
-            
-            const qualityColor = analytics.quality.precision_score >= 85 ? '#10b981' : 
-                                 analytics.quality.precision_score >= 70 ? '#3b82f6' :
-                                 analytics.quality.precision_score >= 50 ? '#f59e0b' : '#64748b';
-            
-            const enrichmentColor = analytics.detection.enrichment_rate >= 80 ? '#10b981' :
-                                    analytics.detection.enrichment_rate >= 60 ? '#3b82f6' : '#f59e0b';
-            
-            section.innerHTML = `
+                .report-header h2 {
+                    font-size: 2rem;
+                }
+                .report-hero {
+                    padding: 1.5rem;
+                }
+                .report-section summary {
+                    padding: 1rem 1.25rem;
+                    font-size: 1.1rem;
+                }
+                .report-section .content {
+                    padding: 0 1.25rem 1.25rem 1.25rem;
+                }
+                .info-card {
+                    padding: 1.25rem;
+                }
+                .channel-analysis-item span {
+                    width: 90px;
+                    font-size: 0.9rem;
+                }
+                .report-disclaimer {
+                    padding: 1rem;
+                }
+            }
+
+            /* Print styles for PDF export */
+            @media print {
+                body {
+                    background: white;
+                }
+                .container {
+                    padding: 0;
+                    max-width: 100%;
+                }
+                .button-group-report {
+                    display: none;
+                }
+                .report-header {
+                    color: #1a253c;
+                }
+                .report-header h2,
+                .report-header p {
+                    color: #1a253c;
+                    text-shadow: none;
+                }
+                details.report-section {
+                    border: 1px solid #ddd;
+                }
+                details.report-section summary {
+                    page-break-inside: avoid;
+                }
+                details.report-section .content {
+                    page-break-inside: avoid;
+                }
+                .report-section {
+                    page-break-inside: avoid;
+                    margin-bottom: 1rem;
+                }
+                .info-card {
+                    page-break-inside: avoid;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <section class="analysis-section" style="padding-top: 2rem">
+                <header class="report-header">
+                    <h2 class="fade-in-up">Иридиологичен Доклад</h2>
+                    <p class="fade-in-up delay-1">Пътят към вашето здраве започва тук.</p>
+                </header>
+
+                <article id="report-container" class="fade-in-up delay-2">
+                    <!-- Съдържанието се генерира от JavaScript -->
+                </article>
+
+                <div id="message-box"></div>
+
+                <div class="button-group-report">
+                    <button
+                        id="print-btn"
+                        class="btn btn-primary fade-in-up delay-3"
+                        title="Принтирайте или запазете като PDF"
+                    >
+                        <i class="fas fa-file-pdf"></i> Запази PDF
+                    </button>
+                    <button id="re-analyze-btn" class="btn btn-secondary fade-in-up delay-3">
+                        Повтори анализа
+                    </button>
+                    <a href="analysis.html" class="btn btn-secondary fade-in-up delay-3"
+                        >Нов анализ</a
+                    >
+                </div>
+            </section>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
+        <script type="module">
+            import { WORKER_URL } from './config.js';
+
+            // *** КЛЮЧОВА ПРОМЯНА: Актуализирана конфигурация на секциите ***
+            const ICONS_CONFIG = {
+                'Резюме на анализа': { icon: 'fa-file-medical', color: '#06b6d4' },
+                'Конституционален анализ': { icon: 'fa-shield-halved', color: '#3b82f6' },
+                'Приоритетни системи за подкрепа': { icon: 'fa-heart-pulse', color: '#ef4444' },
+                'Анализ на елиминативните канали': { icon: 'fa-recycle', color: '#10b981' },
+                'Ключови находки и тяхната връзка': {
+                    icon: 'fa-project-diagram',
+                    color: '#8b5cf6'
+                },
+                'План за действие': { icon: 'fa-list-check', color: '#14b8a6' },
+                'Специални хранителни насоки': { icon: 'fa-apple-alt', color: '#f97316' },
+                'Препоръки за билки и добавки': { icon: 'fa-leaf', color: '#059669' },
+                'Холистични препоръки': { icon: 'fa-seedling', color: '#f59e0b' },
+                'Фундаментални принципи': { icon: 'fa-lightbulb', color: '#1d4ed8' },
+                'Целенасочени препоръки': { icon: 'fa-bullseye', color: '#c2410c' },
+                'Психология и емоции': { icon: 'fa-brain', color: '#be185d' },
+                'Препоръки за проследяване': { icon: 'fa-calendar-check', color: '#7c3aed' },
+                default: { icon: 'fa-circle-info', color: '#6b7280' }
+            };
+
+            // Функция за форматиране на Markdown към HTML
+            function formatTextContent(text) {
+                if (text == null) return '';
+                if (Array.isArray(text)) {
+                    return `<ul>${text.map((item) => `<li>${formatTextContent(item)}</li>`).join('')}</ul>`;
+                }
+                if (typeof text === 'object') {
+                    const main = formatTextContent(text.text || Object.values(text).join(' '));
+                    const source = text.source
+                        ? `<p><em>Източник: ${DOMPurify.sanitize(text.source)}</em></p>`
+                        : '';
+                    return main + source;
+                }
+                let sanitizedText = DOMPurify.sanitize(String(text), {
+                    USE_PROFILES: { html: false }
+                });
+                // Replace escaped newlines with actual newlines
+                sanitizedText = sanitizedText.replace(/\\n/g, '\n');
+                // Replace ** with <strong> for bold text
+                let html = sanitizedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                const blocks = html.split(/\n\s*\n/);
+                const processedBlocks = blocks.map((block) => {
+                    block = block.trim();
+                    if (!block) return '';
+                    const isUnorderedList = /^\*/.test(block);
+                    const isOrderedList = /^\d+\./.test(block);
+                    if (isUnorderedList) {
+                        const items = block
+                            .split('\n')
+                            .map((line) => `<li>${line.replace(/^\*\s*/, '').trim()}</li>`)
+                            .join('');
+                        return `<ul>${items}</ul>`;
+                    } else if (isOrderedList) {
+                        const items = block
+                            .split('\n')
+                            .map((line) => `<li>${line.replace(/^\d+\.\s*/, '').trim()}</li>`)
+                            .join('');
+                        return `<ol>${items}</ol>`;
+                    } else {
+                        return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+                    }
+                });
+                return processedBlocks.join('');
+            }
+
+            // Функция за създаване на аналитична секция
+            function createAnalyticsSection(analytics) {
+                const section = document.createElement('details');
+                section.className = 'report-section';
+                section.setAttribute('open', ''); // Отворена по подразбиране
+
+                const qualityColor =
+                    analytics.quality.precision_score >= 85
+                        ? '#10b981'
+                        : analytics.quality.precision_score >= 70
+                          ? '#3b82f6'
+                          : analytics.quality.precision_score >= 50
+                            ? '#f59e0b'
+                            : '#64748b';
+
+                const enrichmentColor =
+                    analytics.detection.enrichment_rate >= 80
+                        ? '#10b981'
+                        : analytics.detection.enrichment_rate >= 60
+                          ? '#3b82f6'
+                          : '#f59e0b';
+
+                section.innerHTML = `
                 <summary>
                     <div class="summary-title">
                         <span class="icon-circle" style="background-color: #6366f1;"><i class="fas fa-chart-line"></i></span>
@@ -513,24 +712,32 @@
                         </h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 1rem;">
                             <div style="display: flex; align-items: center; color: #166534;">
-                                ${analytics.quality.improvement_indicators.enhanced_validation ? 
-                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Подобрена валидация</span>' : 
-                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Базова валидация</span>'}
+                                ${
+                                    analytics.quality.improvement_indicators.enhanced_validation
+                                        ? '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Подобрена валидация</span>'
+                                        : '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Базова валидация</span>'
+                                }
                             </div>
                             <div style="display: flex; align-items: center; color: #166534;">
-                                ${analytics.quality.improvement_indicators.zone_mapping ? 
-                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Зонно картографиране</span>' : 
-                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Без зонно картографиране</span>'}
+                                ${
+                                    analytics.quality.improvement_indicators.zone_mapping
+                                        ? '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Зонно картографиране</span>'
+                                        : '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Без зонно картографиране</span>'
+                                }
                             </div>
                             <div style="display: flex; align-items: center; color: #166534;">
-                                ${analytics.quality.improvement_indicators.priority_classification ? 
-                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Класификация по приоритет</span>' : 
-                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Без приоритизация</span>'}
+                                ${
+                                    analytics.quality.improvement_indicators.priority_classification
+                                        ? '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Класификация по приоритет</span>'
+                                        : '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Без приоритизация</span>'
+                                }
                             </div>
                             <div style="display: flex; align-items: center; color: #166534;">
-                                ${analytics.quality.improvement_indicators.personalized_metrics ? 
-                                  '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Персонализирани метрики</span>' : 
-                                  '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Базови метрики</span>'}
+                                ${
+                                    analytics.quality.improvement_indicators.personalized_metrics
+                                        ? '<i class="fas fa-check-circle" style="color: #22c55e; margin-right: 0.5rem;"></i><span>Персонализирани метрики</span>'
+                                        : '<i class="fas fa-times-circle" style="color: #dc2626; margin-right: 0.5rem;"></i><span style="color: #991b1b;">Базови метрики</span>'
+                                }
                             </div>
                         </div>
                     </div>
@@ -542,91 +749,99 @@
                     </p>
                 </div>
             `;
-            
-            return section;
-        }
 
-        function renderReport(data) {
-            const container = document.getElementById('report-container');
-            container.innerHTML = '';
+                return section;
+            }
 
-            const hero = document.createElement('div');
-            hero.className = 'report-hero';
-            hero.innerHTML = `
-                <h3>Персонален анализ за <span style="color: #0056b3;">${DOMPurify.sanitize(data["Име"] || 'Клиент')}</span></h3>
+            function renderReport(data) {
+                const container = document.getElementById('report-container');
+                container.innerHTML = '';
+
+                const hero = document.createElement('div');
+                hero.className = 'report-hero';
+                hero.innerHTML = `
+                <h3>Персонален анализ за <span style="color: #0056b3;">${DOMPurify.sanitize(data['Име'] || 'Клиент')}</span></h3>
                 <p>Дата на генериране: ${new Date().toLocaleDateString('bg-BG')}</p>
             `;
-            container.appendChild(hero);
+                container.appendChild(hero);
 
-            // Добавяме резюме ако е налично
-            if (data["Резюме на анализа"]) {
-                const summaryBox = document.createElement('div');
-                summaryBox.className = 'report-hero';
-                summaryBox.style.background = 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)';
-                summaryBox.style.borderLeft = '4px solid #f59e0b';
-                summaryBox.innerHTML = `
+                // Добавяме резюме ако е налично
+                if (data['Резюме на анализа']) {
+                    const summaryBox = document.createElement('div');
+                    summaryBox.className = 'report-hero';
+                    summaryBox.style.background =
+                        'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)';
+                    summaryBox.style.borderLeft = '4px solid #f59e0b';
+                    summaryBox.innerHTML = `
                     <h3 style="color: #92400e; margin-bottom: 0.75rem;"><i class="fas fa-file-medical" style="margin-right: 0.5rem;"></i>Резюме</h3>
-                    <div style="color: #78350f; font-size: 1.05rem; line-height: 1.7; text-align: left;">${formatTextContent(data["Резюме на анализа"])}</div>
+                    <div style="color: #78350f; font-size: 1.05rem; line-height: 1.7; text-align: left;">${formatTextContent(data['Резюме на анализа'])}</div>
                 `;
-                container.appendChild(summaryBox);
-            }
-            
-            // Добавяме аналитични метрики ако са налични
-            if (data._analytics) {
-                const analyticsSection = createAnalyticsSection(data._analytics);
-                container.appendChild(analyticsSection);
-            }
-
-            const sectionOrder = [
-                "Конституционален анализ",
-                "Приоритетни системи за подкрепа",
-                "Анализ на елиминативните канали",
-                "Ключови находки и тяхната връзка",
-                "План за действие",
-                "Специални хранителни насоки",
-                "Препоръки за билки и добавки",
-                "Холистични препоръки",
-                "Препоръки за проследяване"
-            ];
-            
-            sectionOrder.forEach(key => {
-                const content = data[key];
-                if (content) {
-                    let section;
-                    if (key === 'Холистични препоръки') {
-                        section = createRecommendationsSection(key, content);
-                    } else if (key === 'Специални хранителни насоки') {
-                        section = createNutritionalGuidelinesSection(key, content);
-                    } else if (key === 'Препоръки за билки и добавки') {
-                        section = createHerbsSupplementsSection(key, content);
-                    } else if (key === 'Анализ на елиминативните канали' && typeof content === 'string') {
-                        section = createChannelsSection(key, content);
-                    } else if (key === 'Приоритетни системи за подкрепа') {
-                        section = createPrioritySystemsSection(key, content);
-                    } else {
-                        section = createCollapsibleSection(key, formatTextContent(content), false);
-                    }
-                    container.appendChild(section);
+                    container.appendChild(summaryBox);
                 }
-            });
 
-            if (data['Задължителен отказ от отговорност']) {
-                const disclaimer = document.createElement('footer');
-                disclaimer.className = 'report-disclaimer';
-                disclaimer.innerHTML = `<i class="fas fa-info-circle"></i>${formatTextContent(data['Задължителен отказ от отговорност'])}`;
-                container.appendChild(disclaimer);
-            }
-        }
+                // Добавяме аналитични метрики ако са налични
+                if (data._analytics) {
+                    const analyticsSection = createAnalyticsSection(data._analytics);
+                    container.appendChild(analyticsSection);
+                }
 
-        function createCollapsibleSection(title, contentHTML, defaultOpen = false) {
-            const config = ICONS_CONFIG[title] || ICONS_CONFIG['default'];
-            const details = document.createElement('details');
-            details.className = 'report-section';
-            // Only open by default if explicitly requested (not for regular sections)
-            if (defaultOpen) {
-                details.setAttribute('open', '');
+                const sectionOrder = [
+                    'Конституционален анализ',
+                    'Приоритетни системи за подкрепа',
+                    'Анализ на елиминативните канали',
+                    'Ключови находки и тяхната връзка',
+                    'План за действие',
+                    'Специални хранителни насоки',
+                    'Препоръки за билки и добавки',
+                    'Холистични препоръки',
+                    'Препоръки за проследяване'
+                ];
+
+                sectionOrder.forEach((key) => {
+                    const content = data[key];
+                    if (content) {
+                        let section;
+                        if (key === 'Холистични препоръки') {
+                            section = createRecommendationsSection(key, content);
+                        } else if (key === 'Специални хранителни насоки') {
+                            section = createNutritionalGuidelinesSection(key, content);
+                        } else if (key === 'Препоръки за билки и добавки') {
+                            section = createHerbsSupplementsSection(key, content);
+                        } else if (
+                            key === 'Анализ на елиминативните канали' &&
+                            typeof content === 'string'
+                        ) {
+                            section = createChannelsSection(key, content);
+                        } else if (key === 'Приоритетни системи за подкрепа') {
+                            section = createPrioritySystemsSection(key, content);
+                        } else {
+                            section = createCollapsibleSection(
+                                key,
+                                formatTextContent(content),
+                                false
+                            );
+                        }
+                        container.appendChild(section);
+                    }
+                });
+
+                if (data['Задължителен отказ от отговорност']) {
+                    const disclaimer = document.createElement('footer');
+                    disclaimer.className = 'report-disclaimer';
+                    disclaimer.innerHTML = `<i class="fas fa-info-circle"></i>${formatTextContent(data['Задължителен отказ от отговорност'])}`;
+                    container.appendChild(disclaimer);
+                }
             }
-            details.innerHTML = `
+
+            function createCollapsibleSection(title, contentHTML, defaultOpen = false) {
+                const config = ICONS_CONFIG[title] || ICONS_CONFIG['default'];
+                const details = document.createElement('details');
+                details.className = 'report-section';
+                // Only open by default if explicitly requested (not for regular sections)
+                if (defaultOpen) {
+                    details.setAttribute('open', '');
+                }
+                details.innerHTML = `
                 <summary>
                     <div class="summary-title">
                         <span class="icon-circle" style="background-color: ${config.color};"><i class="fas ${config.icon}"></i></span>
@@ -636,672 +851,915 @@
                 </summary>
                 <div class="content">${contentHTML}</div>
             `;
-            return details;
-        }
-        
-        function createRecommendationsSection(title, recommendationsData) {
-            if (!recommendationsData || typeof recommendationsData !== 'object') return document.createElement('div');
-            let subSectionsHTML = '';
-            
-            // За да подредим препоръките, дефинираме ред
-            const recommendationOrder = ["Фундаментални принципи", "Целенасочени препоръки", "Психология и емоции"];
-            const sortedKeys = Object.keys(recommendationsData).sort((a, b) => {
-                const indexA = recommendationOrder.indexOf(a);
-                const indexB = recommendationOrder.indexOf(b);
-                if (indexA === -1) return 1; // ако не е в списъка, слагаме го накрая
-                if (indexB === -1) return -1;
-                return indexA - indexB;
-            });
-            
-            sortedKeys.forEach(key => {
-                const value = recommendationsData[key];
-                const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
-                const formattedValue = formatTextContent(value); 
-                subSectionsHTML += `
+                return details;
+            }
+
+            function createRecommendationsSection(title, recommendationsData) {
+                if (!recommendationsData || typeof recommendationsData !== 'object')
+                    return document.createElement('div');
+                let subSectionsHTML = '';
+
+                // За да подредим препоръките, дефинираме ред
+                const recommendationOrder = [
+                    'Фундаментални принципи',
+                    'Целенасочени препоръки',
+                    'Психология и емоции'
+                ];
+                const sortedKeys = Object.keys(recommendationsData).sort((a, b) => {
+                    const indexA = recommendationOrder.indexOf(a);
+                    const indexB = recommendationOrder.indexOf(b);
+                    if (indexA === -1) return 1; // ако не е в списъка, слагаме го накрая
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+
+                sortedKeys.forEach((key) => {
+                    const value = recommendationsData[key];
+                    const config = ICONS_CONFIG[key] || ICONS_CONFIG['default'];
+                    const formattedValue = formatTextContent(value);
+                    subSectionsHTML += `
                     <div class="info-card">
                         <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>${DOMPurify.sanitize(key)}</h4>
                         <div class="recommendation-content">${formattedValue}</div>
                     </div>
                 `;
-            });
-            const contentHTML = `<div class="report-grid">${subSectionsHTML}</div>`;
-            return createCollapsibleSection(title, contentHTML, false);
-        }
-        
-        function createNutritionalGuidelinesSection(title, nutritionData) {
-            if (!nutritionData || typeof nutritionData !== 'object') return document.createElement('div');
-            let contentHTML = '<div class="report-grid">';
-            
-            // Foods to limit
-            if (nutritionData['Храни за ограничаване']) {
-                const config = { icon: "fa-ban", color: "#dc2626" };
-                const formattedValue = formatTextContent(nutritionData['Храни за ограничаване']);
-                contentHTML += `
+                });
+                const contentHTML = `<div class="report-grid">${subSectionsHTML}</div>`;
+                return createCollapsibleSection(title, contentHTML, false);
+            }
+
+            function createNutritionalGuidelinesSection(title, nutritionData) {
+                if (!nutritionData || typeof nutritionData !== 'object')
+                    return document.createElement('div');
+                let contentHTML = '<div class="report-grid">';
+
+                // Foods to limit
+                if (nutritionData['Храни за ограничаване']) {
+                    const config = { icon: 'fa-ban', color: '#dc2626' };
+                    const formattedValue = formatTextContent(
+                        nutritionData['Храни за ограничаване']
+                    );
+                    contentHTML += `
                     <div class="info-card" style="border-left: 3px solid #dc2626;">
                         <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Храни за ограничаване</h4>
                         <div>${formattedValue}</div>
                     </div>
                 `;
-            }
-            
-            // Foods to add
-            if (nutritionData['Храни за добавяне']) {
-                const config = { icon: "fa-plus-circle", color: "#16a34a" };
-                const formattedValue = formatTextContent(nutritionData['Храни за добавяне']);
-                contentHTML += `
+                }
+
+                // Foods to add
+                if (nutritionData['Храни за добавяне']) {
+                    const config = { icon: 'fa-plus-circle', color: '#16a34a' };
+                    const formattedValue = formatTextContent(nutritionData['Храни за добавяне']);
+                    contentHTML += `
                     <div class="info-card" style="border-left: 3px solid #16a34a;">
                         <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Храни за добавяне</h4>
                         <div>${formattedValue}</div>
                     </div>
                 `;
+                }
+
+                contentHTML += '</div>';
+                return createCollapsibleSection(title, contentHTML, false);
             }
-            
-            contentHTML += '</div>';
-            return createCollapsibleSection(title, contentHTML, false);
-        }
-        
-        function createHerbsSupplementsSection(title, herbsData) {
-            if (!herbsData || typeof herbsData !== 'object') return document.createElement('div');
-            let contentHTML = '<div class="report-grid">';
-            
-            // Herbal recommendations
-            if (herbsData['Билкови препоръки']) {
-                const config = { icon: "fa-seedling", color: "#059669" };
-                const formattedValue = formatTextContent(herbsData['Билкови препоръки']);
-                contentHTML += `
+
+            function createHerbsSupplementsSection(title, herbsData) {
+                if (!herbsData || typeof herbsData !== 'object')
+                    return document.createElement('div');
+                let contentHTML = '<div class="report-grid">';
+
+                // Herbal recommendations
+                if (herbsData['Билкови препоръки']) {
+                    const config = { icon: 'fa-seedling', color: '#059669' };
+                    const formattedValue = formatTextContent(herbsData['Билкови препоръки']);
+                    contentHTML += `
                     <div class="info-card" style="border-left: 3px solid #059669;">
                         <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Билкови препоръки</h4>
                         <div>${formattedValue}</div>
                     </div>
                 `;
-            }
-            
-            // Nutritional supplements
-            if (herbsData['Хранителни добавки']) {
-                const config = { icon: "fa-capsules", color: "#0891b2" };
-                const formattedValue = formatTextContent(herbsData['Хранителни добавки']);
-                contentHTML += `
+                }
+
+                // Nutritional supplements
+                if (herbsData['Хранителни добавки']) {
+                    const config = { icon: 'fa-capsules', color: '#0891b2' };
+                    const formattedValue = formatTextContent(herbsData['Хранителни добавки']);
+                    contentHTML += `
                     <div class="info-card" style="border-left: 3px solid #0891b2;">
                         <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Хранителни добавки</h4>
                         <div>${formattedValue}</div>
                     </div>
                 `;
-            }
-            
-            // Homeopathic remedies
-            if (herbsData['Хомеопатични средства']) {
-                const config = { icon: "fa-flask", color: "#7c3aed" };
-                const formattedValue = formatTextContent(herbsData['Хомеопатични средства']);
-                contentHTML += `
+                }
+
+                // Homeopathic remedies
+                if (herbsData['Хомеопатични средства']) {
+                    const config = { icon: 'fa-flask', color: '#7c3aed' };
+                    const formattedValue = formatTextContent(herbsData['Хомеопатични средства']);
+                    contentHTML += `
                     <div class="info-card" style="border-left: 3px solid #7c3aed;">
                         <h4><i class="fas ${config.icon}" style="color: ${config.color}; margin-right: 0.75rem;"></i>Хомеопатични средства</h4>
                         <div>${formattedValue}</div>
                     </div>
                 `;
+                }
+
+                contentHTML += '</div>';
+                return createCollapsibleSection(title, contentHTML, false);
             }
-            
-            contentHTML += '</div>';
-            return createCollapsibleSection(title, contentHTML, false);
-        }
-        
-        function createPrioritySystemsSection(title, content) {
-            const chartId = 'systemsChart_' + Date.now();
-            const textContentHTML = formatTextContent(content);
-            
-            const contentWithChart = `
+
+            function createPrioritySystemsSection(title, content) {
+                const chartId = 'systemsChart_' + Date.now();
+                const textContentHTML = formatTextContent(content);
+
+                const contentWithChart = `
                 <div class="chart-container medium">
                     <div class="chart-title">Баланс на системите за подкрепа</div>
                     <canvas id="${chartId}"></canvas>
                 </div>
                 ${textContentHTML}
             `;
-            
-            const section = createCollapsibleSection(title, contentWithChart, false);
-            
-            // Create chart after section is added to DOM
-            requestAnimationFrame(() => {
+
+                const section = createCollapsibleSection(title, contentWithChart, false);
+
+                // Create chart after section is added to DOM
                 requestAnimationFrame(() => {
-                    const canvas = document.getElementById(chartId);
-                    if (canvas) createSystemBalanceChart(content, chartId);
+                    requestAnimationFrame(() => {
+                        const canvas = document.getElementById(chartId);
+                        if (canvas) createSystemBalanceChart(content, chartId);
+                    });
                 });
-            });
-            
-            return section;
-        }
-        
-        function createChannelsSection(title, content) {
-            const textContentHTML = formatTextContent(content);
-            const channels = ['черва', 'бъбреци', 'лимфа', 'кожа', 'бели дробове'];
-            const chartId = 'channelsChart_' + Date.now();
-            
-            let barsHTML = `
+
+                return section;
+            }
+
+            function createChannelsSection(title, content) {
+                const textContentHTML = formatTextContent(content);
+                const channels = ['черва', 'бъбреци', 'лимфа', 'кожа', 'бели дробове'];
+                const chartId = 'channelsChart_' + Date.now();
+
+                let barsHTML = `
                 <h4 style="margin-top: 1.5rem;">Визуална оценка на натовареността:</h4>
                 <div class="chart-container medium">
                     <canvas id="${chartId}"></canvas>
                 </div>
             `;
-            
-            const finalContentHTML = textContentHTML + barsHTML;
-            const section = createCollapsibleSection(title, finalContentHTML, false);
-            
-            // Create chart after section is added to DOM
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    const canvas = document.getElementById(chartId);
-                    if (canvas) createChannelComparisonChart(content, chartId);
-                });
-            });
-            
-            return section;
-        }
 
-        // --- CHART CREATION FUNCTIONS ---
-        
-        function createSystemBalanceChart(systemsData, containerId) {
-            const ctx = document.getElementById(containerId);
-            if (!ctx) {
-                console.error('Canvas element not found:', containerId);
-                return;
+                const finalContentHTML = textContentHTML + barsHTML;
+                const section = createCollapsibleSection(title, finalContentHTML, false);
+
+                // Create chart after section is added to DOM
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        const canvas = document.getElementById(chartId);
+                        if (canvas) createChannelComparisonChart(content, chartId);
+                    });
+                });
+
+                return section;
             }
-            
-            // Priority calculation constants
-            const PRIORITY_MULTIPLIER = 25;
-            const PRIORITY_BASE = 35;
-            const PRIORITY_MAX_BASE = 85;
-            const PRIORITY_MIN = 20;
-            const PRIORITY_MAX = 100;
-            const CONTEXT_WINDOW_SIZE = 50;
-            const SEVERITY_BONUS_HIGH = 15;
-            const SEVERITY_BONUS_MEDIUM = 8;
-            const SEVERITY_PENALTY_MILD = -10;
-            const FALLBACK_PRIORITY = 50;
-            
-            const systems = [];
-            const values = [];
-            const colors = [];
-            const backgroundColors = [];
-            
-            // Parse systems and their priorities with improved detection
-            const text = typeof systemsData === 'string' ? systemsData : JSON.stringify(systemsData);
-            const lowerText = text.toLowerCase();
-            
-            // Enhanced system definitions with better colors and more keywords
-            const systemKeywords = [
-                { 
-                    name: 'Храносмилателна', 
-                    color: '#f59e0b',
-                    gradient: 'rgba(245, 158, 11, 0.75)',
-                    keywords: ['храносмилат', 'черва', 'стомах', 'храносмилане', 'храносмилателн', 'гастро', 'чревн']
-                },
-                { 
-                    name: 'Нервна', 
-                    color: '#8b5cf6',
-                    gradient: 'rgba(139, 92, 246, 0.75)',
-                    keywords: ['нервн', 'стрес', 'мозък', 'невро', 'психик', 'емоционалн', 'тревож']
-                },
-                { 
-                    name: 'Лимфна', 
-                    color: '#10b981',
-                    gradient: 'rgba(16, 185, 129, 0.75)',
-                    keywords: ['лимфа', 'лимфатичн', 'имун', 'имунн', 'отбранителн']
-                },
-                { 
-                    name: 'Сърдечно-съдова', 
-                    color: '#ef4444',
-                    gradient: 'rgba(239, 68, 68, 0.75)',
-                    keywords: ['сърдечн', 'кръв', 'съдов', 'кръвоносн', 'сърце', 'артери', 'кардио']
-                },
-                { 
-                    name: 'Дихателна', 
-                    color: '#06b6d4',
-                    gradient: 'rgba(6, 182, 212, 0.75)',
-                    keywords: ['дихат', 'белодробн', 'бели дробове', 'респиратор', 'дишан']
-                },
-                { 
-                    name: 'Елиминативна', 
-                    color: '#84cc16',
-                    gradient: 'rgba(132, 204, 22, 0.75)',
-                    keywords: ['детокс', 'бъбрек', 'елиминат', 'изхвърлян', 'пречистван', 'урин', 'отпадн']
-                },
-                { 
-                    name: 'Хормонална', 
-                    color: '#ec4899',
-                    gradient: 'rgba(236, 72, 153, 0.75)',
-                    keywords: ['хормон', 'ендокрин', 'щитовидн', 'надбъбречн', 'хипофиз']
-                },
-                { 
-                    name: 'Метаболична', 
-                    color: '#f97316',
-                    gradient: 'rgba(249, 115, 22, 0.75)',
-                    keywords: ['метаболи', 'енерги', 'обмен', 'митохондри']
+
+            // --- CHART CREATION FUNCTIONS ---
+
+            function createSystemBalanceChart(systemsData, containerId) {
+                const ctx = document.getElementById(containerId);
+                if (!ctx) {
+                    console.error('Canvas element not found:', containerId);
+                    return;
                 }
-            ];
-            
-            // Severity indicators for better priority calculation
-            const severityIndicators = {
-                high: ['приоритетн', 'критичн', 'важн', 'сериозн', 'силно', 'значителн', 'изразен', 'спешн'],
-                medium: ['умерен', 'средн', 'забележим', 'видим', 'леко'],
-                mild: ['минимален', 'слаб', 'незначителн']
-            };
-            
-            // Detect systems and calculate priorities
-            systemKeywords.forEach(sys => {
-                const matchCount = sys.keywords.filter(kw => lowerText.includes(kw)).length;
-                
-                if (matchCount > 0) {
-                    systems.push(sys.name);
-                    colors.push(sys.color);
-                    backgroundColors.push(sys.gradient);
-                    
-                    // Calculate priority based on keyword frequency and severity indicators
-                    let basePriority = Math.min(matchCount * PRIORITY_MULTIPLIER + PRIORITY_BASE, PRIORITY_MAX_BASE);
-                    
-                    // Check for severity modifiers in proximity to system keywords
-                    let severityBonus = 0;
-                    sys.keywords.forEach(kw => {
-                        if (lowerText.includes(kw)) {
-                            // Check text around the keyword for severity indicators
-                            const keywordIndex = lowerText.indexOf(kw);
-                            const contextStart = Math.max(0, keywordIndex - CONTEXT_WINDOW_SIZE);
-                            const contextEnd = Math.min(lowerText.length, keywordIndex + CONTEXT_WINDOW_SIZE);
-                            const context = lowerText.substring(contextStart, contextEnd);
-                            
-                            if (severityIndicators.high.some(ind => context.includes(ind))) {
-                                severityBonus = Math.max(severityBonus, SEVERITY_BONUS_HIGH);
-                            } else if (severityIndicators.medium.some(ind => context.includes(ind))) {
-                                severityBonus = Math.max(severityBonus, SEVERITY_BONUS_MEDIUM);
-                            } else if (severityIndicators.mild.some(ind => context.includes(ind))) {
-                                severityBonus = Math.max(severityBonus, SEVERITY_PENALTY_MILD);
+
+                // Priority calculation constants
+                const PRIORITY_MULTIPLIER = 25;
+                const PRIORITY_BASE = 35;
+                const PRIORITY_MAX_BASE = 85;
+                const PRIORITY_MIN = 20;
+                const PRIORITY_MAX = 100;
+                const CONTEXT_WINDOW_SIZE = 50;
+                const SEVERITY_BONUS_HIGH = 15;
+                const SEVERITY_BONUS_MEDIUM = 8;
+                const SEVERITY_PENALTY_MILD = -10;
+                const FALLBACK_PRIORITY = 50;
+
+                const systems = [];
+                const values = [];
+                const colors = [];
+                const backgroundColors = [];
+
+                // Parse systems and their priorities with improved detection
+                const text =
+                    typeof systemsData === 'string' ? systemsData : JSON.stringify(systemsData);
+                const lowerText = text.toLowerCase();
+
+                // Enhanced system definitions with better colors and more keywords
+                const systemKeywords = [
+                    {
+                        name: 'Храносмилателна',
+                        color: '#f59e0b',
+                        gradient: 'rgba(245, 158, 11, 0.75)',
+                        keywords: [
+                            'храносмилат',
+                            'черва',
+                            'стомах',
+                            'храносмилане',
+                            'храносмилателн',
+                            'гастро',
+                            'чревн'
+                        ]
+                    },
+                    {
+                        name: 'Нервна',
+                        color: '#8b5cf6',
+                        gradient: 'rgba(139, 92, 246, 0.75)',
+                        keywords: [
+                            'нервн',
+                            'стрес',
+                            'мозък',
+                            'невро',
+                            'психик',
+                            'емоционалн',
+                            'тревож'
+                        ]
+                    },
+                    {
+                        name: 'Лимфна',
+                        color: '#10b981',
+                        gradient: 'rgba(16, 185, 129, 0.75)',
+                        keywords: ['лимфа', 'лимфатичн', 'имун', 'имунн', 'отбранителн']
+                    },
+                    {
+                        name: 'Сърдечно-съдова',
+                        color: '#ef4444',
+                        gradient: 'rgba(239, 68, 68, 0.75)',
+                        keywords: [
+                            'сърдечн',
+                            'кръв',
+                            'съдов',
+                            'кръвоносн',
+                            'сърце',
+                            'артери',
+                            'кардио'
+                        ]
+                    },
+                    {
+                        name: 'Дихателна',
+                        color: '#06b6d4',
+                        gradient: 'rgba(6, 182, 212, 0.75)',
+                        keywords: ['дихат', 'белодробн', 'бели дробове', 'респиратор', 'дишан']
+                    },
+                    {
+                        name: 'Елиминативна',
+                        color: '#84cc16',
+                        gradient: 'rgba(132, 204, 22, 0.75)',
+                        keywords: [
+                            'детокс',
+                            'бъбрек',
+                            'елиминат',
+                            'изхвърлян',
+                            'пречистван',
+                            'урин',
+                            'отпадн'
+                        ]
+                    },
+                    {
+                        name: 'Хормонална',
+                        color: '#ec4899',
+                        gradient: 'rgba(236, 72, 153, 0.75)',
+                        keywords: ['хормон', 'ендокрин', 'щитовидн', 'надбъбречн', 'хипофиз']
+                    },
+                    {
+                        name: 'Метаболична',
+                        color: '#f97316',
+                        gradient: 'rgba(249, 115, 22, 0.75)',
+                        keywords: ['метаболи', 'енерги', 'обмен', 'митохондри']
+                    }
+                ];
+
+                // Severity indicators for better priority calculation
+                const severityIndicators = {
+                    high: [
+                        'приоритетн',
+                        'критичн',
+                        'важн',
+                        'сериозн',
+                        'силно',
+                        'значителн',
+                        'изразен',
+                        'спешн'
+                    ],
+                    medium: ['умерен', 'средн', 'забележим', 'видим', 'леко'],
+                    mild: ['минимален', 'слаб', 'незначителн']
+                };
+
+                // Detect systems and calculate priorities
+                systemKeywords.forEach((sys) => {
+                    const matchCount = sys.keywords.filter((kw) => lowerText.includes(kw)).length;
+
+                    if (matchCount > 0) {
+                        systems.push(sys.name);
+                        colors.push(sys.color);
+                        backgroundColors.push(sys.gradient);
+
+                        // Calculate priority based on keyword frequency and severity indicators
+                        let basePriority = Math.min(
+                            matchCount * PRIORITY_MULTIPLIER + PRIORITY_BASE,
+                            PRIORITY_MAX_BASE
+                        );
+
+                        // Check for severity modifiers in proximity to system keywords
+                        let severityBonus = 0;
+                        sys.keywords.forEach((kw) => {
+                            if (lowerText.includes(kw)) {
+                                // Check text around the keyword for severity indicators
+                                const keywordIndex = lowerText.indexOf(kw);
+                                const contextStart = Math.max(
+                                    0,
+                                    keywordIndex - CONTEXT_WINDOW_SIZE
+                                );
+                                const contextEnd = Math.min(
+                                    lowerText.length,
+                                    keywordIndex + CONTEXT_WINDOW_SIZE
+                                );
+                                const context = lowerText.substring(contextStart, contextEnd);
+
+                                if (severityIndicators.high.some((ind) => context.includes(ind))) {
+                                    severityBonus = Math.max(severityBonus, SEVERITY_BONUS_HIGH);
+                                } else if (
+                                    severityIndicators.medium.some((ind) => context.includes(ind))
+                                ) {
+                                    severityBonus = Math.max(severityBonus, SEVERITY_BONUS_MEDIUM);
+                                } else if (
+                                    severityIndicators.mild.some((ind) => context.includes(ind))
+                                ) {
+                                    severityBonus = Math.max(severityBonus, SEVERITY_PENALTY_MILD);
+                                }
+                            }
+                        });
+
+                        values.push(
+                            Math.min(
+                                Math.max(basePriority + severityBonus, PRIORITY_MIN),
+                                PRIORITY_MAX
+                            )
+                        );
+                    }
+                });
+
+                // Fallback: if no systems detected, show all with moderate values
+                if (systems.length === 0) {
+                    console.warn('No systems detected for chart, using fallback visualization');
+                    systemKeywords.slice(0, 6).forEach((sys) => {
+                        systems.push(sys.name);
+                        values.push(FALLBACK_PRIORITY);
+                        colors.push(sys.color);
+                        backgroundColors.push(sys.gradient);
+                    });
+                }
+
+                try {
+                    // Ensure canvas has proper dimensions
+                    const container = ctx.parentElement;
+                    if (container) {
+                        ctx.style.maxWidth = '100%';
+                        ctx.style.maxHeight = '100%';
+                    }
+
+                    new Chart(ctx, {
+                        type: 'polarArea',
+                        data: {
+                            labels: systems,
+                            datasets: [
+                                {
+                                    label: 'Приоритет за подкрепа',
+                                    data: values,
+                                    backgroundColor: backgroundColors,
+                                    borderColor: colors,
+                                    borderWidth: 3,
+                                    hoverBorderWidth: 5,
+                                    hoverBorderColor: '#ffffff',
+                                    hoverBackgroundColor: backgroundColors.map((color) =>
+                                        color.replace('0.75', '0.9')
+                                    )
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            aspectRatio: 1.3,
+                            animation: {
+                                animateRotate: true,
+                                animateScale: true,
+                                duration: 2000,
+                                easing: 'easeInOutCubic',
+                                delay: (context) => {
+                                    return context.dataIndex * 150;
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                intersect: true
+                            },
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: {
+                                        stepSize: 20,
+                                        font: {
+                                            size: 12,
+                                            family: "'Poppins', sans-serif",
+                                            weight: '500'
+                                        },
+                                        backdropColor: 'rgba(255, 255, 255, 0.95)',
+                                        backdropPadding: 6,
+                                        color: '#475569',
+                                        showLabelBackdrop: true,
+                                        callback: function (value) {
+                                            return value + '%';
+                                        }
+                                    },
+                                    pointLabels: {
+                                        font: {
+                                            size: 14,
+                                            weight: '700',
+                                            family: "'Poppins', sans-serif"
+                                        },
+                                        color: '#1e293b',
+                                        padding: 12,
+                                        callback: function (label) {
+                                            // Wrap long labels for better display
+                                            const words = label.split(' ');
+                                            if (words.length > 1) {
+                                                return words;
+                                            }
+                                            return label;
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(148, 163, 184, 0.2)',
+                                        lineWidth: 2,
+                                        circular: true
+                                    },
+                                    angleLines: {
+                                        color: 'rgba(100, 116, 139, 0.25)',
+                                        lineWidth: 2
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        font: {
+                                            size: 13,
+                                            family: "'Poppins', sans-serif",
+                                            weight: '600'
+                                        },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        pointStyleWidth: 16,
+                                        color: '#334155',
+                                        boxWidth: 12,
+                                        boxHeight: 12
+                                    }
+                                },
+                                tooltip: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#e2e8f0',
+                                    titleFont: {
+                                        size: 15,
+                                        weight: '700',
+                                        family: "'Poppins', sans-serif"
+                                    },
+                                    bodyFont: {
+                                        size: 14,
+                                        family: "'Poppins', sans-serif",
+                                        weight: '500'
+                                    },
+                                    padding: 16,
+                                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                                    borderWidth: 2,
+                                    displayColors: true,
+                                    boxPadding: 6,
+                                    callbacks: {
+                                        title: function (context) {
+                                            return context[0].label;
+                                        },
+                                        label: function (context) {
+                                            const value = context.parsed.r;
+                                            let level = 'Нормален';
+                                            let icon = '●';
+                                            if (value >= 75) {
+                                                level = 'Висок приоритет';
+                                                icon = '🔴';
+                                            } else if (value >= 50) {
+                                                level = 'Среден приоритет';
+                                                icon = '🟡';
+                                            } else if (value >= 30) {
+                                                level = 'Нисък приоритет';
+                                                icon = '🟢';
+                                            }
+                                            return [`${icon} Оценка: ${value}%`, `Ниво: ${level}`];
+                                        }
+                                    }
+                                }
                             }
                         }
                     });
-                    
-                    values.push(Math.min(Math.max(basePriority + severityBonus, PRIORITY_MIN), PRIORITY_MAX));
+                } catch (error) {
+                    console.error('Error creating polar area chart:', error);
+                    // Try fallback to simple display
+                    const errorMsg = document.createElement('p');
+                    errorMsg.style.cssText = 'text-align: center; color: #64748b; padding: 2rem;';
+                    errorMsg.textContent = 'Диаграмата не може да бъде визуализирана в момента.';
+                    ctx.parentElement.appendChild(errorMsg);
+                    ctx.style.display = 'none';
                 }
-            });
-            
-            // Fallback: if no systems detected, show all with moderate values
-            if (systems.length === 0) {
-                console.warn('No systems detected for chart, using fallback visualization');
-                systemKeywords.slice(0, 6).forEach(sys => {
-                    systems.push(sys.name);
-                    values.push(FALLBACK_PRIORITY);
-                    colors.push(sys.color);
-                    backgroundColors.push(sys.gradient);
-                });
             }
-            
-            try {
-                // Ensure canvas has proper dimensions
-                const container = ctx.parentElement;
-                if (container) {
-                    ctx.style.maxWidth = '100%';
-                    ctx.style.maxHeight = '100%';
-                }
-                
+
+            function createChannelComparisonChart(channelsData, containerId) {
+                const ctx = document.getElementById(containerId);
+                if (!ctx) return;
+
+                const text = typeof channelsData === 'string' ? channelsData.toLowerCase() : '';
+                const channels = [
+                    { name: 'Черва', keyword: 'черва', icon: '🔄' },
+                    { name: 'Бъбреци', keyword: 'бъбрек', icon: '💧' },
+                    { name: 'Лимфа', keyword: 'лимфа', icon: '🌊' },
+                    { name: 'Кожа', keyword: 'кожа', icon: '✨' },
+                    { name: 'Бели дробове', keyword: 'бели дробове', icon: '💨' }
+                ];
+
+                const data = channels.map((ch) => {
+                    const keyword = ch.keyword.toLowerCase();
+                    if (text.includes(keyword)) {
+                        if (text.includes('най-натоварен') || text.includes('силно натоварен')) {
+                            return 85;
+                        } else if (text.includes('умерен') || text.includes('средн')) {
+                            return 60;
+                        } else {
+                            return 40;
+                        }
+                    }
+                    return 20;
+                });
+
+                // Create gradient backgrounds for bars
+                const gradients = data.map((val, idx) => {
+                    const canvas = ctx;
+                    const gradient = canvas
+                        .getContext('2d')
+                        .createLinearGradient(0, 0, canvas.width, 0);
+                    if (val >= 70) {
+                        gradient.addColorStop(0, 'rgba(239, 68, 68, 0.9)');
+                        gradient.addColorStop(1, 'rgba(220, 38, 38, 0.75)');
+                    } else if (val >= 50) {
+                        gradient.addColorStop(0, 'rgba(251, 191, 36, 0.9)');
+                        gradient.addColorStop(1, 'rgba(245, 158, 11, 0.75)');
+                    } else {
+                        gradient.addColorStop(0, 'rgba(52, 211, 153, 0.9)');
+                        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.75)');
+                    }
+                    return gradient;
+                });
+
                 new Chart(ctx, {
-                    type: 'polarArea',
+                    type: 'bar',
                     data: {
-                        labels: systems,
-                        datasets: [{
-                            label: 'Приоритет за подкрепа',
-                            data: values,
-                            backgroundColor: backgroundColors,
-                            borderColor: colors,
-                            borderWidth: 3,
-                            hoverBorderWidth: 4,
-                            hoverBorderColor: '#ffffff'
-                        }]
+                        labels: channels.map((ch) => ch.icon + ' ' + ch.name),
+                        datasets: [
+                            {
+                                label: 'Натовареност',
+                                data: data,
+                                backgroundColor: data.map((val) =>
+                                    val >= 70
+                                        ? 'rgba(239, 68, 68, 0.85)'
+                                        : val >= 50
+                                          ? 'rgba(251, 191, 36, 0.85)'
+                                          : 'rgba(52, 211, 153, 0.85)'
+                                ),
+                                borderColor: data.map((val) =>
+                                    val >= 70 ? '#dc2626' : val >= 50 ? '#f59e0b' : '#10b981'
+                                ),
+                                borderWidth: 3,
+                                borderRadius: 10,
+                                borderSkipped: false,
+                                barThickness: 'flex',
+                                maxBarThickness: 50,
+                                hoverBackgroundColor: data.map((val) =>
+                                    val >= 70
+                                        ? 'rgba(239, 68, 68, 0.95)'
+                                        : val >= 50
+                                          ? 'rgba(251, 191, 36, 0.95)'
+                                          : 'rgba(52, 211, 153, 0.95)'
+                                ),
+                                hoverBorderWidth: 4
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
-                        aspectRatio: 1.3,
+                        indexAxis: 'y',
                         animation: {
-                            animateRotate: true,
-                            animateScale: true,
-                            duration: 1500,
-                            easing: 'easeInOutQuart'
+                            duration: 2000,
+                            easing: 'easeInOutQuart',
+                            delay: (context) => {
+                                return context.dataIndex * 200;
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
                         },
                         scales: {
-                            r: {
+                            x: {
                                 beginAtZero: true,
                                 max: 100,
-                                ticks: {
-                                    stepSize: 20,
-                                    font: { 
-                                        size: 11,
-                                        family: "'Poppins', sans-serif"
-                                    },
-                                    backdropColor: 'rgba(255, 255, 255, 0.8)',
-                                    backdropPadding: 4,
-                                    color: '#64748b',
-                                    showLabelBackdrop: true
+                                grid: {
+                                    color: 'rgba(148, 163, 184, 0.15)',
+                                    lineWidth: 1,
+                                    drawBorder: false
                                 },
-                                pointLabels: {
-                                    font: { 
-                                        size: 13, 
-                                        weight: '600',
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        family: "'Poppins', sans-serif",
+                                        weight: '600'
+                                    },
+                                    color: '#475569',
+                                    padding: 8,
+                                    callback: function (value) {
+                                        return value + '%';
+                                    }
+                                },
+                                border: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 13,
+                                        weight: '700',
                                         family: "'Poppins', sans-serif"
                                     },
                                     color: '#1e293b',
-                                    padding: 8
+                                    padding: 12,
+                                    crossAlign: 'far'
                                 },
-                                grid: {
-                                    color: 'rgba(71, 85, 105, 0.15)',
-                                    lineWidth: 1.5,
-                                    circular: true
-                                },
-                                angleLines: {
-                                    color: 'rgba(71, 85, 105, 0.2)',
-                                    lineWidth: 1.5
+                                border: {
+                                    display: false
                                 }
                             }
                         },
                         plugins: {
-                            legend: { 
-                                display: true,
-                                position: 'bottom',
-                                labels: {
-                                    padding: 15,
-                                    font: {
-                                        size: 12,
-                                        family: "'Poppins', sans-serif",
-                                        weight: '500'
-                                    },
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                    color: '#334155'
-                                }
+                            legend: {
+                                display: false
                             },
                             tooltip: {
                                 enabled: true,
-                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                backgroundColor: 'rgba(15, 23, 42, 0.96)',
                                 titleColor: '#ffffff',
                                 bodyColor: '#e2e8f0',
                                 titleFont: {
-                                    size: 14,
-                                    weight: '600',
+                                    size: 15,
+                                    weight: '700',
                                     family: "'Poppins', sans-serif"
                                 },
                                 bodyFont: {
-                                    size: 13,
-                                    family: "'Poppins', sans-serif"
+                                    size: 14,
+                                    family: "'Poppins', sans-serif",
+                                    weight: '500'
                                 },
-                                padding: 12,
-                                borderColor: 'rgba(255, 255, 255, 0.2)',
-                                borderWidth: 1,
-                                displayColors: true,
+                                padding: 16,
+                                borderColor: 'rgba(255, 255, 255, 0.3)',
+                                borderWidth: 2,
+                                displayColors: false,
                                 callbacks: {
-                                    label: function(context) {
-                                        const value = context.parsed.r;
-                                        let level = 'Нормален';
-                                        if (value >= 75) level = 'Висок приоритет';
-                                        else if (value >= 50) level = 'Среден приоритет';
-                                        else if (value >= 30) level = 'Нисък приоритет';
-                                        return `${context.label}: ${value}% - ${level}`;
+                                    title: function (context) {
+                                        return context[0].label;
+                                    },
+                                    label: function (context) {
+                                        const value = context.parsed.x;
+                                        let status = '';
+                                        let icon = '';
+                                        if (value >= 70) {
+                                            status = 'Високо натоварен';
+                                            icon = '🔴';
+                                        } else if (value >= 50) {
+                                            status = 'Умерено натоварен';
+                                            icon = '🟡';
+                                        } else {
+                                            status = 'Нормално състояние';
+                                            icon = '🟢';
+                                        }
+                                        return [
+                                            `${icon} Натовареност: ${value}%`,
+                                            `Статус: ${status}`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 10,
+                                right: 20,
+                                top: 10,
+                                bottom: 10
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createHealthMetricsChart(userData, containerId) {
+                const ctx = document.getElementById(containerId);
+                if (!ctx || !userData) return;
+
+                // Calculate health metrics based on available data
+                const metrics = [];
+                const values = [];
+                const colors = [];
+
+                // Stress level
+                if (userData.stress) {
+                    metrics.push('Управление на стреса');
+                    values.push(Math.max(0, 100 - userData.stress * 10));
+                    colors.push('#8b5cf6');
+                }
+
+                // Sleep quality (if available)
+                if (userData['sleep-hours']) {
+                    const sleepScore = Math.min(100, (userData['sleep-hours'] / 8) * 100);
+                    metrics.push('Качество на съня');
+                    values.push(sleepScore);
+                    colors.push('#06b6d4');
+                }
+
+                // BMI status (if available)
+                if (userData.bmi) {
+                    const bmi = parseFloat(userData.bmi);
+                    let bmiScore = 100;
+                    if (bmi < 18.5 || bmi > 30) bmiScore = 50;
+                    else if (bmi < 20 || bmi > 27) bmiScore = 75;
+                    metrics.push('BMI статус');
+                    values.push(bmiScore);
+                    colors.push('#10b981');
+                }
+
+                if (metrics.length === 0) return;
+
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: metrics,
+                        datasets: [
+                            {
+                                data: values,
+                                backgroundColor: colors.map((c) => c + 'CC'),
+                                borderColor: colors,
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: { size: 12 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return (
+                                            context.label + ': ' + Math.round(context.parsed) + '%'
+                                        );
                                     }
                                 }
                             }
                         }
                     }
                 });
-            } catch (error) {
-                console.error('Error creating polar area chart:', error);
-                // Try fallback to simple display
-                const errorMsg = document.createElement('p');
-                errorMsg.style.cssText = 'text-align: center; color: #64748b; padding: 2rem;';
-                errorMsg.textContent = 'Диаграмата не може да бъде визуализирана в момента.';
-                ctx.parentElement.appendChild(errorMsg);
-                ctx.style.display = 'none';
             }
-        }
-        
-        function createChannelComparisonChart(channelsData, containerId) {
-            const ctx = document.getElementById(containerId);
-            if (!ctx) return;
-            
-            const text = typeof channelsData === 'string' ? channelsData.toLowerCase() : '';
-            const channels = [
-                { name: 'Черва', keyword: 'черва' },
-                { name: 'Бъбреци', keyword: 'бъбрек' },
-                { name: 'Лимфа', keyword: 'лимфа' },
-                { name: 'Кожа', keyword: 'кожа' },
-                { name: 'Бели дробове', keyword: 'бели дробове' }
-            ];
-            
-            const data = channels.map(ch => {
-                const keyword = ch.keyword.toLowerCase();
-                if (text.includes(keyword)) {
-                    if (text.includes('най-натоварен') || text.includes('силно натоварен')) {
-                        return 85;
-                    } else if (text.includes('умерен') || text.includes('средн')) {
-                        return 60;
-                    } else {
-                        return 40;
-                    }
-                }
-                return 20;
-            });
-            
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: channels.map(ch => ch.name),
-                    datasets: [{
-                        label: 'Натовареност (%)',
-                        data: data,
-                        backgroundColor: data.map(val => 
-                            val >= 70 ? 'rgba(220, 53, 69, 0.7)' :
-                            val >= 50 ? 'rgba(255, 193, 7, 0.7)' :
-                            'rgba(40, 167, 69, 0.7)'
-                        ),
-                        borderColor: data.map(val => 
-                            val >= 70 ? '#dc3545' :
-                            val >= 50 ? '#ffc107' :
-                            '#28a745'
-                        ),
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    indexAxis: 'y',
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) { return value + '%'; }
-                            }
-                        },
-                        y: {
-                            ticks: {
-                                font: { size: 12, weight: '600' }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Натовареност: ' + context.parsed.x + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        function createHealthMetricsChart(userData, containerId) {
-            const ctx = document.getElementById(containerId);
-            if (!ctx || !userData) return;
-            
-            // Calculate health metrics based on available data
-            const metrics = [];
-            const values = [];
-            const colors = [];
-            
-            // Stress level
-            if (userData.stress) {
-                metrics.push('Управление на стреса');
-                values.push(Math.max(0, 100 - (userData.stress * 10)));
-                colors.push('#8b5cf6');
-            }
-            
-            // Sleep quality (if available)
-            if (userData['sleep-hours']) {
-                const sleepScore = Math.min(100, (userData['sleep-hours'] / 8) * 100);
-                metrics.push('Качество на съня');
-                values.push(sleepScore);
-                colors.push('#06b6d4');
-            }
-            
-            // BMI status (if available)
-            if (userData.bmi) {
-                const bmi = parseFloat(userData.bmi);
-                let bmiScore = 100;
-                if (bmi < 18.5 || bmi > 30) bmiScore = 50;
-                else if (bmi < 20 || bmi > 27) bmiScore = 75;
-                metrics.push('BMI статус');
-                values.push(bmiScore);
-                colors.push('#10b981');
-            }
-            
-            if (metrics.length === 0) return;
-            
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: metrics,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: colors.map(c => c + 'CC'),
-                        borderColor: colors,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                font: { size: 12 }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + Math.round(context.parsed) + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
 
-        // --- ЛОГИКА ЗА ЗАРЕЖДАНЕ И ПОВТОРЕН АНАЛИЗ ---
-        document.addEventListener('DOMContentLoaded', function () {
-            const reportContainer = document.getElementById('report-container');
-            const messageBox = document.getElementById('message-box');
-            const reAnalyzeBtn = document.getElementById('re-analyze-btn');
+            // --- ЛОГИКА ЗА ЗАРЕЖДАНЕ И ПОВТОРЕН АНАЛИЗ ---
+            document.addEventListener('DOMContentLoaded', function () {
+                const reportContainer = document.getElementById('report-container');
+                const messageBox = document.getElementById('message-box');
+                const reAnalyzeBtn = document.getElementById('re-analyze-btn');
 
-            reportContainer.innerHTML = `<div class="loading-box" style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:1rem;">Генериране на Вашия доклад...</p></div>`;
+                reportContainer.innerHTML = `<div class="loading-box" style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:1rem;">Генериране на Вашия доклад...</p></div>`;
 
-            setTimeout(() => {
-                try {
-                    const rawData = localStorage.getItem('iridologyReport');
-                    if (!rawData) throw new Error('Няма налични данни за анализ. Моля, върнете се на началната страница.');
-                    
-                    const data = JSON.parse(rawData);
-                    renderReport(data);
-                } catch (err) {
-                    reportContainer.style.display = 'none';
-                    if (!messageBox.hasChildNodes()) { // Показваме грешка само ако вече няма съобщение
-                       messageBox.textContent = err.message;
-                       messageBox.className = 'error-box';
-                    }
-                }
-            }, 500);
-
-            if (reAnalyzeBtn) {
-                reAnalyzeBtn.addEventListener('click', async () => {
-                    reAnalyzeBtn.disabled = true;
-                    reAnalyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Повтаряне...';
-                    
-                    const messageContainer = document.querySelector('.button-group-report'); // Показваме съобщението над бутоните
-                    messageBox.textContent = 'Подготвяме повторен анализ...';
-                    messageBox.className = 'info-box';
-                    messageContainer.insertAdjacentElement('beforebegin', messageBox);
-
-                    const stored = localStorage.getItem('iridologyFormData');
-                    if (!stored) {
-                        messageBox.textContent = 'Липсват данни за повторен анализ. Моля, започнете отначало.';
-                        messageBox.className = 'error-box';
-                        reAnalyzeBtn.disabled = false;
-                        reAnalyzeBtn.innerHTML = 'Повтори анализа';
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    const obj = JSON.parse(stored);
-                    for (const [key, value] of Object.entries(obj)) {
-                        if (typeof value === 'string' && value.startsWith('data:')) {
-                            const res = await fetch(value);
-                            const blob = await res.blob();
-                            formData.append(key, blob, `${key}.png`);
-                        } else {
-                            formData.append(key, value);
-                        }
-                    }
-
+                setTimeout(() => {
                     try {
-                        messageBox.textContent = 'Изпращаме данните към AI...';
-                        const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
-                        if (!response.ok) {
-                            const errData = await response.json().catch(() => ({ error: `Грешка от сървъра: ${response.status}` }));
-                            throw new Error(errData.error);
-                        }
-                        const data = await response.json();
-                        localStorage.setItem('iridologyReport', JSON.stringify(data));
-                        messageBox.textContent = 'Успех! Презареждаме доклада...';
-                        messageBox.className = 'success-box';
-                        setTimeout(() => location.reload(), 1000);
+                        const rawData = localStorage.getItem('iridologyReport');
+                        if (!rawData)
+                            throw new Error(
+                                'Няма налични данни за анализ. Моля, върнете се на началната страница.'
+                            );
 
+                        const data = JSON.parse(rawData);
+                        renderReport(data);
                     } catch (err) {
-                        messageBox.textContent = 'Грешка: ' + err.message;
-                        messageBox.className = 'error-box';
-                        reAnalyzeBtn.disabled = false;
-                        reAnalyzeBtn.innerHTML = 'Повтори анализа';
+                        reportContainer.style.display = 'none';
+                        if (!messageBox.hasChildNodes()) {
+                            // Показваме грешка само ако вече няма съобщение
+                            messageBox.textContent = err.message;
+                            messageBox.className = 'error-box';
+                        }
                     }
-                });
-            }
+                }, 500);
 
-            // PDF Print functionality
-            const printBtn = document.getElementById('print-btn');
-            if (printBtn) {
-                printBtn.addEventListener('click', () => {
-                    // Отваряме всички секции преди принтиране за пълен доклад
-                    const allDetails = document.querySelectorAll('details.report-section');
-                    allDetails.forEach(detail => detail.setAttribute('open', ''));
-                    
-                    // Използваме requestAnimationFrame за да сме сигурни че съдържанието е рендерирано
-                    requestAnimationFrame(() => {
+                if (reAnalyzeBtn) {
+                    reAnalyzeBtn.addEventListener('click', async () => {
+                        reAnalyzeBtn.disabled = true;
+                        reAnalyzeBtn.innerHTML =
+                            '<i class="fas fa-spinner fa-spin"></i> Повтаряне...';
+
+                        const messageContainer = document.querySelector('.button-group-report'); // Показваме съобщението над бутоните
+                        messageBox.textContent = 'Подготвяме повторен анализ...';
+                        messageBox.className = 'info-box';
+                        messageContainer.insertAdjacentElement('beforebegin', messageBox);
+
+                        const stored = localStorage.getItem('iridologyFormData');
+                        if (!stored) {
+                            messageBox.textContent =
+                                'Липсват данни за повторен анализ. Моля, започнете отначало.';
+                            messageBox.className = 'error-box';
+                            reAnalyzeBtn.disabled = false;
+                            reAnalyzeBtn.innerHTML = 'Повтори анализа';
+                            return;
+                        }
+
+                        const formData = new FormData();
+                        const obj = JSON.parse(stored);
+                        for (const [key, value] of Object.entries(obj)) {
+                            if (typeof value === 'string' && value.startsWith('data:')) {
+                                const res = await fetch(value);
+                                const blob = await res.blob();
+                                formData.append(key, blob, `${key}.png`);
+                            } else {
+                                formData.append(key, value);
+                            }
+                        }
+
+                        try {
+                            messageBox.textContent = 'Изпращаме данните към AI...';
+                            const response = await fetch(WORKER_URL, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            if (!response.ok) {
+                                const errData = await response.json().catch(() => ({
+                                    error: `Грешка от сървъра: ${response.status}`
+                                }));
+                                throw new Error(errData.error);
+                            }
+                            const data = await response.json();
+                            localStorage.setItem('iridologyReport', JSON.stringify(data));
+                            messageBox.textContent = 'Успех! Презареждаме доклада...';
+                            messageBox.className = 'success-box';
+                            setTimeout(() => location.reload(), 1000);
+                        } catch (err) {
+                            messageBox.textContent = 'Грешка: ' + err.message;
+                            messageBox.className = 'error-box';
+                            reAnalyzeBtn.disabled = false;
+                            reAnalyzeBtn.innerHTML = 'Повтори анализа';
+                        }
+                    });
+                }
+
+                // PDF Print functionality
+                const printBtn = document.getElementById('print-btn');
+                if (printBtn) {
+                    printBtn.addEventListener('click', () => {
+                        // Отваряме всички секции преди принтиране за пълен доклад
+                        const allDetails = document.querySelectorAll('details.report-section');
+                        allDetails.forEach((detail) => detail.setAttribute('open', ''));
+
+                        // Използваме requestAnimationFrame за да сме сигурни че съдържанието е рендерирано
                         requestAnimationFrame(() => {
-                            window.print();
+                            requestAnimationFrame(() => {
+                                window.print();
+                            });
                         });
                     });
-                });
-            }
-        });
-    </script>
-</body>
+                }
+            });
+        </script>
+    </body>
 </html>

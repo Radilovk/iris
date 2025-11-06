@@ -102,9 +102,9 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
 
       // При rate limit грешка, използваме retry-after ако е наличен
       if (error.name === 'RateLimitError' && attempt < maxRetries) {
-        const delay = error.retryAfter || (baseDelay * Math.pow(2, attempt));
+        const delay = error.retryAfter || baseDelay * Math.pow(2, attempt);
         console.log(`Rate limit достигнат. Изчакваме ${delay}ms преди опит ${attempt + 2}/${maxRetries + 1}...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
 
@@ -112,7 +112,7 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
       if (attempt < maxRetries) {
         const delay = baseDelay * Math.pow(2, attempt);
         console.log(`Опит ${attempt + 1} неуспешен. Изчакваме ${delay}ms преди следващ опит...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
 
@@ -169,14 +169,16 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
   if (pathname.endsWith('/admin/models')) {
     if (method === 'GET') {
       try {
-        const modelsListJson = await env.iris_rag_kv.get('iris_models_list') || '{}';
+        const modelsListJson = (await env.iris_rag_kv.get('iris_models_list')) || '{}';
         const models = JSON.parse(modelsListJson);
         return new Response(JSON.stringify({ models }), {
-          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (err) {
         return new Response(JSON.stringify({ error: 'Невалиден JSON в `iris_models_list`: ' + err.message }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
     }
@@ -186,11 +188,13 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
         const newModelsList = await request.json();
         await env.iris_rag_kv.put('iris_models_list', JSON.stringify(newModelsList));
         return new Response(JSON.stringify({ success: true }), {
-          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (err) {
         return new Response(JSON.stringify({ error: 'Грешка при запис на списъка с модели: ' + err.message }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
     }
@@ -199,13 +203,14 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
   const { CF_ACCOUNT_ID, CF_API_TOKEN, CF_KV_NAMESPACE_ID } = env;
   if (!CF_ACCOUNT_ID || !CF_API_TOKEN || !CF_KV_NAMESPACE_ID) {
     return new Response(JSON.stringify({ error: 'Cloudflare API credentials не са конфигурирани.' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
   const key = url.searchParams.get('key');
   const cfApiBase = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NAMESPACE_ID}`;
-  const cfHeaders = { 'Authorization': `Bearer ${CF_API_TOKEN}` };
+  const cfHeaders = { Authorization: `Bearer ${CF_API_TOKEN}` };
 
   let apiUrl;
   const cfMethod = request.method;
@@ -222,7 +227,8 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
     cfHeaders['Content-Type'] = 'text/plain';
   } else {
     return new Response(JSON.stringify({ error: 'Невалидна административна команда.' }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
@@ -231,31 +237,36 @@ async function handleAdminRequest(request, env, corsHeaders = {}) {
     if (!response.ok) {
       const errorText = await response.text();
       return new Response(JSON.stringify({ error: `Грешка от Cloudflare API: ${errorText}` }), {
-        status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     if (pathname.endsWith('/keys')) {
       const data = await response.json();
       return new Response(JSON.stringify({ keys: data.result }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     if (pathname.endsWith('/get')) {
       const value = await response.text();
       return new Response(JSON.stringify({ value: value }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     if (pathname.endsWith('/put') || pathname.endsWith('/set')) {
       return new Response(JSON.stringify({ success: true }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     return new Response(await response.text(), { status: response.status, headers: corsHeaders });
   } catch (err) {
     return new Response(JSON.stringify({ error: 'Вътрешна грешка в worker-а: ' + err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 }
@@ -306,8 +317,13 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
     userData[key] = value;
   }
 
-  const kvKeys = ['iris_config_kv', 'iris_diagnostic_map', 'holistic_interpretation_knowledge', 'remedy_and_recommendation_base'];
-  const kvPromises = kvKeys.map(key => env.iris_rag_kv.get(key, { type: 'json' }));
+  const kvKeys = [
+    'iris_config_kv',
+    'iris_diagnostic_map',
+    'holistic_interpretation_knowledge',
+    'remedy_and_recommendation_base'
+  ];
+  const kvPromises = kvKeys.map((key) => env.iris_rag_kv.get(key, { type: 'json' }));
   const [config, irisMap, interpretationKnowledge, remedyBase] = await Promise.all(kvPromises);
 
   if (!config) {
@@ -322,10 +338,15 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
 
   if (!analysisModel || !reportModel) {
     console.error('Конфигурацията на AI моделите е непълна. analysis_model или report_model липсват.');
-    return new Response(JSON.stringify({ error: 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.' }), {
-      status: 503,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Конфигурацията на AI моделите е непълна. Моля, задайте analysis_model и report_model.'
+      }),
+      {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 
   config.analysis_model = analysisModel;
@@ -337,13 +358,16 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
     });
   }
 
-  const apiKey = config.provider === 'gemini' ? env.GEMINI_API_KEY : (config.provider === 'openai' ? env.OPENAI_API_KEY : null);
+  const apiKey =
+    config.provider === 'gemini' ? env.GEMINI_API_KEY : config.provider === 'openai' ? env.OPENAI_API_KEY : null;
 
   const preliminaryKeywordSet = buildKeywordSet([], userData);
-  const { filteredKnowledge: preliminaryKnowledge } = selectRelevantInterpretationKnowledge(interpretationKnowledge, preliminaryKeywordSet);
-  const maxContextEntries = Number.isInteger(config.max_context_entries) && config.max_context_entries > 0
-    ? config.max_context_entries
-    : 6;
+  const { filteredKnowledge: preliminaryKnowledge } = selectRelevantInterpretationKnowledge(
+    interpretationKnowledge,
+    preliminaryKeywordSet
+  );
+  const maxContextEntries =
+    Number.isInteger(config.max_context_entries) && config.max_context_entries > 0 ? config.max_context_entries : 6;
   config.max_context_entries = maxContextEntries;
 
   // За визуалния анализ използваме обогатен контекст с ключова информация
@@ -351,14 +375,27 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
   const visionContextPayload = createEnrichedVisionContext(interpretationKnowledge, maxContextEntries);
 
   const [leftEyeAnalysisResult, rightEyeAnalysisResult] = await Promise.all([
-    retryWithBackoff(() => analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, config, apiKey, visionContextPayload)),
-    retryWithBackoff(() => analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, config, apiKey, visionContextPayload))
+    retryWithBackoff(() =>
+      analyzeImageWithVision(leftEyeFile, 'ляво око', irisMap, config, apiKey, visionContextPayload)
+    ),
+    retryWithBackoff(() =>
+      analyzeImageWithVision(rightEyeFile, 'дясно око', irisMap, config, apiKey, visionContextPayload)
+    )
   ]);
 
-  const finalReport = await retryWithBackoff(() => generateHolisticReport(
-    userData, leftEyeAnalysisResult, rightEyeAnalysisResult,
-    interpretationKnowledge, remedyBase, config, apiKey, env, irisMap
-  ));
+  const finalReport = await retryWithBackoff(() =>
+    generateHolisticReport(
+      userData,
+      leftEyeAnalysisResult,
+      rightEyeAnalysisResult,
+      interpretationKnowledge,
+      remedyBase,
+      config,
+      apiKey,
+      env,
+      irisMap
+    )
+  );
 
   return new Response(JSON.stringify(finalReport), {
     status: 200,
@@ -374,9 +411,7 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
  * Вече няма да пропуска анализа на снимките, ако е избран OpenAI.
  */
 async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiKey, externalContextPayload = '[]') {
-  const template = typeof config.analysis_prompt_template === 'string'
-    ? config.analysis_prompt_template
-    : '';
+  const template = typeof config.analysis_prompt_template === 'string' ? config.analysis_prompt_template : '';
 
   // Използваме компактна версия на diagnostic map за да не претоварваме контекста
   const conciseMap = createConciseIrisMap(irisMap);
@@ -397,7 +432,7 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     headers = { 'Content-Type': 'application/json' };
     requestBody = {
       contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: base64Image } }] }],
-      generationConfig: { 'response_mime_type': 'application/json' }
+      generationConfig: { response_mime_type: 'application/json' }
     };
   } else if (config.provider === 'openai') {
     if ((config.analysis_model || '').trim() === 'gpt-4o-search-preview') {
@@ -424,20 +459,22 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     apiUrl = API_BASE_URLS.openai;
     headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      Authorization: `Bearer ${apiKey}`
     };
     requestBody = {
       model: config.analysis_model,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          {
-            type: 'image_url',
-            image_url: { 'url': `data:${file.type};base64,${base64Image}` }
-          }
-        ]
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: { url: `data:${file.type};base64,${base64Image}` }
+            }
+          ]
+        }
+      ],
       max_tokens: 2048,
       response_format: { type: 'json_object' }
     };
@@ -512,7 +549,10 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     jsonText = choice?.message?.content ?? '';
   }
 
-  jsonText = normalizeModelJsonText(jsonText).replace(/```json/g, '').replace(/```/g, '').trim();
+  jsonText = normalizeModelJsonText(jsonText)
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
 
   try {
     return JSON.parse(jsonText);
@@ -558,7 +598,8 @@ async function fetchExternalInsights(keywordHints, env) {
 
     const data = await response.json();
     const organicResults = Array.isArray(data.organic) ? data.organic : [];
-    const limitedResults = organicResults.slice(0, 3)
+    const limitedResults = organicResults
+      .slice(0, 3)
       .map((item) => ({
         title: item.title || '',
         snippet: item.snippet || item.snippet_highlighted || '',
@@ -599,7 +640,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
     if (!sign || typeof sign !== 'object') continue;
 
     const enrichedSign = { ...sign };
-    const signName = (/** @type {IrisSign} */ (sign).sign_name || '').toLowerCase();
+    const signName = /** @type {IrisSign} */ (sign.sign_name || '').toLowerCase();
 
     // Търсене на съвпадение в diagnostic map за допълнителна информация
     let matchedMapSign = null;
@@ -608,9 +649,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
       const mapSignName = mapSign.name.toLowerCase();
 
       // Проверка за директно съвпадение или частично съвпадение
-      if (signName === mapSignName ||
-          signName.includes(mapKey.toLowerCase()) ||
-          mapSignName.includes(signName)) {
+      if (signName === mapSignName || signName.includes(mapKey.toLowerCase()) || mapSignName.includes(signName)) {
         matchedMapSign = mapSign;
         break;
       }
@@ -630,14 +669,15 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
 
       // Добавяне на допълнителен контекст за интерпретация
       if (matchedMapSign.interpretation && !enrichedSign.map_interpretation) {
-        enrichedSign.map_interpretation = typeof matchedMapSign.interpretation === 'string'
-          ? matchedMapSign.interpretation
-          : JSON.stringify(matchedMapSign.interpretation);
+        enrichedSign.map_interpretation =
+          typeof matchedMapSign.interpretation === 'string'
+            ? matchedMapSign.interpretation
+            : JSON.stringify(matchedMapSign.interpretation);
       }
     }
 
     // Валидация на зона (1-7)
-    const location = (/** @type {IrisSign} */ (sign).location || '').toLowerCase();
+    const location = /** @type {IrisSign} */ (sign.location || '').toLowerCase();
     const zoneMatch = location.match(/зона\s*(\d+)/i);
     if (zoneMatch) {
       const zoneNum = parseInt(zoneMatch[1], 10);
@@ -646,7 +686,7 @@ function validateAndEnrichSigns(identifiedSigns, irisMap) {
 
         // Добавяне на име на зоната от картата
         if (irisMap.topography && Array.isArray(irisMap.topography.zones)) {
-          const zoneInfo = irisMap.topography.zones.find(z => z.zone === zoneNum);
+          const zoneInfo = irisMap.topography.zones.find((z) => z.zone === zoneNum);
           if (zoneInfo) {
             enrichedSign.zone_name = zoneInfo.name;
             enrichedSign.zone_description = zoneInfo.description;
@@ -750,9 +790,12 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
     enriched.signs_count = identifiedSigns.length;
 
     // Броене на знаци с висок интензитет
-    const highIntensitySigns = identifiedSigns.filter(sign =>
-      sign && typeof sign === 'object' && 'intensity' in sign &&
-      (sign.intensity === 'силен' || sign.intensity === 'high' || sign.intensity === 'severe')
+    const highIntensitySigns = identifiedSigns.filter(
+      (sign) =>
+        sign &&
+        typeof sign === 'object' &&
+        'intensity' in sign &&
+        (sign.intensity === 'силен' || sign.intensity === 'high' || sign.intensity === 'severe')
     ).length;
 
     enriched.high_intensity_signs_count = highIntensitySigns;
@@ -820,8 +863,8 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
     for (const sign of identifiedSigns) {
       if (!sign || typeof sign !== 'object') continue;
 
-      const signName = (/** @type {IrisSign} */ (sign).sign_name || '').toLowerCase();
-      const location = (/** @type {IrisSign} */ (sign).location || '').toLowerCase();
+      const signName = /** @type {IrisSign} */ (sign.sign_name || '').toLowerCase();
+      const location = /** @type {IrisSign} */ (sign.location || '').toLowerCase();
 
       // Категоризиране на типове знаци
       if (signName.includes('лакун') || signName.includes('lacun')) {
@@ -851,9 +894,24 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
 
       // Извличане на органни проекции
       const organKeywords = [
-        'черен дроб', 'liver', 'бъбрек', 'kidney', 'панкреас', 'pancreas',
-        'сърце', 'heart', 'бял дроб', 'lung', 'далак', 'spleen',
-        'щитовидна', 'thyroid', 'мозък', 'brain', 'черво', 'intestin'
+        'черен дроб',
+        'liver',
+        'бъбрек',
+        'kidney',
+        'панкреас',
+        'pancreas',
+        'сърце',
+        'heart',
+        'бял дроб',
+        'lung',
+        'далак',
+        'spleen',
+        'щитовидна',
+        'thyroid',
+        'мозък',
+        'brain',
+        'черво',
+        'intestin'
       ];
 
       for (const organ of organKeywords) {
@@ -908,18 +966,18 @@ function enrichUserDataWithMetrics(userData, identifiedSigns) {
 function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSigns, rawSigns, userData) {
   // Базови метрики
   const totalSignsDetected = enrichedSigns.length;
-  const signsEnriched = enrichedSigns.filter(sign =>
-    sign.validated_zone || sign.priority_level || sign.map_interpretation
+  const signsEnriched = enrichedSigns.filter(
+    (sign) => sign.validated_zone || sign.priority_level || sign.map_interpretation
   ).length;
 
   // Брой знаци по приоритет
-  const highPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'high').length;
-  const mediumPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'medium').length;
-  const lowPrioritySigns = enrichedSigns.filter(s => s.priority_level === 'low').length;
+  const highPrioritySigns = enrichedSigns.filter((s) => s.priority_level === 'high').length;
+  const mediumPrioritySigns = enrichedSigns.filter((s) => s.priority_level === 'medium').length;
+  const lowPrioritySigns = enrichedSigns.filter((s) => s.priority_level === 'low').length;
 
   // Анализ на зоните
   const analyzedZones = new Set();
-  enrichedSigns.forEach(sign => {
+  enrichedSigns.forEach((sign) => {
     if (sign.validated_zone) {
       analyzedZones.add(sign.validated_zone);
     }
@@ -932,9 +990,7 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
   };
 
   // Оценка на обогатяването
-  const enrichmentRate = totalSignsDetected > 0
-    ? Math.round((signsEnriched / totalSignsDetected) * 100)
-    : 0;
+  const enrichmentRate = totalSignsDetected > 0 ? Math.round((signsEnriched / totalSignsDetected) * 100) : 0;
 
   // Персонализация метрики
   const personalizationMetrics = calculatePersonalizationMetrics(userData);
@@ -966,13 +1022,18 @@ function generateAnalyticsMetrics(leftEyeAnalysis, rightEyeAnalysis, enrichedSig
     personalization: personalizationMetrics,
     quality: {
       precision_score: precisionScore,
-      detail_level: precisionScore >= 85 ? 'Много висока' :
-        precisionScore >= 70 ? 'Висока' :
-          precisionScore >= 50 ? 'Средна' : 'Базова',
+      detail_level:
+        precisionScore >= 85
+          ? 'Много висока'
+          : precisionScore >= 70
+            ? 'Висока'
+            : precisionScore >= 50
+              ? 'Средна'
+              : 'Базова',
       improvement_indicators: {
         enhanced_validation: signsEnriched > 0,
         zone_mapping: analyzedZones.size >= 3,
-        priority_classification: (highPrioritySigns + mediumPrioritySigns) > 0,
+        priority_classification: highPrioritySigns + mediumPrioritySigns > 0,
         personalized_metrics: personalizationMetrics.metrics_calculated > 3
       }
     }
@@ -1008,7 +1069,7 @@ function calculateConstitutionalDepth(eyeAnalysis) {
     'anv_collarette_analysis'
   ];
 
-  fields.forEach(field => {
+  fields.forEach((field) => {
     maxScore += FIELD_SCORE_FULL;
     if (analysis[field] && typeof analysis[field] === 'string' && analysis[field].length > MIN_FIELD_LENGTH) {
       score += FIELD_SCORE_FULL;
@@ -1022,7 +1083,7 @@ function calculateConstitutionalDepth(eyeAnalysis) {
     maxScore += CHANNEL_SCORE_MAX;
     const channels = eyeAnalysis.eliminative_channels_assessment;
     const filledChannels = Object.values(channels).filter(
-      v => v && typeof v === 'string' && v.length > MIN_CHANNEL_LENGTH
+      (v) => v && typeof v === 'string' && v.length > MIN_CHANNEL_LENGTH
     ).length;
     score += Math.min(filledChannels * CHANNEL_SCORE_PER_FILLED, CHANNEL_SCORE_MAX);
   }
@@ -1061,7 +1122,7 @@ function calculatePersonalizationMetrics(userData) {
 
   // Проверка на животен стил
   const lifestyleFactors = ['stress_assessment', 'sleep_assessment', 'hydration_assessment'];
-  lifestyleFactors.forEach(factor => {
+  lifestyleFactors.forEach((factor) => {
     if (userData[factor]) {
       metrics.metrics_calculated++;
       metrics.lifestyle_factors_analyzed++;
@@ -1085,9 +1146,13 @@ function calculatePrecisionScore(signs, constitutionalDepth) {
   const SIGN_INTERPRETATION_BONUS = 5;
   const SIGN_ZONE_NAME_BONUS = 3;
   const SIGN_INTENSITY_BONUS = 2;
-  const MAX_SIGN_SCORE = SIGN_BASE_SCORE + SIGN_VALIDATED_ZONE_BONUS +
-                         SIGN_PRIORITY_BONUS + SIGN_INTERPRETATION_BONUS +
-                         SIGN_ZONE_NAME_BONUS + SIGN_INTENSITY_BONUS; // = 30
+  const MAX_SIGN_SCORE =
+    SIGN_BASE_SCORE +
+    SIGN_VALIDATED_ZONE_BONUS +
+    SIGN_PRIORITY_BONUS +
+    SIGN_INTERPRETATION_BONUS +
+    SIGN_ZONE_NAME_BONUS +
+    SIGN_INTENSITY_BONUS; // = 30
 
   // Тегла за различните компоненти на оценката
   const SIGN_QUALITY_WEIGHT = 40;
@@ -1118,9 +1183,10 @@ function calculatePrecisionScore(signs, constitutionalDepth) {
   score += (avgConstitutional / 100) * CONSTITUTIONAL_WEIGHT;
 
   // 30% от оценката: обхват на анализа
-  const coverageBonus = signs.length >= MIN_SIGNS_FOR_FULL_COVERAGE
-    ? COVERAGE_WEIGHT
-    : (signs.length / MIN_SIGNS_FOR_FULL_COVERAGE) * COVERAGE_WEIGHT;
+  const coverageBonus =
+    signs.length >= MIN_SIGNS_FOR_FULL_COVERAGE
+      ? COVERAGE_WEIGHT
+      : (signs.length / MIN_SIGNS_FOR_FULL_COVERAGE) * COVERAGE_WEIGHT;
   score += coverageBonus;
 
   return Math.min(Math.round(score), 100);
@@ -1140,16 +1206,46 @@ function calculatePrecisionScore(signs, constitutionalDepth) {
  * @returns {Promise<Object>} - Генериран доклад
  * @note Функцията има 9 параметъра. Бъдещо подобрение: групиране в config обект
  */
-async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
+async function generateHolisticReport(
+  userData,
+  leftEyeAnalysis,
+  rightEyeAnalysis,
+  interpretationKnowledge,
+  remedyBase,
+  config,
+  apiKey,
+  env,
+  irisMap
+) {
   // Проверка дали е активиран multi-query режим (по подразбиране е ИЗКЛЮЧЕН за обратна съвместимост)
   const useMultiQuery = config.use_multi_query_report === true;
 
   if (useMultiQuery) {
-    return await generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap);
+    return await generateMultiQueryReport(
+      userData,
+      leftEyeAnalysis,
+      rightEyeAnalysis,
+      interpretationKnowledge,
+      remedyBase,
+      config,
+      apiKey,
+      env,
+      irisMap
+    );
   }
 
   // Стар подход - единична заявка (по подразбиране)
-  return await generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap);
+  return await generateSingleQueryReport(
+    userData,
+    leftEyeAnalysis,
+    rightEyeAnalysis,
+    interpretationKnowledge,
+    remedyBase,
+    config,
+    apiKey,
+    env,
+    irisMap
+  );
 }
 
 /**
@@ -1165,10 +1261,20 @@ async function generateHolisticReport(userData, leftEyeAnalysis, rightEyeAnalysi
  * @param {Object} irisMap - Iris diagnostic map за валидация
  * @returns {Promise<Object>} - Генериран доклад
  */
-async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
+async function generateMultiQueryReport(
+  userData,
+  leftEyeAnalysis,
+  rightEyeAnalysis,
+  interpretationKnowledge,
+  remedyBase,
+  config,
+  apiKey,
+  env,
+  irisMap
+) {
   const rawIdentifiedSigns = [
-    ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
-    ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
+    ...(leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs) ? leftEyeAnalysis.identified_signs : []),
+    ...(rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs) ? rightEyeAnalysis.identified_signs : [])
   ];
 
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
@@ -1185,11 +1291,15 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
   );
 
   const keywordSet = buildKeywordSet(identifiedSigns, enrichedUserData);
-  const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
+  const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(
+    interpretationKnowledge,
+    keywordSet
+  );
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
-  const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
-    ? remedyBase.mandatory_disclaimer.text
-    : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
+  const disclaimerText =
+    remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text
+      ? remedyBase.mandatory_disclaimer.text
+      : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
 
   // СТЪПКА 1: Конституционален анализ и синтеза
   const constitutionalAnalysis = await generateConstitutionalSynthesis(
@@ -1249,10 +1359,20 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
  * @param {Object} irisMap - Iris diagnostic map за валидация
  * @returns {Promise<Object>} - Генериран доклад
  */
-async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnalysis, interpretationKnowledge, remedyBase, config, apiKey, env, irisMap) {
+async function generateSingleQueryReport(
+  userData,
+  leftEyeAnalysis,
+  rightEyeAnalysis,
+  interpretationKnowledge,
+  remedyBase,
+  config,
+  apiKey,
+  env,
+  irisMap
+) {
   const rawIdentifiedSigns = [
-    ...((leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs)) ? leftEyeAnalysis.identified_signs : []),
-    ...((rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs)) ? rightEyeAnalysis.identified_signs : [])
+    ...(leftEyeAnalysis && Array.isArray(leftEyeAnalysis.identified_signs) ? leftEyeAnalysis.identified_signs : []),
+    ...(rightEyeAnalysis && Array.isArray(rightEyeAnalysis.identified_signs) ? rightEyeAnalysis.identified_signs : [])
   ];
 
   // Валидация и обогатяване на знаците с информация от diagnostic map
@@ -1271,36 +1391,36 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
   );
 
   const keywordSet = buildKeywordSet(identifiedSigns, enrichedUserData);
-  const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
+  const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(
+    interpretationKnowledge,
+    keywordSet
+  );
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
   const keywordHints = Array.from(keywordSet);
   const webInsights = env && env.WEB_RESEARCH_API_KEY ? await fetchExternalInsights(keywordHints, env) : [];
   const normalizedWebInsights = normalizeWebSearchResults(webInsights);
-  const contextLimit = Number.isInteger(config.max_context_entries) && config.max_context_entries > 0
-    ? config.max_context_entries
-    : 6;
+  const contextLimit =
+    Number.isInteger(config.max_context_entries) && config.max_context_entries > 0 ? config.max_context_entries : 6;
   const fallbackExternalContext = buildFallbackExternalContext(
     keywordHints,
     filteredKnowledge,
     identifiedSigns,
     contextLimit
   );
-  const externalContextEntries = normalizedWebInsights.length > 0
-    ? normalizedWebInsights.slice(0, contextLimit)
-    : fallbackExternalContext;
+  const externalContextEntries =
+    normalizedWebInsights.length > 0 ? normalizedWebInsights.slice(0, contextLimit) : fallbackExternalContext;
   const externalContextPayload = JSON.stringify(externalContextEntries, null, 2);
   const promptUserData = { ...enrichedUserData, keyword_hints: keywordHints };
 
   const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
   const remedyPayload = JSON.stringify(relevantRemedyBase, null, 2);
-  const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
-    ? remedyBase.mandatory_disclaimer.text
-    : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
+  const disclaimerText =
+    remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text
+      ? remedyBase.mandatory_disclaimer.text
+      : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
 
-  const reportTemplate = typeof config.report_prompt_template === 'string'
-    ? config.report_prompt_template
-    : '';
+  const reportTemplate = typeof config.report_prompt_template === 'string' ? config.report_prompt_template : '';
 
   const prompt = reportTemplate
     .replace('{{USER_DATA}}', JSON.stringify(promptUserData, null, 2))
@@ -1325,7 +1445,7 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
     headers = { 'Content-Type': 'application/json' };
     requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { 'response_mime_type': 'application/json' }
+      generationConfig: { response_mime_type: 'application/json' }
     };
   } else if (config.provider === 'openai') {
     if ((config.report_model || '').trim() === 'gpt-4o-search-preview') {
@@ -1343,7 +1463,7 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
     apiUrl = API_BASE_URLS.openai;
     headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      Authorization: `Bearer ${apiKey}`
     };
     requestBody = {
       model: config.report_model,
@@ -1403,14 +1523,17 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
     jsonText = choice?.message?.content ?? '';
   }
 
-  jsonText = normalizeModelJsonText(jsonText).replace(/```json/g, '').replace(/```/g, '').trim();
+  jsonText = normalizeModelJsonText(jsonText)
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
 
   try {
     const reportData = JSON.parse(jsonText);
     // Добавяме аналитичните метрики към доклада
     reportData._analytics = analyticsMetrics;
     return reportData;
-  } catch(e) {
+  } catch (e) {
     // Логване на пълния отговор и грешката за debugging
     console.error('Грешка при парсване на JSON от AI (финален доклад):');
     console.error('Получен текст:', jsonText.substring(0, 500)); // Първите 500 символа
@@ -1448,7 +1571,7 @@ async function runSearchPreview({
   const baseUrl = 'https://api.openai.com/v1';
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`,
+    Authorization: `Bearer ${apiKey}`,
     'OpenAI-Beta': 'assistants=v2'
   };
 
@@ -1558,12 +1681,16 @@ async function runSearchPreview({
 
   const messagesData = await messagesResponse.json();
   const assistantMessage = Array.isArray(messagesData?.data)
-    ? messagesData.data.find((message) => message && message.role === 'assistant' && message.run_id === completedRun.id)
-      || messagesData.data.find((message) => message && message.role === 'assistant')
+    ? messagesData.data.find(
+        (message) => message && message.role === 'assistant' && message.run_id === completedRun.id
+      ) || messagesData.data.find((message) => message && message.role === 'assistant')
     : null;
 
   const assistantText = extractAssistantMessageText(assistantMessage);
-  const normalized = normalizeModelJsonText(assistantText).replace(/```json/g, '').replace(/```/g, '').trim();
+  const normalized = normalizeModelJsonText(assistantText)
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
 
   try {
     return JSON.parse(normalized);
@@ -1653,7 +1780,12 @@ function extractAssistantMessageText(message) {
       continue;
     }
 
-    if (part.type === 'output_text' && part.text && typeof part.text === 'object' && typeof part.text.value === 'string') {
+    if (
+      part.type === 'output_text' &&
+      part.text &&
+      typeof part.text === 'object' &&
+      typeof part.text.value === 'string'
+    ) {
       fragments.push(part.text.value);
     }
   }
@@ -1712,9 +1844,11 @@ function buildFallbackExternalContext(keywordHints, interpretationKnowledge, ide
 
   const signNames = Array.isArray(identifiedSigns)
     ? identifiedSigns
-      .map((sign) => (sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''))
-      .filter(Boolean)
-      .slice(0, 3)
+        .map((sign) =>
+          sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''
+        )
+        .filter(Boolean)
+        .slice(0, 3)
     : [];
 
   const summarySegments = [];
@@ -1778,15 +1912,16 @@ function normalizeExternalEntry(entry, bucket) {
 
   if (entry && typeof entry === 'object') {
     const source = typeof entry.source === 'string' && entry.source.trim() ? entry.source : 'external';
-    const summaryValue = typeof entry.summary === 'string' && entry.summary.trim()
-      ? entry.summary
-      : (() => {
-        try {
-          return JSON.stringify(entry);
-        } catch {
-          return String(entry);
-        }
-      })();
+    const summaryValue =
+      typeof entry.summary === 'string' && entry.summary.trim()
+        ? entry.summary
+        : (() => {
+            try {
+              return JSON.stringify(entry);
+            } catch {
+              return String(entry);
+            }
+          })();
 
     const normalized = { source, summary: summaryValue };
     if (typeof entry.url === 'string' && entry.url.trim()) {
@@ -1817,7 +1952,10 @@ function normalizeWebSearchResults(results) {
 
     const candidate = {
       source: title || url || 'Уеб търсене',
-      summary: snippet || title || (url ? `Прегледай ${url} за допълнителна информация.` : 'Външният източник не предостави резюме.'),
+      summary:
+        snippet ||
+        title ||
+        (url ? `Прегледай ${url} за допълнителна информация.` : 'Външният източник не предостави резюме.'),
       url: url || undefined
     };
 
@@ -1833,7 +1971,7 @@ function normalizeWebSearchResults(results) {
  */
 const GOAL_KEYWORDS_MAP = {
   'main-goals': {
-    'отслабване': ['weight_management'],
+    отслабване: ['weight_management'],
     'контрол на теглото': ['weight_management'],
     'регулация на теглото': ['weight_management'],
     'диабет тип 2': ['type_2_diabetes', 'glycemic_control'],
@@ -1841,15 +1979,15 @@ const GOAL_KEYWORDS_MAP = {
     'инсулинова резистентност': ['insulin_resistance'],
     'подобряване на метаболизма': ['metabolic_risk'],
     'анти-ейдж': ['anti_aging_goal'],
-    'детокс': ['detox_focus'],
-    'детоксикация': ['detox_focus']
+    детокс: ['detox_focus'],
+    детоксикация: ['detox_focus']
   },
   'health-status': {
     'диабет тип 2': ['type_2_diabetes', 'glycemic_control'],
     'инсулинова резистентност': ['insulin_resistance'],
     'метаболитен синдром': ['metabolic_risk'],
     'наднормено тегло': ['weight_management'],
-    'затлъстяване': ['weight_management']
+    затлъстяване: ['weight_management']
   }
 };
 
@@ -1882,8 +2020,7 @@ function buildKeywordSet(identifiedSigns, userData = {}) {
         if (!normalized) continue;
 
         const normalizedSlug = slugify(entry);
-        const mappedSlugs =
-          mapping[normalized] || (normalizedSlug ? mapping[normalizedSlug] : undefined);
+        const mappedSlugs = mapping[normalized] || (normalizedSlug ? mapping[normalizedSlug] : undefined);
         if (!mappedSlugs) continue;
 
         for (const slug of mappedSlugs) {
@@ -2002,7 +2139,7 @@ function addKeywordVariants(set, value) {
   if (normalized) set.add(normalized);
   const slug = slugify(value);
   if (slug) set.add(slug);
-  const words = normalized.split(/[^a-zа-я0-9]+/i).filter(word => word && word.length >= 4);
+  const words = normalized.split(/[^a-zа-я0-9]+/i).filter((word) => word && word.length >= 4);
   for (const word of words) {
     set.add(word);
   }
@@ -2183,14 +2320,14 @@ function selectRelevantInterpretationKnowledge(knowledge, keywords) {
     if (slugMatched) {
       filteredKnowledge[key] = included ? filteredValue : value;
       const supplementalLinks = collectRemedyLinks(value);
-      supplementalLinks.forEach(link => matchedRemedyLinks.add(link));
-      remedyLinks.forEach(link => matchedRemedyLinks.add(link));
+      supplementalLinks.forEach((link) => matchedRemedyLinks.add(link));
+      remedyLinks.forEach((link) => matchedRemedyLinks.add(link));
       continue;
     }
 
     if (included) {
       filteredKnowledge[key] = filteredValue;
-      remedyLinks.forEach(link => matchedRemedyLinks.add(link));
+      remedyLinks.forEach((link) => matchedRemedyLinks.add(link));
     }
   }
 
@@ -2218,7 +2355,7 @@ function filterKnowledgeValue(value, keywords) {
       const result = filterKnowledgeValue(item, keywords);
       if (result.included) {
         filteredArray.push(result.filteredValue);
-        result.remedyLinks.forEach(link => remedyLinks.add(link));
+        result.remedyLinks.forEach((link) => remedyLinks.add(link));
       }
     }
     return { included: filteredArray.length > 0, filteredValue: filteredArray, remedyLinks };
@@ -2244,7 +2381,7 @@ function filterKnowledgeValue(value, keywords) {
       if (childResult.included) {
         result[key] = childResult.filteredValue;
         included = true;
-        childResult.remedyLinks.forEach(link => remedyLinks.add(link));
+        childResult.remedyLinks.forEach((link) => remedyLinks.add(link));
       } else if (typeof child === 'string' && matchesKeywords(child, keywords)) {
         result[key] = child;
         included = true;
@@ -2260,7 +2397,7 @@ function filterKnowledgeValue(value, keywords) {
     }
 
     if (included) {
-      ownRemedyLinks.forEach(link => remedyLinks.add(link));
+      ownRemedyLinks.forEach((link) => remedyLinks.add(link));
       const filteredObject = { ...result };
       for (const key of ['name', 'title', 'summary', 'description']) {
         if (value[key] !== undefined && filteredObject[key] === undefined) {
@@ -2505,7 +2642,7 @@ function createConciseIrisMap(irisMap) {
 
   // Включи зоните (критично за локализация)
   if (irisMap.topography && irisMap.topography.zones) {
-    concise.zones = irisMap.topography.zones.map(z => ({
+    concise.zones = irisMap.topography.zones.map((z) => ({
       zone: z.zone,
       name: z.name,
       description: z.description
@@ -2520,9 +2657,10 @@ function createConciseIrisMap(irisMap) {
         concise.signs[key] = {
           name: value.name || key,
           type: value.type || '',
-          interpretation: typeof value.interpretation === 'string'
-            ? value.interpretation.substring(0, 200) + (value.interpretation.length > 200 ? '...' : '')
-            : value.interpretation
+          interpretation:
+            typeof value.interpretation === 'string'
+              ? value.interpretation.substring(0, 200) + (value.interpretation.length > 200 ? '...' : '')
+              : value.interpretation
         };
       }
     }
@@ -2582,7 +2720,7 @@ function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
     // Ако имаме още място, добавяме допълнителна информация
     if (contextEntries.length < maxEntries) {
       const additionalKeys = Object.keys(interpretationKnowledge)
-        .filter(k => !VISION_CONTEXT_PRIORITY_KEYS.includes(k))
+        .filter((k) => !VISION_CONTEXT_PRIORITY_KEYS.includes(k))
         .slice(0, maxEntries - contextEntries.length);
 
       for (const key of additionalKeys) {
@@ -2614,7 +2752,8 @@ function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
   if (contextEntries.length === 0) {
     contextEntries.push({
       source: 'Базови насоки',
-      summary: 'Фокусирай се върху конституционалния анализ (цвят, структура, плътност) и елиминативните канали (черва, бъбреци, лимфа, бели дробове, кожа). Идентифицирай всички видими знаци: лакуни, нервни пръстени, radii solaris, пигменти, токсични пръстени.'
+      summary:
+        'Фокусирай се върху конституционалния анализ (цвят, структура, плътност) и елиминативните канали (черва, бъбреци, лимфа, бели дробове, кожа). Идентифицирай всички видими знаци: лакуни, нервни пръстени, radii solaris, пигменти, токсични пръстени.'
     });
   }
 
@@ -2652,13 +2791,13 @@ async function queryAI(prompt, config, apiKey, expectJson = true) {
     headers = { 'Content-Type': 'application/json' };
     requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: expectJson ? { 'response_mime_type': 'application/json' } : {}
+      generationConfig: expectJson ? { response_mime_type: 'application/json' } : {}
     };
   } else if (config.provider === 'openai') {
     apiUrl = API_BASE_URLS.openai;
     headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      Authorization: `Bearer ${apiKey}`
     };
     requestBody = {
       model: config.report_model,
@@ -2714,7 +2853,10 @@ async function queryAI(prompt, config, apiKey, expectJson = true) {
     responseText = choice?.message?.content ?? '';
   }
 
-  responseText = normalizeModelJsonText(responseText).replace(/```json/g, '').replace(/```/g, '').trim();
+  responseText = normalizeModelJsonText(responseText)
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
 
   if (expectJson) {
     try {
@@ -2828,7 +2970,14 @@ ${JSON.stringify(knowledge, null, 2).substring(0, 3000)}
 /**
  * СТЪПКА 3: Генерира персонализирани препоръки
  */
-async function generatePersonalizedRecommendations(signsInterpretation, constitutional, userData, remedyBase, config, apiKey) {
+async function generatePersonalizedRecommendations(
+  signsInterpretation,
+  constitutional,
+  userData,
+  remedyBase,
+  config,
+  apiKey
+) {
   const prompt = `Ти си холистичен здравен консултант. Създай КОНКРЕТНИ и ПРИЛАГАЕМИ препоръки базирани на анализа.
 
 **ИНТЕРПРЕТАЦИЯ НА ЗНАЦИТЕ:**
@@ -2911,7 +3060,15 @@ ${JSON.stringify(remedyBase, null, 2).substring(0, 4000)}
 /**
  * СТЪПКА 4: Сглобява финалния доклад
  */
-async function assembleFinalReport(constitutional, signsInterpretation, recommendations, userData, disclaimer, config, apiKey) {
+async function assembleFinalReport(
+  constitutional,
+  signsInterpretation,
+  recommendations,
+  userData,
+  disclaimer,
+  config,
+  apiKey
+) {
   const prompt = `Ти си експерт редактор на холистични доклади. Създай окончателния СТРУКТУРИРАН доклад.
 
 **КОМПОНЕНТИ:**

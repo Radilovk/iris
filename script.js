@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- ОСНОВНА ЛОГИКА ЗА НАВИГАЦИЯ ---
   function showStep(stepNumber) {
     currentStep = stepNumber;
-    formSteps.forEach(step => step.classList.remove('active'));
+    formSteps.forEach((step) => step.classList.remove('active'));
     form.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
 
     stepperSteps.forEach((step, index) => {
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  nextBtns.forEach(btn => {
+  nextBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       if (validateCurrentStep() && currentStep < formSteps.length) {
         showStep(currentStep + 1);
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  prevBtns.forEach(btn => {
+  prevBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       if (currentStep > 1) {
         showStep(currentStep - 1);
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isStepValid = true;
     let firstInvalidField = null;
 
-    requiredFields.forEach(field => {
+    requiredFields.forEach((field) => {
       const parentGroup = field.closest('.form-group');
       parentGroup.classList.remove('error');
 
@@ -91,15 +91,21 @@ document.addEventListener('DOMContentLoaded', () => {
     return isStepValid;
   }
 
-  form.querySelectorAll('[required]').forEach(field => {
-    field.addEventListener('input', () => { if (field.value.trim()) field.closest('.form-group').classList.remove('error'); });
-    field.addEventListener('change', () => { if (field.value) field.closest('.form-group').classList.remove('error'); });
+  form.querySelectorAll('[required]').forEach((field) => {
+    field.addEventListener('input', () => {
+      if (field.value.trim()) field.closest('.form-group').classList.remove('error');
+    });
+    field.addEventListener('change', () => {
+      if (field.value) field.closest('.form-group').classList.remove('error');
+    });
   });
 
   // --- СЪОБЩЕНИЯ ---
   function renderMessage() {
     const combinedMessage = cacheNotice
-      ? (currentMessage ? `${currentMessage} ${cacheNotice}` : cacheNotice)
+      ? currentMessage
+        ? `${currentMessage} ${cacheNotice}`
+        : cacheNotice
       : currentMessage;
 
     messageContent.textContent = combinedMessage;
@@ -132,13 +138,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- КАЧВАНЕ НА ФАЙЛОВЕ ---
-  form.querySelectorAll('input[type="file"]').forEach(input => {
+  form.querySelectorAll('input[type="file"]').forEach((input) => {
     const preview = document.getElementById(input.id.replace('-upload', '-preview'));
     if (!preview) return;
 
     preview.addEventListener('click', () => input.click());
 
-    input.addEventListener('change', function() {
+    input.addEventListener('change', function () {
       const file = this.files[0];
       const parentGroup = this.closest('.form-group');
       parentGroup.classList.remove('error');
@@ -160,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = (e) => {
         preview.querySelector('i').style.display = 'none';
         preview.querySelector('p').style.display = 'none';
         preview.style.backgroundImage = `url(${e.target.result})`;
@@ -171,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
     if (!validateCurrentStep()) return;
 
@@ -217,9 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // ===================================================================
       const cacheState = await saveFormDataForReanalysis(formData);
       if (cacheState?.cacheDisabled) {
-        const reason = cacheState.reason === 'quota'
-          ? ' (ограничение на мястото за съхранение).'
-          : ' (файловете са твърде големи за кеширане).';
+        const reason =
+          cacheState.reason === 'quota'
+            ? ' (ограничение на мястото за съхранение).'
+            : ' (файловете са твърде големи за кеширане).';
         setCacheNotice(`⚠ Повторният анализ няма да бъде наличен за тази сесия${reason}`);
       } else {
         setCacheNotice('');
@@ -237,8 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
       progressBar.style.width = '100%';
       showMessage('Успех! Пренасочваме ви към доклада...', 'success');
       localStorage.setItem('iridologyReport', JSON.stringify(data));
-      setTimeout(() => window.location.href = 'report.html', 1500);
-
+      setTimeout(() => (window.location.href = 'report.html'), 1500);
     } catch (error) {
       clearInterval(progressInterval);
       progressBarContainer.style.display = 'none';
@@ -261,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(img.src);
-        canvas.toBlob(blob => {
+        canvas.toBlob((blob) => {
           if (!blob) return reject(new Error('Оптимизацията е неуспешна.'));
           const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.png'), { type: 'image/png' });
           resolve(newFile);

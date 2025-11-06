@@ -1,57 +1,76 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bg">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Администрация - Iris-Holistica AI</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div id="loading" class="loading"><i class="fas fa-spinner fa-spin"></i></div>
-    <div class="container admin-container">
-      <h1>Администрация</h1>
-      <div id="message-box"></div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Администрация - Iris-Holistica AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="loading" class="loading"><i class="fas fa-spinner fa-spin"></i></div>
+        <div class="container admin-container">
+            <h1>Администрация</h1>
+            <div id="message-box"></div>
 
-      <h2>Управление на конфигурации</h2>
-      <div class="kv-editor">
-        <h3>Зареждане или създаване на конфигурация</h3>
-        <p>Изберете конфигурация, за да я заредите и активирате, или въведете ново име, за да създадете нова.</p>
-        <select id="config-select">
-          <option value="">-- Зареждане --</option>
-        </select>
-        <input id="config-name" placeholder="Име на нова или съществуваща конфигурация">
-        <button id="save-config" class="cta-button">Запази като нова / Актуализирай</button>
-      </div>
+            <h2>Управление на конфигурации</h2>
+            <div class="kv-editor">
+                <h3>Зареждане или създаване на конфигурация</h3>
+                <p>
+                    Изберете конфигурация, за да я заредите и активирате, или въведете ново име, за
+                    да създадете нова.
+                </p>
+                <select id="config-select">
+                    <option value="">-- Зареждане --</option>
+                </select>
+                <input id="config-name" placeholder="Име на нова или съществуваща конфигурация" />
+                <button id="save-config" class="cta-button">Запази като нова / Актуализирай</button>
+            </div>
 
-      <h2>Редактор на активната конфигурация</h2>
-      <div class="kv-editor">
-        <h3>Системен промпт (за доклади)</h3>
-        <textarea id="role-prompt" placeholder="Въведете системния промпт за генериране на холистичния доклад..."></textarea>
-        <button id="save-prompt" class="cta-button">Запази промпт в текущата конфигурация</button>
-      </div>
+            <h2>Редактор на активната конфигурация</h2>
+            <div class="kv-editor">
+                <h3>Системен промпт (за доклади)</h3>
+                <textarea
+                    id="role-prompt"
+                    placeholder="Въведете системния промпт за генериране на холистичния доклад..."
+                ></textarea>
+                <button id="save-prompt" class="cta-button">
+                    Запази промпт в текущата конфигурация
+                </button>
+            </div>
 
-      <div class="kv-editor">
-        <h3>Модел за анализ и доклади</h3>
-        <select id="provider-select"></select>
-        <select id="model-select"></select>
-        <button id="save-model" class="cta-button">Запази модел в текущата конфигурация</button>
-      </div>
-      
-      <h2>Управление на AI Моделите</h2>
-      <div class="kv-editor">
-        <h3>Списък с налични модели (JSON формат)</h3>
-        <p>Редактирайте този JSON, за да добавите или премахнете модели. Промените ще се отразят в падащото меню "Модел" след запазване.</p>
-        <textarea id="models-list-editor" class="models-json-editor"></textarea>
-        <button id="save-models-list" class="cta-button">Запази списъка с модели</button>
-      </div>
+            <div class="kv-editor">
+                <h3>Модел за анализ и доклади</h3>
+                <select id="provider-select"></select>
+                <select id="model-select"></select>
+                <button id="save-model" class="cta-button">
+                    Запази модел в текущата конфигурация
+                </button>
+            </div>
 
-      <h2>KV Хранилище (Списък с ключове)</h2>
-      <pre id="kv-viewer" class="admin-viewer"></pre>
-    </div>
-  <script type="module" src="admin.js"></script>
-</body>
+            <h2>Управление на AI Моделите</h2>
+            <div class="kv-editor">
+                <h3>Списък с налични модели (JSON формат)</h3>
+                <p>
+                    Редактирайте този JSON, за да добавите или премахнете модели. Промените ще се
+                    отразят в падащото меню "Модел" след запазване.
+                </p>
+                <textarea id="models-list-editor" class="models-json-editor"></textarea>
+                <button id="save-models-list" class="cta-button">Запази списъка с модели</button>
+            </div>
+
+            <h2>KV Хранилище (Списък с ключове)</h2>
+            <pre id="kv-viewer" class="admin-viewer"></pre>
+        </div>
+        <script type="module" src="admin.js"></script>
+    </body>
 </html>

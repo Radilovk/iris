@@ -5,6 +5,7 @@
 ## 🚀 Започване
 
 1. **Fork на репозиторито**
+
    ```bash
    # Кликнете "Fork" в GitHub UI, след това:
    git clone https://github.com/your-username/iris.git
@@ -12,6 +13,7 @@
    ```
 
 2. **Инсталирайте зависимостите**
+
    ```bash
    npm install
    ```
@@ -163,6 +165,7 @@ npm test
 ```
 
 **Types:**
+
 - `feat`: Нова функция
 - `fix`: Bug fix
 - `docs`: Промени в документацията
@@ -172,6 +175,7 @@ npm test
 - `chore`: Maintenance задачи
 
 **Примери:**
+
 ```
 feat: add rate limiting to worker endpoints
 
