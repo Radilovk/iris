@@ -60,12 +60,28 @@ wrangler kv:namespace create iris_rag_kv
 ```
 
 2. Качете JSON файловете от папката `kv/`:
+
+**Препоръчан метод (с автоматизиран скрипт):**
 ```bash
+export CF_KV_NAMESPACE_ID=YOUR_NAMESPACE_ID
+./scripts/deploy-kv.sh
+```
+
+**Алтернативен метод (ръчно):**
+```bash
+wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID iris_config_kv --path=kv/iris_config_kv.json
 wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID iris_diagnostic_map --path=kv/iris_diagnostic_map.json
 wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID holistic_interpretation_knowledge --path=kv/holistic_interpretation_knowledge.json
 wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID remedy_and_recommendation_base --path=kv/remedy_and_recommendation_base.json
-wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID iris_config_kv --path=kv/iris_config_kv.json
 ```
+
+3. Верифицирайте конфигурацията:
+```bash
+export CF_KV_NAMESPACE_ID=YOUR_NAMESPACE_ID
+./scripts/verify-kv.sh
+```
+
+**⚠️ Важно:** При всяка промяна в `kv/*.json` файловете, винаги изпълнявайте `./scripts/deploy-kv.sh` за да приложите промените! За детайлни инструкции вижте [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
 
 ### 4. Задаване на API ключове
 
