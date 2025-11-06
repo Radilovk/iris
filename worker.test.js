@@ -1109,3 +1109,161 @@ test('createEnrichedVisionContext работи дори при празна ба
   assert.ok(contextEntries[0].summary.includes('Фокусирай') || contextEntries[0].summary.includes('елиминатив'), 
     'Трябва да включва базови насоки');
 });
+
+test('generateHolisticReport добавя аналитични метрики към доклада', async () => {
+  const { generateHolisticReport } = __testables__;
+  
+  const mockLeftEyeAnalysis = {
+    eye: 'ляво око',
+    constitutional_analysis: {
+      level_1_constitution_color: 'Лимфатична конституция с бял ирис',
+      level_2_disposition_structure: 'Неврогенна структура с много плътни влакна',
+      level_3_diathesis_overlays: 'Хидрогеноидна диатеза с лимфна броеница',
+      density_assessment: 'Много плътна тъкан',
+      pupil_characteristics: 'Нормална форма и размер',
+      anv_collarette_analysis: 'Редовна форма'
+    },
+    eliminative_channels_assessment: {
+      intestines: 'Добро състояние',
+      kidneys: 'Леко натоварване',
+      lymphatic: 'Умерено натоварване',
+      lungs: 'Добро състояние',
+      skin: 'Добро състояние'
+    },
+    identified_signs: [
+      { sign_name: 'Лакуна', location: 'зона 3', intensity: 'умерен', description: 'Малка лакуна' },
+      { sign_name: 'Нервен пръстен', location: 'зона 7', intensity: 'силен', description: 'Двоен пръстен' }
+    ]
+  };
+  
+  const mockRightEyeAnalysis = {
+    eye: 'дясно око',
+    constitutional_analysis: {
+      level_1_constitution_color: 'Лимфатична конституция',
+      level_2_disposition_structure: 'Неврогенна структура',
+      level_3_diathesis_overlays: 'Без видими диатези',
+      density_assessment: 'Плътна тъкан',
+      pupil_characteristics: 'Нормална',
+      anv_collarette_analysis: 'Редовна'
+    },
+    eliminative_channels_assessment: {
+      intestines: 'Добро',
+      kidneys: 'Добро',
+      lymphatic: 'Добро',
+      lungs: 'Добро',
+      skin: 'Добро'
+    },
+    identified_signs: [
+      { sign_name: 'Радий', location: 'зона 4', intensity: 'лек', description: 'Тънък радий' }
+    ]
+  };
+  
+  const mockUserData = {
+    name: 'Тест Потребител',
+    age: 35,
+    height: 170,
+    weight: 70,
+    stress: 6
+  };
+  
+  const mockInterpretationKnowledge = {
+    lacunae_types: { name: 'Типове лакуни', description: 'Описание' }
+  };
+  
+  const mockRemedyBase = {
+    mandatory_disclaimer: { text: 'Тестов дисклеймър' }
+  };
+  
+  const mockConfig = {
+    provider: 'openai',
+    report_model: 'gpt-4o',
+    report_prompt_template: 'Test template {{USER_DATA}} {{LEFT_EYE_ANALYSIS}} {{RIGHT_EYE_ANALYSIS}} {{INTERPRETATION_KNOWLEDGE}} {{REMEDY_BASE}} {{EXTERNAL_CONTEXT}} {{PATIENT_NAME}} {{DISCLAIMER}}',
+    max_context_entries: 6
+  };
+  
+  const mockApiKey = 'test-key';
+  
+  const mockEnv = {};
+  
+  const mockIrisMap = {
+    topography: {
+      zones: [
+        { zone: 3, name: 'Зона 3', description: 'Хуморална' },
+        { zone: 4, name: 'Зона 4', description: 'Органна' },
+        { zone: 7, name: 'Зона 7', description: 'Кожна' }
+      ]
+    },
+    signs: {
+      lacunae: { name: 'Лакуна', type: 'structural', interpretation: 'Слабост' }
+    }
+  };
+  
+  // Mock fetch за AI заявката
+  global.fetch = async (url, options) => {
+    return {
+      ok: true,
+      json: async () => ({
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              'Име': 'Тест Потребител',
+              'Резюме на анализа': 'Тестово резюме',
+              'Задължителен отказ от отговорност': 'Тестов дисклеймър'
+            })
+          }
+        }]
+      })
+    };
+  };
+  
+  const report = await generateHolisticReport(
+    mockUserData,
+    mockLeftEyeAnalysis,
+    mockRightEyeAnalysis,
+    mockInterpretationKnowledge,
+    mockRemedyBase,
+    mockConfig,
+    mockApiKey,
+    mockEnv,
+    mockIrisMap
+  );
+  
+  // Проверяваме че докладът съдържа аналитични метрики
+  assert.ok(report._analytics, 'Докладът трябва да съдържа _analytics обект');
+  
+  const analytics = report._analytics;
+  
+  // Проверяваме структурата на метриките
+  assert.ok(analytics.timestamp, 'Трябва да има timestamp');
+  assert.ok(analytics.detection, 'Трябва да има detection метрики');
+  assert.ok(analytics.coverage, 'Трябва да има coverage метрики');
+  assert.ok(analytics.constitutional_analysis, 'Трябва да има constitutional_analysis метрики');
+  assert.ok(analytics.personalization, 'Трябва да има personalization метрики');
+  assert.ok(analytics.quality, 'Трябва да има quality метрики');
+  
+  // Проверяваме detection метрики
+  assert.ok(analytics.detection.total_signs >= 0, 'Трябва да брои открити знаци');
+  assert.ok(analytics.detection.enrichment_rate >= 0 && analytics.detection.enrichment_rate <= 100, 
+    'Enrichment rate трябва да е между 0 и 100');
+  
+  // Проверяваме coverage метрики
+  assert.ok(analytics.coverage.zones_analyzed >= 0, 'Трябва да брои анализирани зони');
+  assert.ok(analytics.coverage.coverage_percentage >= 0 && analytics.coverage.coverage_percentage <= 100,
+    'Coverage percentage трябва да е между 0 и 100');
+  
+  // Проверяваме quality метрики
+  assert.ok(analytics.quality.precision_score >= 0 && analytics.quality.precision_score <= 100,
+    'Precision score трябва да е между 0 и 100');
+  assert.ok(analytics.quality.detail_level, 'Трябва да има detail_level');
+  assert.ok(analytics.quality.improvement_indicators, 'Трябва да има improvement_indicators');
+  
+  // Проверяваме improvement indicators
+  assert.ok(typeof analytics.quality.improvement_indicators.enhanced_validation === 'boolean',
+    'enhanced_validation трябва да е boolean');
+  assert.ok(typeof analytics.quality.improvement_indicators.zone_mapping === 'boolean',
+    'zone_mapping трябва да е boolean');
+  assert.ok(typeof analytics.quality.improvement_indicators.priority_classification === 'boolean',
+    'priority_classification трябва да е boolean');
+  assert.ok(typeof analytics.quality.improvement_indicators.personalized_metrics === 'boolean',
+    'personalized_metrics трябва да е boolean');
+});
