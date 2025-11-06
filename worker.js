@@ -1232,7 +1232,16 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
     apiKey
   );
 
-  finalReport._analytics = analyticsMetrics;
+  // Добавяне на информация за броя заявки
+  finalReport._analytics = {
+    ...analyticsMetrics,
+    ai_queries: {
+      image_analysis: 2,  // 2 заявки за анализ на двете очи
+      report_generation: 4,  // 4 заявки в multi-query режим
+      total: 6,  // Общо 6 заявки
+      mode: 'multi-query'
+    }
+  };
   return finalReport;
 }
 
@@ -1407,8 +1416,16 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
 
   try {
     const reportData = JSON.parse(jsonText);
-    // Добавяме аналитичните метрики към доклада
-    reportData._analytics = analyticsMetrics;
+    // Добавяме аналитичните метрики към доклада, включително информация за заявките
+    reportData._analytics = {
+      ...analyticsMetrics,
+      ai_queries: {
+        image_analysis: 2,  // 2 заявки за анализ на двете очи
+        report_generation: 1,  // 1 заявка в single-query режим
+        total: 3,  // Общо 3 заявки
+        mode: 'single-query'
+      }
+    };
     return reportData;
   } catch(e) {
     // Логване на пълния отговор и грешката за debugging

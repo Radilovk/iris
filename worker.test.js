@@ -1357,3 +1357,133 @@ test('generateMultiQueryReport извършва 4 фокусирани AI зая
     global.fetch = originalFetch;
   }
 });
+
+test('Analytics съдържа информация за броя AI заявки в single-query режим', async () => {
+  const { generateSingleQueryReport } = __testables__;
+
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [
+          { content: { parts: [{ text: JSON.stringify({ 'Име': 'Тест' }) }] } }
+        ]
+      })
+    };
+  };
+
+  try {
+    const config = {
+      provider: 'gemini',
+      report_model: 'gemini-1.5-flash-latest',
+      report_prompt_template: '{{USER_DATA}}{{LEFT_EYE_ANALYSIS}}{{RIGHT_EYE_ANALYSIS}}{{INTERPRETATION_KNOWLEDGE}}{{REMEDY_BASE}}{{EXTERNAL_CONTEXT}}{{PATIENT_NAME}}{{DISCLAIMER}}',
+      use_multi_query_report: false
+    };
+
+    const report = await generateSingleQueryReport(
+      { name: 'Тест' },
+      { constitutional_analysis: {}, identified_signs: [] },
+      { constitutional_analysis: {}, identified_signs: [] },
+      {},
+      { mandatory_disclaimer: { text: 'Дисклеймър' } },
+      config,
+      'test-key',
+      null,
+      {}
+    );
+
+    assert.ok(report._analytics, 'Докладът съдържа аналитика');
+    assert.ok(report._analytics.ai_queries, 'Аналитиката съдържа информация за заявки');
+    assert.equal(report._analytics.ai_queries.image_analysis, 2, 'Има 2 заявки за анализ на изображения');
+    assert.equal(report._analytics.ai_queries.report_generation, 1, 'Има 1 заявка за генериране на доклад');
+    assert.equal(report._analytics.ai_queries.total, 3, 'Общо 3 заявки в single-query режим');
+    assert.equal(report._analytics.ai_queries.mode, 'single-query', 'Режимът е single-query');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('Analytics съдържа информация за броя AI заявки в multi-query режим', async () => {
+  const { generateMultiQueryReport } = __testables__;
+
+  const originalFetch = global.fetch;
+  const callsLog = [];
+
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    const promptText = body.contents?.[0]?.parts?.[0]?.text || '';
+
+    if (promptText.includes('конституционална синтеза')) {
+      callsLog.push('constitutional');
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            { content: { parts: [{ text: JSON.stringify({ constitutional_type: 'Тест' }) }] } }
+          ]
+        })
+      };
+    } else if (promptText.includes('интерпретация на знаците')) {
+      callsLog.push('signs_interpretation');
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            { content: { parts: [{ text: JSON.stringify({ priority_systems: [] }) }] } }
+          ]
+        })
+      };
+    } else if (promptText.includes('персонализирани препоръки')) {
+      callsLog.push('recommendations');
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            { content: { parts: [{ text: JSON.stringify({ action_plan: {} }) }] } }
+          ]
+        })
+      };
+    } else {
+      callsLog.push('final_assembly');
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            { content: { parts: [{ text: JSON.stringify({ 'Име': 'Тест' }) }] } }
+          ]
+        })
+      };
+    }
+  };
+
+  try {
+    const config = {
+      provider: 'gemini',
+      report_model: 'gemini-1.5-flash-latest',
+      use_multi_query_report: true
+    };
+
+    const report = await generateMultiQueryReport(
+      { name: 'Тест' },
+      { constitutional_analysis: { level_1_constitution_color: 'Лимфатична' }, identified_signs: [] },
+      { constitutional_analysis: { level_1_constitution_color: 'Лимфатична' }, identified_signs: [] },
+      {},
+      { mandatory_disclaimer: { text: 'Дисклеймър' } },
+      config,
+      'test-key',
+      null,
+      {}
+    );
+
+    assert.equal(callsLog.length, 4, 'Очакваме 4 AI заявки за генериране на доклад');
+    assert.ok(report._analytics, 'Докладът съдържа аналитика');
+    assert.ok(report._analytics.ai_queries, 'Аналитиката съдържа информация за заявки');
+    assert.equal(report._analytics.ai_queries.image_analysis, 2, 'Има 2 заявки за анализ на изображения');
+    assert.equal(report._analytics.ai_queries.report_generation, 4, 'Има 4 заявки за генериране на доклад');
+    assert.equal(report._analytics.ai_queries.total, 6, 'Общо 6 заявки в multi-query режим');
+    assert.equal(report._analytics.ai_queries.mode, 'multi-query', 'Режимът е multi-query');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
