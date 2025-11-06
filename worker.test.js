@@ -1024,3 +1024,88 @@ test('max_context_entries е увеличен на 10 за по-богат RAG �
 
   assert.equal(config.max_context_entries, 10, 'max_context_entries трябва да е 10 след интеграция на учебниците');
 });
+
+test('createConciseIrisMap намалява размера на diagnostic map значително', async () => {
+  const { createConciseIrisMap } = __testables__;
+  const fs = await import('fs/promises');
+  const irisMapData = await fs.readFile('./kv/iris_diagnostic_map.txt', 'utf8');
+  const fullIrisMap = JSON.parse(irisMapData);
+  
+  const conciseMap = createConciseIrisMap(fullIrisMap);
+  
+  const fullSize = JSON.stringify(fullIrisMap, null, 2).length;
+  const conciseSize = JSON.stringify(conciseMap, null, 2).length;
+  
+  // Проверяваме че има значително намаление (поне 40%)
+  assert.ok(conciseSize < fullSize * 0.6, `Concise map трябва да е поне 40% по-малък. Full: ${fullSize}, Concise: ${conciseSize}`);
+  
+  // Проверяваме че критичните секции са запазени
+  assert.ok(conciseMap.constitutions, 'Трябва да има constitutions');
+  assert.ok(conciseMap.zones, 'Трябва да има zones');
+  assert.ok(conciseMap.signs, 'Трябва да има signs');
+  
+  // Проверяваме че конституционалните типове са включени
+  assert.ok(conciseMap.constitutions.color_types, 'Трябва да има color_types');
+  assert.ok(conciseMap.constitutions.structural_types, 'Трябва да има structural_types');
+  
+  // Проверяваме че има поне 5 зони
+  assert.ok(Array.isArray(conciseMap.zones) && conciseMap.zones.length >= 5, 'Трябва да има поне 5 зони');
+  
+  // Проверяваме че знаците имат само основната информация
+  const firstSignKey = Object.keys(conciseMap.signs)[0];
+  if (firstSignKey) {
+    const firstSign = conciseMap.signs[firstSignKey];
+    assert.ok(firstSign.name, 'Знакът трябва да има име');
+    // Проверяваме че няма излишна информация като remedy_link, support, psychology
+    assert.equal(firstSign.remedy_link, undefined, 'Concise map не трябва да включва remedy_link в signs');
+  }
+});
+
+test('createEnrichedVisionContext създава богат контекст с приоритетни знания', async () => {
+  const { createEnrichedVisionContext } = __testables__;
+  const fs = await import('fs/promises');
+  const knowledgeData = await fs.readFile('./kv/holistic_interpretation_knowledge.txt', 'utf8');
+  const interpretationKnowledge = JSON.parse(knowledgeData);
+  
+  const enrichedContext = createEnrichedVisionContext(interpretationKnowledge, 10);
+  
+  // Проверяваме че връща JSON string
+  assert.ok(typeof enrichedContext === 'string', 'Трябва да върне string');
+  
+  const contextEntries = JSON.parse(enrichedContext);
+  
+  // Проверяваме че има масив от записи
+  assert.ok(Array.isArray(contextEntries), 'Трябва да върне масив');
+  assert.ok(contextEntries.length > 0, 'Трябва да има поне един запис');
+  assert.ok(contextEntries.length <= 10, 'Не трябва да надвишава максималния брой записи');
+  
+  // Проверяваме структурата на записите
+  const firstEntry = contextEntries[0];
+  assert.ok(firstEntry.source, 'Всеки запис трябва да има source');
+  assert.ok(firstEntry.summary, 'Всеки запис трябва да има summary');
+  
+  // Проверяваме че приоритетните ключове са включени ако съществуват
+  const sources = contextEntries.map(e => e.source);
+  const sourcesStr = sources.join(' ');
+  
+  // Поне един от приоритетните ключове трябва да е включен
+  const hasPriorityKey = sourcesStr.includes('elimination_channels') ||
+                        sourcesStr.includes('common_iris_signs') ||
+                        sourcesStr.includes('lacunae_types') ||
+                        sourcesStr.includes('nerve_rings');
+  
+  assert.ok(hasPriorityKey, 'Трябва да включва поне един приоритетен ключ');
+});
+
+test('createEnrichedVisionContext работи дори при празна база знания', () => {
+  const { createEnrichedVisionContext } = __testables__;
+  
+  const enrichedContext = createEnrichedVisionContext({}, 5);
+  const contextEntries = JSON.parse(enrichedContext);
+  
+  // Дори при празна база, трябва да върне базови насоки
+  assert.ok(Array.isArray(contextEntries), 'Трябва да върне масив');
+  assert.ok(contextEntries.length > 0, 'Трябва да има поне базови насоки');
+  assert.ok(contextEntries[0].summary.includes('Фокусирай') || contextEntries[0].summary.includes('елиминатив'), 
+    'Трябва да включва базови насоки');
+});

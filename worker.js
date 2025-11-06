@@ -2131,7 +2131,7 @@ function createConciseIrisMap(irisMap) {
         concise.signs[key] = {
           name: value.name || key,
           type: value.type || '',
-          interpretation: typeof value.interpretation === 'string' 
+          interpretation: typeof value.interpretation === 'string'
             ? value.interpretation.substring(0, 200) + (value.interpretation.length > 200 ? '...' : '')
             : value.interpretation
         };
@@ -2144,7 +2144,7 @@ function createConciseIrisMap(irisMap) {
 
 /**
  * Създава обогатен external context за визуалния анализ
- * Вместо да разчита само на userData keywords, добавя ключова информация за 
+ * Вместо да разчита само на userData keywords, добавя ключова информация за
  * разпознаване на знаци
  * @param {Object} interpretationKnowledge - База знания за интерпретация
  * @param {number} maxEntries - Максимален брой записи
@@ -2152,7 +2152,7 @@ function createConciseIrisMap(irisMap) {
  */
 function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
   const contextEntries = [];
-  
+
   // Винаги включваме ключовата информация за елиминативните канали
   const priorityKeys = [
     'elimination_channels',
@@ -2162,65 +2162,65 @@ function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
     'nerve_rings',
     'radii_solaris'
   ];
-  
+
   if (interpretationKnowledge && typeof interpretationKnowledge === 'object') {
     // Първо добавяме приоритетните ключове
     for (const key of priorityKeys) {
       if (interpretationKnowledge[key]) {
         const value = interpretationKnowledge[key];
         let summary;
-        
+
         if (typeof value === 'string') {
           summary = value.length > 300 ? value.substring(0, 297) + '...' : value;
         } else if (typeof value === 'object') {
-          summary = JSON.stringify(value).length > 300 
+          summary = JSON.stringify(value).length > 300
             ? JSON.stringify(value).substring(0, 297) + '...'
             : JSON.stringify(value);
         } else {
           summary = String(value);
         }
-        
+
         contextEntries.push({
           source: `Базово знание: ${key}`,
           summary: summary
         });
-        
+
         if (contextEntries.length >= maxEntries) {
           break;
         }
       }
     }
-    
+
     // Ако имаме още място, добавяме допълнителна информация
     if (contextEntries.length < maxEntries) {
       const additionalKeys = Object.keys(interpretationKnowledge)
         .filter(k => !priorityKeys.includes(k))
         .slice(0, maxEntries - contextEntries.length);
-      
+
       for (const key of additionalKeys) {
         const value = interpretationKnowledge[key];
         let summary;
-        
+
         if (typeof value === 'string') {
           summary = value.length > 300 ? value.substring(0, 297) + '...' : value;
         } else {
-          summary = typeof value === 'object' 
+          summary = typeof value === 'object'
             ? JSON.stringify(value).substring(0, 297) + '...'
             : String(value);
         }
-        
+
         contextEntries.push({
           source: `Интерпретация: ${key}`,
           summary: summary
         });
-        
+
         if (contextEntries.length >= maxEntries) {
           break;
         }
       }
     }
   }
-  
+
   // Ако все още нямаме достатъчно контекст, добавяме общи насоки
   if (contextEntries.length === 0) {
     contextEntries.push({
@@ -2228,7 +2228,7 @@ function createEnrichedVisionContext(interpretationKnowledge, maxEntries = 10) {
       summary: 'Фокусирай се върху конституционалния анализ (цвят, структура, плътност) и елиминативните канали (черва, бъбреци, лимфа, бели дробове, кожа). Идентифицирай всички видими знаци: лакуни, нервни пръстени, radii solaris, пигменти, токсични пръстени.'
     });
   }
-  
+
   return JSON.stringify(contextEntries, null, 2);
 }
 
@@ -2265,5 +2265,7 @@ export const __testables__ = {
   selectRelevantInterpretationKnowledge,
   selectRelevantRemedyBase,
   runSearchPreview,
-  retryWithBackoff
+  retryWithBackoff,
+  createConciseIrisMap,
+  createEnrichedVisionContext
 };
