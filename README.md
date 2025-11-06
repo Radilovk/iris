@@ -45,6 +45,7 @@ cp .env.example .env
 ```
 
 Редактирайте `.env`:
+
 ```env
 WORKER_URL=https://your-worker.workers.dev/
 CF_ACCOUNT_ID=your_account_id
@@ -56,6 +57,7 @@ ALLOWED_ORIGIN=https://your-frontend-domain.com
 ### 3. Настройка на KV namespace
 
 1. Създайте KV namespace в Cloudflare:
+
 ```bash
 wrangler kv:namespace create iris_rag_kv
 ```
@@ -63,12 +65,14 @@ wrangler kv:namespace create iris_rag_kv
 2. Качете JSON файловете от папката `kv/`:
 
 **Препоръчан метод (с автоматизиран скрипт):**
+
 ```bash
 export CF_KV_NAMESPACE_ID=YOUR_NAMESPACE_ID
 ./scripts/deploy-kv.sh
 ```
 
 **Алтернативен метод (ръчно):**
+
 ```bash
 wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID iris_config_kv --path=kv/iris_config_kv.json
 wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID iris_diagnostic_map --path=kv/iris_diagnostic_map.json
@@ -77,6 +81,7 @@ wrangler kv:key put --namespace-id=YOUR_NAMESPACE_ID remedy_and_recommendation_b
 ```
 
 3. Верифицирайте конфигурацията:
+
 ```bash
 export CF_KV_NAMESPACE_ID=YOUR_NAMESPACE_ID
 ./scripts/verify-kv.sh
@@ -201,6 +206,7 @@ curl -F "left-eye-upload=@left.jpg" -F "right-eye-upload=@right.jpg" \
 4. **Финално сглобяване** - Структуриран доклад
 
 **Активиране в `iris_config_kv.json`:**
+
 ```json
 {
   "use_multi_query_report": true
@@ -208,6 +214,7 @@ curl -F "left-eye-upload=@left.jpg" -F "right-eye-upload=@right.jpg" \
 ```
 
 **Предимства:**
+
 - По-високо качество на анализа
 - По-детайлни препоръки
 - Фокусиран контекст за всяка стъпка
@@ -253,6 +260,7 @@ ISC License
 ---
 
 **За повече информация вижте:**
+
 - [PROJECT_GUIDE.md](PROJECT_GUIDE.md) - Детайлно ръководство за организация
 - [MULTI_QUERY_REPORT.md](MULTI_QUERY_REPORT.md) - Multi-Query генериране на доклади
 - [AGENTS.md](AGENTS.md) - Инструкции за AI agents

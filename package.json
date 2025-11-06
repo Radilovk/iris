@@ -12,7 +12,12 @@
     "deploy:kv": "./scripts/deploy-kv.sh",
     "verify:kv": "./scripts/verify-kv.sh"
   },
-  "keywords": ["iridology", "ai", "cloudflare-workers", "health"],
+  "keywords": [
+    "iridology",
+    "ai",
+    "cloudflare-workers",
+    "health"
+  ],
   "author": "",
   "license": "ISC",
   "type": "module",

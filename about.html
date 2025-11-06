@@ -1,222 +1,433 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Научните основи на анализа на окото</title>
-    
-    <!-- Fonts and Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Научните основи на анализа на окото</title>
 
-    <style>
-        :root {
-            --primary-color: #2c5b85;
-            --secondary-color: #4a90e2;
-            --text-color: #212529;
-            --text-light: #5a5a5a;
-            --bg-color: #f8f9fa;
-            --white: #ffffff;
-            --border-color: #dee2e6;
-            --accent-bg: #eaf2fa;
-            --success-bg: #d4edda;
-            --success-border: #c3e6cb;
-            --success-text: #155724;
-        }
+        <!-- Fonts and Icons -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        />
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body { font-family: 'Source Sans Pro', sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.8; font-size: 16px; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        <style>
+            :root {
+                --primary-color: #2c5b85;
+                --secondary-color: #4a90e2;
+                --text-color: #212529;
+                --text-light: #5a5a5a;
+                --bg-color: #f8f9fa;
+                --white: #ffffff;
+                --border-color: #dee2e6;
+                --accent-bg: #eaf2fa;
+                --success-bg: #d4edda;
+                --success-border: #c3e6cb;
+                --success-text: #155724;
+            }
 
-        .page-header { background: var(--primary-color); color: var(--white); padding: 60px 20px; text-align: center; border-bottom: 5px solid var(--secondary-color); }
-        .page-header h1 { font-size: 2.8rem; font-weight: 700; margin-bottom: 10px; }
-        .page-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; max-width: 700px; margin: 0 auto; }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            html {
+                scroll-behavior: smooth;
+            }
+            body {
+                font-family: 'Source Sans Pro', sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-color);
+                line-height: 1.8;
+                font-size: 16px;
+            }
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 20px;
+            }
 
-        .content-section { background: var(--white); margin: 30px auto; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+            .page-header {
+                background: var(--primary-color);
+                color: var(--white);
+                padding: 60px 20px;
+                text-align: center;
+                border-bottom: 5px solid var(--secondary-color);
+            }
+            .page-header h1 {
+                font-size: 2.8rem;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }
+            .page-header p {
+                font-size: 1.2rem;
+                font-weight: 300;
+                opacity: 0.9;
+                max-width: 700px;
+                margin: 0 auto;
+            }
 
-        h2 { font-size: 2rem; font-weight: 600; color: var(--primary-color); margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); }
-        h3 { font-size: 1.5rem; font-weight: 600; margin-top: 30px; margin-bottom: 15px; color: var(--secondary-color); }
+            .content-section {
+                background: var(--white);
+                margin: 30px auto;
+                padding: 40px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            }
 
-        p, li { font-size: 1.1rem; color: var(--text-light); margin-bottom: 15px; }
-        strong { font-weight: 600; color: var(--text-color); }
+            h2 {
+                font-size: 2rem;
+                font-weight: 600;
+                color: var(--primary-color);
+                margin-bottom: 25px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid var(--border-color);
+            }
+            h3 {
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin-top: 30px;
+                margin-bottom: 15px;
+                color: var(--secondary-color);
+            }
 
-        .success-box { background-color: var(--success-bg); border-left: 5px solid var(--success-border); border-radius: 8px; padding: 25px; margin-top: 30px; }
-        .success-box h3 { color: var(--success-text); margin-top: 0; }
-        .success-box ul { list-style-type: none; padding-left: 0; }
-        .success-box li { position: relative; padding-left: 25px; color: var(--success-text); }
-        .success-box li::before { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; top: 5px; }
-        
-        .bibliography ul { list-style-type: none; padding-left: 0; }
-        .bibliography li { position: relative; padding-left: 30px; margin-bottom: 10px; }
-        .bibliography li::before { content: '\f02d'; /* book icon */ font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; top: 5px; color: var(--primary-color); }
-        
-        footer { text-align: center; padding: 20px; font-size: 0.9rem; color: #888; }
-        
-        .floating-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background: var(--primary-color);
-            color: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            text-decoration: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(20px);
-            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
-        }
-        
-        .floating-btn.visible {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-    </style>
-</head>
-<body>
+            p,
+            li {
+                font-size: 1.1rem;
+                color: var(--text-light);
+                margin-bottom: 15px;
+            }
+            strong {
+                font-weight: 600;
+                color: var(--text-color);
+            }
 
-    <header class="page-header">
-        <h1>Окото като прозорец към системното здраве</h1>
-        <p>Разграничение между научно валидирани маркери и холистичния модел на ирисологията.</p>
-    </header>
+            .success-box {
+                background-color: var(--success-bg);
+                border-left: 5px solid var(--success-border);
+                border-radius: 8px;
+                padding: 25px;
+                margin-top: 30px;
+            }
+            .success-box h3 {
+                color: var(--success-text);
+                margin-top: 0;
+            }
+            .success-box ul {
+                list-style-type: none;
+                padding-left: 0;
+            }
+            .success-box li {
+                position: relative;
+                padding-left: 25px;
+                color: var(--success-text);
+            }
+            .success-box li::before {
+                content: '\f00c';
+                font-family: 'Font Awesome 6 Free';
+                font-weight: 900;
+                position: absolute;
+                left: 0;
+                top: 5px;
+            }
 
-    <div class="container">
-        <main>
-            <section class="content-section">
-                
-                <div id="introduction">
-                    <h2>Въведение: Два подхода към анализа на окото</h2>
-                    <p>
-                        Анализът на очите като отражение на здравето се развива в две основни направления:
-                    </p>
-                    <ol>
-                        <li><strong>Клинична офталмология и медицина:</strong> Идентифицира конкретни, научно доказани маркери в окото, които са директни индикатори за системни заболявания.</li>
-                        <li><strong>Холистична иридология:</strong> Използва теоретичен модел (топографска карта), за да оцени конституционални предразположения и функционални дисбаланси в тялото.</li>
-                    </ol>
-                    <p>
-                        Нашият подход в <strong>IRIS-AI</strong> е уникален, защото <strong>интегрира и двата свята</strong>. Ние използваме силата на AI, за да разпознаем както научно валидираните маркери, така и моделите от холистичната иридология, създавайки цялостен и многопластов здравен профил.
-                    </p>
-                </div>
+            .bibliography ul {
+                list-style-type: none;
+                padding-left: 0;
+            }
+            .bibliography li {
+                position: relative;
+                padding-left: 30px;
+                margin-bottom: 10px;
+            }
+            .bibliography li::before {
+                content: '\f02d'; /* book icon */
+                font-family: 'Font Awesome 6 Free';
+                font-weight: 900;
+                position: absolute;
+                left: 0;
+                top: 5px;
+                color: var(--primary-color);
+            }
 
-            </section>
-            
-            <section class="content-section">
-                <div id="scientific-markers">
-                    <h2>1. Научно признати маркери в окото</h2>
-                    <p>
-                        Конвенционалната медицина отдавна използва окото като диагностичен инструмент. Редица системни състояния имат ясни, обективни и доказани проявления в ириса, склерата и конюнктивата. Това не е теория, а медицински факт.
-                    </p>
-                    
-                    <div class="success-box">
-                        <h3>Примери за доказани връзки "око-тяло":</h3>
+            footer {
+                text-align: center;
+                padding: 20px;
+                font-size: 0.9rem;
+                color: #888;
+            }
+
+            .floating-btn {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                background: var(--primary-color);
+                color: var(--white);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                text-decoration: none;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(20px);
+                transition:
+                    opacity 0.3s ease,
+                    visibility 0.3s ease,
+                    transform 0.3s ease;
+            }
+
+            .floating-btn.visible {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="page-header">
+            <h1>Окото като прозорец към системното здраве</h1>
+            <p>
+                Разграничение между научно валидирани маркери и холистичния модел на ирисологията.
+            </p>
+        </header>
+
+        <div class="container">
+            <main>
+                <section class="content-section">
+                    <div id="introduction">
+                        <h2>Въведение: Два подхода към анализа на окото</h2>
+                        <p>
+                            Анализът на очите като отражение на здравето се развива в две основни
+                            направления:
+                        </p>
+                        <ol>
+                            <li>
+                                <strong>Клинична офталмология и медицина:</strong> Идентифицира
+                                конкретни, научно доказани маркери в окото, които са директни
+                                индикатори за системни заболявания.
+                            </li>
+                            <li>
+                                <strong>Холистична иридология:</strong> Използва теоретичен модел
+                                (топографска карта), за да оцени конституционални предразположения и
+                                функционални дисбаланси в тялото.
+                            </li>
+                        </ol>
+                        <p>
+                            Нашият подход в <strong>IRIS-AI</strong> е уникален, защото
+                            <strong>интегрира и двата свята</strong>. Ние използваме силата на AI,
+                            за да разпознаем както научно валидираните маркери, така и моделите от
+                            холистичната иридология, създавайки цялостен и многопластов здравен
+                            профил.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="content-section">
+                    <div id="scientific-markers">
+                        <h2>1. Научно признати маркери в окото</h2>
+                        <p>
+                            Конвенционалната медицина отдавна използва окото като диагностичен
+                            инструмент. Редица системни състояния имат ясни, обективни и доказани
+                            проявления в ириса, склерата и конюнктивата. Това не е теория, а
+                            медицински факт.
+                        </p>
+
+                        <div class="success-box">
+                            <h3>Примери за доказани връзки "око-тяло":</h3>
+                            <ul>
+                                <li>
+                                    <strong>Arcus Senilis (Натриев/Холестеролов пръстен):</strong>
+                                    Сиво-белият пръстен по периферията на ириса е клинично признат
+                                    маркер, свързан с
+                                    <strong
+                                        >високи нива на холестерол и липиди в кръвта
+                                        (хиперлипидемия)</strong
+                                    >. Той е статистически значим рисков фактор за атеросклероза и
+                                    сърдечно-съдови заболявания.
+                                </li>
+                                <li>
+                                    <strong>Scleral Icterus (Пожълтяване на склерата):</strong>
+                                    Жълтото оцветяване на бялата част на окото е кардинален признак
+                                    за <strong>жълтеница</strong>. Причинява се от високи нива на
+                                    билирубин в кръвта и директно насочва към проблеми с
+                                    <strong
+                                        >черния дроб, жлъчния мехур или хемолитична анемия.</strong
+                                    >
+                                </li>
+                                <li>
+                                    <strong>Conjunctival Pallor (Бледост на конюнктивата):</strong>
+                                    Прегледът на цвета на вътрешната страна на долния клепач е
+                                    стандартна клинична практика. Необичайната бледост е силен
+                                    индикатор за <strong>анемия</strong> (ниски нива на хемоглобин).
+                                </li>
+                                <li>
+                                    <strong
+                                        >Кръвоносни съдове в склерата (Конюнктивална
+                                        хиперемия):</strong
+                                    >
+                                    Разширените и ясно видими кръвоносни съдове са директен признак
+                                    за <strong>възпаление</strong>. Могат да индикират както локално
+                                    дразнене (сухота, алергия), така и системен възпалителен процес
+                                    или високо кръвно налягане.
+                                </li>
+                                <li>
+                                    <strong>Пръстени на Кайзер-Флайшер:</strong> Зеленикаво-кафяви
+                                    пръстени в периферията на ириса, причинени от натрупване на мед.
+                                    Те са патогномоничен (сигурен) признак за
+                                    <strong>Болестта на Уилсън</strong>, генетично заболяване на
+                                    метаболизма на медта.
+                                </li>
+                            </ul>
+                        </div>
+                        <p style="margin-top: 20px">
+                            Тези примери ясно показват, че **връзката между състоянието на окото и
+                            системното здраве е научно неоспорима.** Нашият AI е обучен да
+                            разпознава именно тези видове обективни маркери като основа на анализа.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="content-section">
+                    <div id="holistic-model">
+                        <h2>2. Холистичният модел на иридологията</h2>
+                        <p>
+                            Върху научната основа на доказаните маркери, холистичната иридология
+                            надгражда с теоретичен модел, който има за цел не да диагностицира
+                            болести, а да оцени
+                            <strong>конституцията и функционалните тенденции</strong>.
+                        </p>
+
+                        <h3>Принципи на холистичния анализ:</h3>
                         <ul>
                             <li>
-                                <strong>Arcus Senilis (Натриев/Холестеролов пръстен):</strong> Сиво-белият пръстен по периферията на ириса е клинично признат маркер, свързан с <strong>високи нива на холестерол и липиди в кръвта (хиперлипидемия)</strong>. Той е статистически значим рисков фактор за атеросклероза и сърдечно-съдови заболявания.
+                                <strong>Конституционална сила:</strong> Анализът на плътността на
+                                ирисовите влакна дава представа за вродената устойчивост на
+                                организма.
                             </li>
                             <li>
-                                <strong>Scleral Icterus (Пожълтяване на склерата):</strong> Жълтото оцветяване на бялата част на окото е кардинален признак за <strong>жълтеница</strong>. Причинява се от високи нива на билирубин в кръвта и директно насочва към проблеми с <strong>черния дроб, жлъчния мехур или хемолитична анемия.</strong>
+                                <strong>Функционален дисбаланс:</strong> Знаци като лакуни, нервни
+                                пръстени и пигменти се интерпретират не като болест, а като
+                                индикатори за потенциални слабости, натрупване на токсини или
+                                системно напрежение.
                             </li>
                             <li>
-                                <strong>Conjunctival Pallor (Бледост на конюнктивата):</strong> Прегледът на цвета на вътрешната страна на долния клепач е стандартна клинична практика. Необичайната бледост е силен индикатор за <strong>анемия</strong> (ниски нива на хемоглобин).
+                                <strong>Топографска карта:</strong> Използва се карта за свързване
+                                на тези знаци с конкретни органи и системи, за да се изградят
+                                хипотези за взаимовръзките в тялото (напр. как стресът влияе на
+                                храносмилането).
+                            </li>
+                        </ul>
+                        <p>
+                            Например, ако видим
+                            <strong>научно признат маркер за липиден стрес (Arcus Senilis)</strong>
+                            и едновременно с това
+                            <strong
+                                >холистичен маркер за чернодробно натоварване (кафяв пигмент в
+                                зоната на черния дроб)</strong
+                            >, ние получаваме много по-цялостна и силна картина за метаболитното
+                            здраве на човека.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="content-section">
+                    <div id="conclusion">
+                        <h2>Заключение: Синергия между наука и холистика</h2>
+                        <p>
+                            <strong>IRIS-AI не е традиционна иридология.</strong> Това е
+                            интелигентна система, която стои на раменете на конвенционалната
+                            медицина, като използва научно доказаните маркери в окото като своя
+                            основа.
+                        </p>
+                        <p>
+                            Върху тази здрава основа ние интегрираме модели от холистичния анализ,
+                            за да разкрием модели и взаимовръзки, които често остават невидими.
+                            Резултатът е не "диагноза", а **дълбоко персонализиран здравен профил**,
+                            който ви дава практически насоки за превенция, оптимизация на начина на
+                            живот и постигане на вашите здравни цели.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="content-section bibliography">
+                    <div id="bibliography">
+                        <h2>Използвана литература и източници</h2>
+                        <p>
+                            Методологията и базата от знания на IRIS-AI са изградени върху синтез на
+                            информация от водещи автори и школи в областта на ирисологията,
+                            натуропатията и холистичното здраве.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Dr. Bernard Jensen</strong> - "The Science and Practice of
+                                Iridology" (Volume 1 & 2)
+                            </li>
+                            <li><strong>Farida Sharan</strong> - "Iridology: A Complete Guide"</li>
+                            <li>
+                                <strong>Ellen Tart-Jensen</strong> - "Techniques in Iris Analysis"
                             </li>
                             <li>
-                                <strong>Кръвоносни съдове в склерата (Конюнктивална хиперемия):</strong> Разширените и ясно видими кръвоносни съдове са директен признак за <strong>възпаление</strong>. Могат да индикират както локално дразнене (сухота, алергия), така и системен възпалителен процес или високо кръвно налягане.
+                                <strong>John Andrews</strong> - "Iris & Pupillary Signs",
+                                "Immunology & Iridology"
                             </li>
-                             <li>
-                                <strong>Пръстени на Кайзер-Флайшер:</strong> Зеленикаво-кафяви пръстени в периферията на ириса, причинени от натрупване на мед. Те са патогномоничен (сигурен) признак за <strong>Болестта на Уилсън</strong>, генетично заболяване на метаболизма на медта.
+                            <li>
+                                <strong>Dorothy Hall</strong> - "Iridology: How the Eyes Reveal Your
+                                Health and Personality"
+                            </li>
+                            <li>
+                                <strong>Bill Caradonna</strong> - "The Evolving Science of
+                                Iridology"
+                            </li>
+                            <li>
+                                <strong>Dr. Daniele Lo Rito</strong> - "The Time Risk in the Iris"
+                            </li>
+                            <li>
+                                <strong>Ignatz von Peczely</strong> - "Discoveries in the Realm of
+                                Nature and Art of Healing" (Исторически основополагащ труд)
+                            </li>
+                            <li>
+                                <strong>Henry Lindlahr</strong> - "Nature Cure" (Основи на
+                                натуропатичната философия)
+                            </li>
+                            <li>
+                                <strong>Dr. John R. Christopher</strong> - "School of Natural
+                                Healing" (Фундаментален труд по хербология)
                             </li>
                         </ul>
                     </div>
-                     <p style="margin-top: 20px;">
-                        Тези примери ясно показват, че **връзката между състоянието на окото и системното здраве е научно неоспорима.** Нашият AI е обучен да разпознава именно тези видове обективни маркери като основа на анализа.
-                    </p>
-                </div>
-            </section>
-            
-            <section class="content-section">
-                <div id="holistic-model">
-                    <h2>2. Холистичният модел на иридологията</h2>
-                    <p>
-                        Върху научната основа на доказаните маркери, холистичната иридология надгражда с теоретичен модел, който има за цел не да диагностицира болести, а да оцени <strong>конституцията и функционалните тенденции</strong>.
-                    </p>
+                </section>
+            </main>
+        </div>
 
-                    <h3>Принципи на холистичния анализ:</h3>
-                    <ul>
-                        <li><strong>Конституционална сила:</strong> Анализът на плътността на ирисовите влакна дава представа за вродената устойчивост на организма.</li>
-                        <li><strong>Функционален дисбаланс:</strong> Знаци като лакуни, нервни пръстени и пигменти се интерпретират не като болест, а като индикатори за потенциални слабости, натрупване на токсини или системно напрежение.</li>
-                        <li><strong>Топографска карта:</strong> Използва се карта за свързване на тези знаци с конкретни органи и системи, за да се изградят хипотези за взаимовръзките в тялото (напр. как стресът влияе на храносмилането).</li>
-                    </ul>
-                     <p>
-                        Например, ако видим <strong>научно признат маркер за липиден стрес (Arcus Senilis)</strong> и едновременно с това <strong>холистичен маркер за чернодробно натоварване (кафяв пигмент в зоната на черния дроб)</strong>, ние получаваме много по-цялостна и силна картина за метаболитното здраве на човека.
-                    </p>
-                </div>
-            </section>
-            
-            <section class="content-section">
-                <div id="conclusion">
-                    <h2>Заключение: Синергия между наука и холистика</h2>
-                    <p>
-                        <strong>IRIS-AI не е традиционна иридология.</strong> Това е интелигентна система, която стои на раменете на конвенционалната медицина, като използва научно доказаните маркери в окото като своя основа.
-                    </p>
-                    <p>
-                        Върху тази здрава основа ние интегрираме модели от холистичния анализ, за да разкрием модели и взаимовръзки, които често остават невидими. Резултатът е не "диагноза", а **дълбоко персонализиран здравен профил**, който ви дава практически насоки за превенция, оптимизация на начина на живот и постигане на вашите здравни цели.
-                    </p>
-                </div>
-            </section>
-            
-            <section class="content-section bibliography">
-                <div id="bibliography">
-                    <h2>Използвана литература и източници</h2>
-                    <p>
-                        Методологията и базата от знания на IRIS-AI са изградени върху синтез на информация от водещи автори и школи в областта на ирисологията, натуропатията и холистичното здраве.
-                    </p>
-                    <ul>
-                        <li><strong>Dr. Bernard Jensen</strong> - "The Science and Practice of Iridology" (Volume 1 & 2)</li>
-                        <li><strong>Farida Sharan</strong> - "Iridology: A Complete Guide"</li>
-                        <li><strong>Ellen Tart-Jensen</strong> - "Techniques in Iris Analysis"</li>
-                        <li><strong>John Andrews</strong> - "Iris & Pupillary Signs", "Immunology & Iridology"</li>
-                        <li><strong>Dorothy Hall</strong> - "Iridology: How the Eyes Reveal Your Health and Personality"</li>
-                        <li><strong>Bill Caradonna</strong> - "The Evolving Science of Iridology"</li>
-                        <li><strong>Dr. Daniele Lo Rito</strong> - "The Time Risk in the Iris"</li>
-                        <li><strong>Ignatz von Peczely</strong> - "Discoveries in the Realm of Nature and Art of Healing" (Исторически основополагащ труд)</li>
-                        <li><strong>Henry Lindlahr</strong> - "Nature Cure" (Основи на натуропатичната философия)</li>
-                        <li><strong>Dr. John R. Christopher</strong> - "School of Natural Healing" (Фундаментален труд по хербология)</li>
-                    </ul>
-                </div>
-            </section>
+        <footer>
+            <p>&copy; 2025 IRIS-AI. Всички права запазени.</p>
+        </footer>
 
-        </main>
-    </div>
+        <a href="index.html" class="floating-btn" aria-label="Връщане към началната страница">
+            <i class="fa-solid fa-house"></i>
+        </a>
 
-    <footer>
-        <p>&copy; 2025 IRIS-AI. Всички права запазени.</p>
-    </footer>
-
-    <a href="index.html" class="floating-btn" aria-label="Връщане към началната страница">
-        <i class="fa-solid fa-house"></i>
-    </a>
-    
-    <script>
-        const floatingBtn = document.querySelector('.floating-btn');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 300) {
-                floatingBtn.classList.add('visible');
-            } else {
-                floatingBtn.classList.remove('visible');
-            }
-        });
-    </script>
-
-</body>
+        <script>
+            const floatingBtn = document.querySelector('.floating-btn');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    floatingBtn.classList.add('visible');
+                } else {
+                    floatingBtn.classList.remove('visible');
+                }
+            });
+        </script>
+    </body>
 </html>

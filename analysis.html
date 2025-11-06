@@ -1,173 +1,374 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iris-Holistica AI - Започнете своя анализ</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Iris-Holistica AI - Започнете своя анализ</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div class="container">
+            <!-- СЕКЦИЯ ЗА АНАЛИЗ -->
+            <section id="analysis-section" class="analysis-section">
+                <h2>Процес на анализ в 3 лесни стъпки</h2>
 
-    <div class="container">
+                <form id="iridology-form" class="card">
+                    <!-- НАВИГАЦИЯ НА СТЪПКИТЕ -->
+                    <ul class="stepper-nav" role="list">
+                        <li class="step active" data-step="1" role="listitem">
+                            <span>1</span>
+                            <p>Инфо</p>
+                        </li>
+                        <li class="step-line" aria-hidden="true"></li>
+                        <li class="step" data-step="2" role="listitem">
+                            <span>2</span>
+                            <p>Навици</p>
+                        </li>
+                        <li class="step-line" aria-hidden="true"></li>
+                        <li class="step" data-step="3" role="listitem">
+                            <span>3</span>
+                            <p>Снимки</p>
+                        </li>
+                    </ul>
 
-        <!-- СЕКЦИЯ ЗА АНАЛИЗ -->
-        <section id="analysis-section" class="analysis-section">
-            <h2>Процес на анализ в 3 лесни стъпки</h2>
-
-            <form id="iridology-form" class="card">
-                <!-- НАВИГАЦИЯ НА СТЪПКИТЕ -->
-                <ul class="stepper-nav" role="list">
-                    <li class="step active" data-step="1" role="listitem"><span>1</span><p>Инфо</p></li>
-                    <li class="step-line" aria-hidden="true"></li>
-                    <li class="step" data-step="2" role="listitem"><span>2</span><p>Навици</p></li>
-                    <li class="step-line" aria-hidden="true"></li>
-                    <li class="step" data-step="3" role="listitem"><span>3</span><p>Снимки</p></li>
-                </ul>
-
-                <!-- СТЪПКА 1: ВЪПРОСНИК - ДЕМОГРАФСКИ И ЗДРАВНИ -->
-                <div class="form-step active" data-step="1">
-                    <h3>Стъпка 1: Разкажете ни малко за себе си</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="name">Име:</label>
-                            <input type="text" id="name" name="name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="age">Възраст:</label>
-                            <input type="number" id="age" name="age" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="height">Ръст (см): <span class="tooltip-trigger" data-tooltip="Ръстът и теглото се използват за изчисляване на BMI и персонализиране на препоръките.">?</span></label>
-                            <input type="number" id="height" name="height">
-                        </div>
-                        <div class="form-group">
-                            <label for="weight">Килограми:</label>
-                            <input type="number" id="weight" name="weight">
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="gender">Пол:</label>
-                            <select id="gender" name="gender" required>
-                                <option value="" disabled selected>Изберете</option>
-                                <option value="Мъж">Мъж</option>
-                                <option value="Жена">Жена</option>
-                            </select>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>
-                                Вашата основна цел:
-                                <span class="tooltip-trigger" data-tooltip="Изборът на цел помага на AI да персонализира препоръките според вашите приоритети. Можете да изберете повече от една цел.">?</span>
-                            </label>
-                            <p class="form-hint">Изберете всички направления, които искате да развием заедно.</p>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item"><input type="checkbox" name="main-goals" value="Отслабване"> Отслабване</label>
-                                <label class="checkbox-item"><input type="checkbox" name="main-goals" value="Антиейджинг"> Антиейджинг</label>
-                                <label class="checkbox-item"><input type="checkbox" name="main-goals" value="Възстановяване"> Възстановяване</label>
+                    <!-- СТЪПКА 1: ВЪПРОСНИК - ДЕМОГРАФСКИ И ЗДРАВНИ -->
+                    <div class="form-step active" data-step="1">
+                        <h3>Стъпка 1: Разкажете ни малко за себе си</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="name">Име:</label>
+                                <input type="text" id="name" name="name" required />
                             </div>
-                        </div>
-                        <details class="form-details full-width">
-                            <summary>Здравословно състояние</summary>
-                            <div class="details-content">
-                                <p class="form-hint">Отбележете актуалните за вас състояния, за да адаптираме анализа.</p>
+                            <div class="form-group">
+                                <label for="age">Възраст:</label>
+                                <input type="number" id="age" name="age" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="height"
+                                    >Ръст (см):
+                                    <span
+                                        class="tooltip-trigger"
+                                        data-tooltip="Ръстът и теглото се използват за изчисляване на BMI и персонализиране на препоръките."
+                                        >?</span
+                                    ></label
+                                >
+                                <input type="number" id="height" name="height" />
+                            </div>
+                            <div class="form-group">
+                                <label for="weight">Килограми:</label>
+                                <input type="number" id="weight" name="weight" />
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="gender">Пол:</label>
+                                <select id="gender" name="gender" required>
+                                    <option value="" disabled selected>Изберете</option>
+                                    <option value="Мъж">Мъж</option>
+                                    <option value="Жена">Жена</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>
+                                    Вашата основна цел:
+                                    <span
+                                        class="tooltip-trigger"
+                                        data-tooltip="Изборът на цел помага на AI да персонализира препоръките според вашите приоритети. Можете да изберете повече от една цел."
+                                        >?</span
+                                    >
+                                </label>
+                                <p class="form-hint">
+                                    Изберете всички направления, които искате да развием заедно.
+                                </p>
                                 <div class="checkbox-group">
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Инсулинова резистентност"> Инсулинова резистентност</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Диабет тип 2"> Диабет тип 2</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хашимото"> Хашимото</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хипертония"> Хипертония</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Повишен холестерол"> Повишен холестерол</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Автоимунно заболяване"> Автоимунно заболяване</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Храносмилателни проблеми"> Храносмилателни проблеми</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Интоксикация на черен дроб"> Интоксикация на черен дроб</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хормонален дисбаланс"> Хормонален дисбаланс</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Бременност"> Бременност</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="health-status" value="Хронична умора"> Хронична умора</label>
-                                </div>
-                                <div class="form-group other-health">
-                                    <label for="health-other">Друго:</label>
-                                    <input type="text" id="health-other" name="health-other" placeholder="Опишете друго важно състояние">
+                                    <label class="checkbox-item"
+                                        ><input
+                                            type="checkbox"
+                                            name="main-goals"
+                                            value="Отслабване"
+                                        />
+                                        Отслабване</label
+                                    >
+                                    <label class="checkbox-item"
+                                        ><input
+                                            type="checkbox"
+                                            name="main-goals"
+                                            value="Антиейджинг"
+                                        />
+                                        Антиейджинг</label
+                                    >
+                                    <label class="checkbox-item"
+                                        ><input
+                                            type="checkbox"
+                                            name="main-goals"
+                                            value="Възстановяване"
+                                        />
+                                        Възстановяване</label
+                                    >
                                 </div>
                             </div>
-                        </details>
-                        <div class="form-group full-width">
-                            <label>Фамилна анамнеза: <span class="tooltip-trigger" data-tooltip="Семейната история помага за по-точна оценка на генетичните предразположения.">?</span></label>
-                            <input type="text" id="family-history" name="family-history" placeholder="Напр. 'Баща ми имаше високо кръвно'">
+                            <details class="form-details full-width">
+                                <summary>Здравословно състояние</summary>
+                                <div class="details-content">
+                                    <p class="form-hint">
+                                        Отбележете актуалните за вас състояния, за да адаптираме
+                                        анализа.
+                                    </p>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Инсулинова резистентност"
+                                            />
+                                            Инсулинова резистентност</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Диабет тип 2"
+                                            />
+                                            Диабет тип 2</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Хашимото"
+                                            />
+                                            Хашимото</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Хипертония"
+                                            />
+                                            Хипертония</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Повишен холестерол"
+                                            />
+                                            Повишен холестерол</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Автоимунно заболяване"
+                                            />
+                                            Автоимунно заболяване</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Храносмилателни проблеми"
+                                            />
+                                            Храносмилателни проблеми</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Интоксикация на черен дроб"
+                                            />
+                                            Интоксикация на черен дроб</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Хормонален дисбаланс"
+                                            />
+                                            Хормонален дисбаланс</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Бременност"
+                                            />
+                                            Бременност</label
+                                        >
+                                        <label class="checkbox-item"
+                                            ><input
+                                                type="checkbox"
+                                                name="health-status"
+                                                value="Хронична умора"
+                                            />
+                                            Хронична умора</label
+                                        >
+                                    </div>
+                                    <div class="form-group other-health">
+                                        <label for="health-other">Друго:</label>
+                                        <input
+                                            type="text"
+                                            id="health-other"
+                                            name="health-other"
+                                            placeholder="Опишете друго важно състояние"
+                                        />
+                                    </div>
+                                </div>
+                            </details>
+                            <div class="form-group full-width">
+                                <label
+                                    >Фамилна анамнеза:
+                                    <span
+                                        class="tooltip-trigger"
+                                        data-tooltip="Семейната история помага за по-точна оценка на генетичните предразположения."
+                                        >?</span
+                                    ></label
+                                >
+                                <input
+                                    type="text"
+                                    id="family-history"
+                                    name="family-history"
+                                    placeholder="Напр. 'Баща ми имаше високо кръвно'"
+                                />
+                            </div>
                         </div>
+                        <button type="button" class="btn btn-primary next-btn">
+                            Продължи <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
-                    <button type="button" class="btn btn-primary next-btn">Продължи <i class="fas fa-arrow-right"></i></button>
-                </div>
 
-                <!-- СТЪПКА 2: ВЪПРОСНИК - НАЧИН НА ЖИВОТ -->
-                <div class="form-step" data-step="2">
-                    <h3>Стъпка 2: Вашите навици и начин на живот</h3>
-                    <div class="form-grid">
-                         <div class="form-group full-width">
-                            <label for="water">Прием на вода на ден:</label>
-                            <select id="water" name="water" required>
-                                <option>Под 1 литър</option>
-                                <option selected>1-2 литра</option>
-                                <option>Над 2 литра</option>
-                            </select>
+                    <!-- СТЪПКА 2: ВЪПРОСНИК - НАЧИН НА ЖИВОТ -->
+                    <div class="form-step" data-step="2">
+                        <h3>Стъпка 2: Вашите навици и начин на живот</h3>
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="water">Прием на вода на ден:</label>
+                                <select id="water" name="water" required>
+                                    <option>Под 1 литър</option>
+                                    <option selected>1-2 литра</option>
+                                    <option>Над 2 литра</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="sleep">Средно часове сън:</label>
+                                <input type="number" id="sleep" name="sleep" required value="7" />
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="stress"
+                                    >Ниво на стрес (1-10):
+                                    <span
+                                        class="tooltip-trigger"
+                                        data-tooltip="Оценете стреса от 1 (минимален) до 10 (критичен). Нива над 7 се считат за високи."
+                                        >?</span
+                                    ></label
+                                >
+                                <input
+                                    type="range"
+                                    id="stress"
+                                    name="stress"
+                                    min="1"
+                                    max="10"
+                                    value="5"
+                                    oninput="this.nextElementSibling.value = this.value"
+                                    required
+                                />
+                                <output>5</output>
+                            </div>
                         </div>
-                        <div class="form-group full-width">
-                             <label for="sleep">Средно часове сън:</label>
-                            <input type="number" id="sleep" name="sleep" required value="7">
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="stress">Ниво на стрес (1-10): <span class="tooltip-trigger" data-tooltip="Оценете стреса от 1 (минимален) до 10 (критичен). Нива над 7 се считат за високи.">?</span></label>
-                            <input type="range" id="stress" name="stress" min="1" max="10" value="5" oninput="this.nextElementSibling.value = this.value" required>
-                            <output>5</output>
+                        <div class="button-group">
+                            <button type="button" class="btn btn-secondary prev-btn">
+                                <i class="fas fa-arrow-left"></i> Назад
+                            </button>
+                            <button type="button" class="btn btn-primary next-btn">
+                                Продължи <i class="fas fa-arrow-right"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="button-group">
-                        <button type="button" class="btn btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Назад</button>
-                        <button type="button" class="btn btn-primary next-btn">Продължи <i class="fas fa-arrow-right"></i></button>
-                    </div>
-                </div>
 
-                <!-- СТЪПКА 3: КАЧВАНЕ НА СНИМКИ -->
-                <div class="form-step" data-step="3">
-                    <h3>Стъпка 3: Качете снимки на вашите очи</h3>
-                    <div class="upload-instructions">
-                        <h4>Инструкции за перфектната снимка:</h4>
-                        <ul>
-                            <li><i class="fas fa-check-circle"></i> Използвайте <strong>задната камера</strong> на телефона си.</li>
-                            <li><i class="fas fa-check-circle"></i> Включете <strong>светкавицата</strong> под ъгъл, за да избегнете отблясъци.</li>
-                            <li><i class="fas fa-check-circle"></i> Приближете максимално, докато ирисът е <strong>на фокус</strong>.</li>
-                        </ul>
-                    </div>
-                    <div class="upload-area-container">
-                        <div class="upload-area form-group">
-                            <label for="left-eye-upload">Ляво око</label>
-                            <input type="file" id="left-eye-upload" name="left-eye-upload" accept="image/*" required>
-                            <div class="upload-preview" id="left-eye-preview"><i class="fas fa-eye"></i><p>Качи снимка</p></div>
+                    <!-- СТЪПКА 3: КАЧВАНЕ НА СНИМКИ -->
+                    <div class="form-step" data-step="3">
+                        <h3>Стъпка 3: Качете снимки на вашите очи</h3>
+                        <div class="upload-instructions">
+                            <h4>Инструкции за перфектната снимка:</h4>
+                            <ul>
+                                <li>
+                                    <i class="fas fa-check-circle"></i> Използвайте
+                                    <strong>задната камера</strong> на телефона си.
+                                </li>
+                                <li>
+                                    <i class="fas fa-check-circle"></i> Включете
+                                    <strong>светкавицата</strong> под ъгъл, за да избегнете
+                                    отблясъци.
+                                </li>
+                                <li>
+                                    <i class="fas fa-check-circle"></i> Приближете максимално,
+                                    докато ирисът е <strong>на фокус</strong>.
+                                </li>
+                            </ul>
                         </div>
-                        <div class="upload-area form-group">
-                            <label for="right-eye-upload">Дясно око</label>
-                            <input type="file" id="right-eye-upload" name="right-eye-upload" accept="image/*" required>
-                            <div class="upload-preview" id="right-eye-preview"><i class="fas fa-eye"></i><p>Качи снимка</p></div>
+                        <div class="upload-area-container">
+                            <div class="upload-area form-group">
+                                <label for="left-eye-upload">Ляво око</label>
+                                <input
+                                    type="file"
+                                    id="left-eye-upload"
+                                    name="left-eye-upload"
+                                    accept="image/*"
+                                    required
+                                />
+                                <div class="upload-preview" id="left-eye-preview">
+                                    <i class="fas fa-eye"></i>
+                                    <p>Качи снимка</p>
+                                </div>
+                            </div>
+                            <div class="upload-area form-group">
+                                <label for="right-eye-upload">Дясно око</label>
+                                <input
+                                    type="file"
+                                    id="right-eye-upload"
+                                    name="right-eye-upload"
+                                    accept="image/*"
+                                    required
+                                />
+                                <div class="upload-preview" id="right-eye-preview">
+                                    <i class="fas fa-eye"></i>
+                                    <p>Качи снимка</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="disclaimer-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p>
+                                Този анализ е предназначен за образователни цели и не представлява
+                                медицинска диагноза.
+                            </p>
+                        </div>
+                        <div class="button-group">
+                            <button type="button" class="btn btn-secondary prev-btn">
+                                <i class="fas fa-arrow-left"></i> Назад
+                            </button>
+                            <button type="submit" class="btn btn-primary submit-btn">
+                                Изпрати за анализ <i class="fas fa-paper-plane"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="disclaimer-note">
-                        <i class="fas fa-info-circle"></i>
-                        <p>Този анализ е предназначен за образователни цели и не представлява медицинска диагноза.</p>
+                </form>
+                <div id="message-box">
+                    <div class="progress-bar-container" style="display: none">
+                        <div class="progress-bar"></div>
                     </div>
-                    <div class="button-group">
-                         <button type="button" class="btn btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Назад</button>
-                        <button type="submit" class="btn btn-primary submit-btn">Изпрати за анализ <i class="fas fa-paper-plane"></i></button>
-                    </div>
+                    <div class="message-content"></div>
                 </div>
-            </form>
-            <div id="message-box">
-                 <div class="progress-bar-container" style="display: none;">
-                    <div class="progress-bar"></div>
-                </div>
-                <div class="message-content"></div>
-            </div>
-        </section>
-    </div>
-    <script type="module" src="script.js"></script>
-</body>
+            </section>
+        </div>
+        <script type="module" src="script.js"></script>
+    </body>
 </html>

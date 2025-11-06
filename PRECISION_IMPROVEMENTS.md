@@ -14,11 +14,13 @@
 ### 1.1 Структурирана 5-Фазова Методология
 
 **Преди:**
+
 ```
 Анализирай внимателно цвета, структурата и всички видими аномалии
 ```
 
 **След:**
+
 ```
 ФАЗА 1: КОНСТИТУЦИОНАЛЕН АНАЛИЗ (ЗАДЪЛЖИТЕЛНО)
 - Цветна конституция (син/сив/кафяв/смесен)
@@ -55,10 +57,12 @@
 ### 1.2 Количествени Критерии
 
 **Преди:**
+
 - "наличие на пръстени"
 - "видими знаци"
 
 **След:**
+
 - **Брой:** "3 нервни пръстена"
 - **Размер:** "дълбочина ~2-3mm" или "обхваща 30% от зона 7"
 - **Позиция:** "Зона 4, сектор 2:00-3:30 (бял дроб)"
@@ -75,10 +79,12 @@
     "density_assessment": "Точна оценка с вариации по зони",
     "pupil_characteristics": "Детайлно описание с позиции на изравнявания"
   },
-  "identified_signs": [{
-    "color_characteristics": "При лакуни и пигменти: цвят и интерпретация",
-    "significance": "Клинична значимост според diagnostic map"
-  }]
+  "identified_signs": [
+    {
+      "color_characteristics": "При лакуни и пигменти: цвят и интерпретация",
+      "significance": "Клинична значимост според diagnostic map"
+    }
+  ]
 }
 ```
 
@@ -98,6 +104,7 @@
 **Нова функция:** `validateAndEnrichSigns()`
 
 Всеки идентифициран знак се:
+
 1. **Валидира** спрямо `iris_diagnostic_map`
 2. **Обогатява** с допълнителна информация:
    - `sign_type` - тип на знака (Структурен, Пръстен, и т.н.)
@@ -163,12 +170,12 @@ iris_sign_analysis: {
 
 ```javascript
 iris_system_priorities: [
-  "detoxification_priority",      // При toxic_rings > 0 или зона 7
-  "organ_support_priority",       // При lacunae > 2
-  "nervous_system_priority",      // При rings > 3
-  "lymphatic_drainage_priority",  // При lymphatic > 0 или зона 6
-  "digestive_health_priority"     // При зона 1 или 2
-]
+  'detoxification_priority', // При toxic_rings > 0 или зона 7
+  'organ_support_priority', // При lacunae > 2
+  'nervous_system_priority', // При rings > 3
+  'lymphatic_drainage_priority', // При lymphatic > 0 или зона 6
+  'digestive_health_priority' // При зона 1 или 2
+];
 ```
 
 **Ефект:** AI моделът получава ясни насоки за фокус на препоръките
@@ -178,14 +185,16 @@ iris_system_priorities: [
 Обогатените данни се използват за по-интелигентна селекция на RAG знания:
 
 **Преди:**
+
 ```javascript
-buildKeywordSet(identifiedSigns, userData)
+buildKeywordSet(identifiedSigns, userData);
 // Връща основни keywords от имена на знаци
 ```
 
 **След:**
+
 ```javascript
-buildKeywordSet(enrichedSigns, enrichedUserData)
+buildKeywordSet(enrichedSigns, enrichedUserData);
 // Връща:
 // - Keywords от sign_types
 // - Keywords от affected_zones
@@ -202,17 +211,20 @@ buildKeywordSet(enrichedSigns, enrichedUserData)
 ### 3.1 Нови Функции
 
 #### `validateAndEnrichSigns(identifiedSigns, irisMap)`
+
 - Валидира идентифицирани знаци спрямо diagnostic map
 - Обогатява с информация от картата
 - Валидира зони (1-7)
 - Определя приоритетни нива
 
 #### `collectAllSignsFromMap(irisMap)`
+
 - Събира всички знаци от iris diagnostic map
 - Включва и подтипове (напр. subtypes на лакуните)
 - Върща структуриран обект за лесно търсене
 
 #### Разширена `enrichUserDataWithMetrics(userData, identifiedSigns)`
+
 - **Оригинални метрики:** BMI, възрастова група, риск, стрес, сън, хидратация
 - **Нови iris-специфични метрики:**
   - `iris_sign_analysis` - детайлен анализ на типове знаци
@@ -247,15 +259,18 @@ const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
 ### 4.1 Нови Тестове
 
 **Тест 1:** `enrichUserDataWithMetrics добавя iris_sign_analysis`
+
 - Проверява че знаците се анализират правилно
 - Верифицира категоризацията на типове знаци
 
 **Тест 2:** `Подобреният analysis_prompt_template съдържа структурирана методология`
+
 - Проверява наличието на 5-те фази
 - Верифицира количествените критерии
 - Проверява новите JSON полета
 
 **Тест 3:** `max_context_entries е увеличен на 8`
+
 - Верифицира че контекстът е разширен
 
 ### 4.2 Резултати
@@ -275,29 +290,32 @@ const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
 
 ### 5.1 Количествени Подобрения
 
-| Аспект | Преди | След | Подобрение |
-|--------|-------|------|------------|
-| Детайлност на анализа | 5/10 | 9/10 | **+80%** |
-| Точност на локализация | 6/10 | 9/10 | **+50%** |
-| RAG релевантност | 7/10 | 9/10 | **+29%** |
-| Количествени данни | 3/10 | 9/10 | **+200%** |
-| Валидация на знаци | 0/10 | 8/10 | **+∞** |
-| **ОБЩО** | **5.25/10** | **8.8/10** | **+68%** |
+| Аспект                 | Преди       | След       | Подобрение |
+| ---------------------- | ----------- | ---------- | ---------- |
+| Детайлност на анализа  | 5/10        | 9/10       | **+80%**   |
+| Точност на локализация | 6/10        | 9/10       | **+50%**   |
+| RAG релевантност       | 7/10        | 9/10       | **+29%**   |
+| Количествени данни     | 3/10        | 9/10       | **+200%**  |
+| Валидация на знаци     | 0/10        | 8/10       | **+∞**     |
+| **ОБЩО**               | **5.25/10** | **8.8/10** | **+68%**   |
 
 ### 5.2 Качествени Подобрения
 
 **Структуриран подход:**
+
 - ✅ Систематичен анализ на всички 7 зони
 - ✅ Проверка на органни проекции
 - ✅ Идентификация на специфични типове знаци
 - ✅ Кръстосана валидация
 
 **Прецизност:**
+
 - ✅ Количествени измервания (брой, размер, дълбочина)
 - ✅ Точна локализация (зона + сектор + орган)
 - ✅ Оценка на интензитет с критерии
 
 **Интелигентност:**
+
 - ✅ Автоматична валидация срещу diagnostic map
 - ✅ Обогатяване със научни източници
 - ✅ Автоматична приоритизация на системи
@@ -310,11 +328,13 @@ const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
 ### 6.1 Преди Подобренията
 
 **Prompt:**
+
 ```
 Анализирай внимателно цвета, структурата и всички видими аномалии
 ```
 
 **Отговор:**
+
 ```json
 {
   "identified_signs": [
@@ -331,6 +351,7 @@ const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
 ### 6.2 След Подобренията
 
 **Prompt:**
+
 ```
 ФАЗА 1: КОНСТИТУЦИОНАЛЕН АНАЛИЗ (ЗАДЪЛЖИТЕЛНО)
 ...
@@ -343,6 +364,7 @@ const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
 ```
 
 **Отговор:**
+
 ```json
 {
   "constitutional_analysis": {
@@ -374,6 +396,7 @@ const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
 ```
 
 **Обогатени потребителски данни:**
+
 ```json
 {
   "iris_sign_analysis": {
@@ -390,9 +413,7 @@ const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
     "total_organs_implicated": 2,
     "affected_organs": ["мозък", "бъбрек"]
   },
-  "iris_system_priorities": [
-    "nervous_system_priority"
-  ]
+  "iris_system_priorities": ["nervous_system_priority"]
 }
 ```
 

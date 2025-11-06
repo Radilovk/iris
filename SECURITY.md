@@ -17,6 +17,7 @@ ALLOWED_ORIGIN = "https://your-production-domain.com"
 ```
 
 Или през environment variable:
+
 ```bash
 wrangler secret put ALLOWED_ORIGIN
 ```
@@ -41,6 +42,7 @@ Admin endpoints (`/admin/*`) използват Cloudflare API credentials. Пр
 ### 4. Валидация на входни данни
 
 Worker-ът автоматично валидира:
+
 - Размер на качените файлове (макс. 20MB)
 - Тип на файловете (само изображения)
 - Формат на formData
@@ -58,11 +60,13 @@ Worker-ът автоматично валидира:
 Добавете CSP headers в статичните файлове:
 
 ```html
-<meta http-equiv="Content-Security-Policy" 
-      content="default-src 'self'; 
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; 
                script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; 
                style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
-               img-src 'self' data: https:;">
+               img-src 'self' data: https:;"
+/>
 ```
 
 ### 7. Dependency Security
