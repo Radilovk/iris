@@ -1173,19 +1173,20 @@ async function generateMultiQueryReport(userData, leftEyeAnalysis, rightEyeAnaly
 
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
 
+  // Обогатяване на потребителските данни с изчислени метрики ЗА да се използват в аналитиката
+  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
+
   const analyticsMetrics = generateAnalyticsMetrics(
     leftEyeAnalysis,
     rightEyeAnalysis,
     identifiedSigns,
     rawIdentifiedSigns,
-    userData
+    enrichedUserData
   );
 
-  const keywordSet = buildKeywordSet(identifiedSigns, userData);
+  const keywordSet = buildKeywordSet(identifiedSigns, enrichedUserData);
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
-
-  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
   const disclaimerText = (remedyBase && remedyBase.mandatory_disclaimer && remedyBase.mandatory_disclaimer.text)
     ? remedyBase.mandatory_disclaimer.text
     : 'Важно: Този анализ е с образователна цел. Консултирайте се със специалист при здравословни въпроси.';
@@ -1257,16 +1258,19 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
   // Валидация и обогатяване на знаците с информация от diagnostic map
   const identifiedSigns = validateAndEnrichSigns(rawIdentifiedSigns, irisMap || {});
 
-  // Генериране на аналитична статистика
+  // Обогатяване на потребителските данни с изчислени метрики ЗА да се използват в аналитиката
+  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
+
+  // Генериране на аналитична статистика с обогатените данни
   const analyticsMetrics = generateAnalyticsMetrics(
     leftEyeAnalysis,
     rightEyeAnalysis,
     identifiedSigns,
     rawIdentifiedSigns,
-    userData
+    enrichedUserData
   );
 
-  const keywordSet = buildKeywordSet(identifiedSigns, userData);
+  const keywordSet = buildKeywordSet(identifiedSigns, enrichedUserData);
   const { filteredKnowledge, matchedRemedyLinks } = selectRelevantInterpretationKnowledge(interpretationKnowledge, keywordSet);
   const relevantRemedyBase = selectRelevantRemedyBase(remedyBase, matchedRemedyLinks, keywordSet);
 
@@ -1286,9 +1290,6 @@ async function generateSingleQueryReport(userData, leftEyeAnalysis, rightEyeAnal
     ? normalizedWebInsights.slice(0, contextLimit)
     : fallbackExternalContext;
   const externalContextPayload = JSON.stringify(externalContextEntries, null, 2);
-
-  // Обогатяване на потребителските данни с изчислени метрики за по-добра персонализация
-  const enrichedUserData = enrichUserDataWithMetrics(userData, identifiedSigns);
   const promptUserData = { ...enrichedUserData, keyword_hints: keywordHints };
 
   const interpretationPayload = JSON.stringify(filteredKnowledge, null, 2);
@@ -1958,6 +1959,38 @@ function buildKeywordSet(identifiedSigns, userData = {}) {
   return keywords;
 }
 
+function parseWaterIntake(raw) {
+  if (raw == null) return undefined;
+
+  // Ако е число, просто го върни
+  if (typeof raw === 'number') {
+    return Number.isFinite(raw) ? raw : undefined;
+  }
+
+  if (typeof raw === 'string') {
+    const normalized = raw.toLowerCase().trim();
+
+    // Обработка на текстовите опции от формата (проверяваме за точни съвпадения)
+    if ((normalized.includes('под') || normalized.includes('under')) && normalized.includes('1') && !normalized.includes('1-2')) {
+      return 0.75; // "Под 1 литър" → 0.75 литра
+    }
+    if (normalized.includes('над') || normalized.includes('over') || normalized.includes('above')) {
+      if (normalized.includes('2')) {
+        return 2.5; // "Над 2 литра" → 2.5 литра
+      }
+    }
+    // Проверка за диапазон "1-2" (трябва да съдържа тире или дефис)
+    if ((normalized.includes('1-2') || normalized.includes('1–2')) && normalized.includes('литр')) {
+      return 1.5; // "1-2 литра" → 1.5 литра (средната стойност)
+    }
+
+    // Ако не е една от текстовите опции, опитай да извлечеш число
+    return parseFloatValue(raw);
+  }
+
+  return undefined;
+}
+
 function addKeywordVariants(set, value) {
   const normalized = value.toLowerCase();
   if (normalized) set.add(normalized);
@@ -2008,7 +2041,7 @@ function parseNumericContext(source) {
     context.ageYears = age;
   }
 
-  const water = parseFloatValue(source.water ?? source['water-intake']);
+  const water = parseWaterIntake(source.water ?? source['water-intake']);
   if (isValidRange(water, 0, 12)) {
     context.waterLiters = water;
   }
