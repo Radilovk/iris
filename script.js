@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     preview.addEventListener('click', () => input.click());
 
-    input.addEventListener('change', function () {
+    input.addEventListener('change', function() {
       const file = this.files[0];
       const parentGroup = this.closest('.form-group');
       parentGroup.classList.remove('error');
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
-  form.addEventListener('submit', async function (e) {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
     if (!validateCurrentStep()) return;
 

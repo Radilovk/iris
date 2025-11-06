@@ -1682,8 +1682,8 @@ async function runSearchPreview({
   const messagesData = await messagesResponse.json();
   const assistantMessage = Array.isArray(messagesData?.data)
     ? messagesData.data.find(
-        (message) => message && message.role === 'assistant' && message.run_id === completedRun.id
-      ) || messagesData.data.find((message) => message && message.role === 'assistant')
+      (message) => message && message.role === 'assistant' && message.run_id === completedRun.id
+    ) || messagesData.data.find((message) => message && message.role === 'assistant')
     : null;
 
   const assistantText = extractAssistantMessageText(assistantMessage);
@@ -1844,11 +1844,11 @@ function buildFallbackExternalContext(keywordHints, interpretationKnowledge, ide
 
   const signNames = Array.isArray(identifiedSigns)
     ? identifiedSigns
-        .map((sign) =>
-          sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''
-        )
-        .filter(Boolean)
-        .slice(0, 3)
+      .map((sign) =>
+        sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''
+      )
+      .filter(Boolean)
+      .slice(0, 3)
     : [];
 
   const summarySegments = [];
@@ -1916,12 +1916,12 @@ function normalizeExternalEntry(entry, bucket) {
       typeof entry.summary === 'string' && entry.summary.trim()
         ? entry.summary
         : (() => {
-            try {
-              return JSON.stringify(entry);
-            } catch {
-              return String(entry);
-            }
-          })();
+          try {
+            return JSON.stringify(entry);
+          } catch {
+            return String(entry);
+          }
+        })();
 
     const normalized = { source, summary: summaryValue };
     if (typeof entry.url === 'string' && entry.url.trim()) {
@@ -3039,6 +3039,13 @@ ${JSON.stringify(remedyBase, null, 2).substring(0, 4000)}
         "dosage": "Дозировка",
         "purpose": "Цел"
       }
+    ],
+    "homeopathy": [
+      {
+        "name": "Име на средство",
+        "potency": "Потентност (напр. 30C)",
+        "purpose": "Цел"
+      }
     ]
   },
   "holistic_recommendations": {
@@ -3092,6 +3099,27 @@ ${JSON.stringify(recommendations, null, 2)}
 - КРАТКИ изречения (15-20 думи)
 - Фокус върху приложими действия
 
+**ВАЖНО ЗА СТРУКТУРАТА:**
+1. "Специални хранителни насоки" трябва да бъде обект със следната структура:
+   {
+     "Храни за ограничаване": "Списък с храни и причини за ограничаването им",
+     "Храни за добавяне": "Списък с храни, количества и ползи"
+   }
+
+2. "Препоръки за билки и добавки" трябва да бъде обект със следната структура:
+   {
+     "Билкови препоръки": "Списък с билки, дозировки и цели",
+     "Хранителни добавки": "Списък с добавки, форми, дозировки и цели",
+     "Хомеопатични средства": "Списък с хомеопатични препарати (опционално)"
+   }
+
+3. "Холистични препоръки" трябва да бъде обект със следната структура:
+   {
+     "Фундаментални принципи": "Списък с основни принципи за здраве",
+     "Целенасочени препоръки": "Списък с конкретни препоръки за състоянието",
+     "Психология и емоции": "Параграф за емоционалната връзка и психологическата подкрепа (100-150 думи)"
+   }
+
 **ИЗХОД (JSON):**
 {
   "Име": "${userData.name || 'Не е посочено'}",
@@ -3101,9 +3129,20 @@ ${JSON.stringify(recommendations, null, 2)}
   "Приоритетни системи за подкрепа": "Форматиран списък от signsInterpretation.priority_systems",
   "Ключови находки и тяхната връзка": "Форматиран текст от signsInterpretation.key_findings + synergistic_effect",
   "План за действие": "Форматиран текст от recommendations.action_plan",
-  "Специални хранителни насоки": "Форматиран текст от recommendations.nutrition",
-  "Препоръки за билки и добавки": "Форматиран текст от recommendations.herbs_and_supplements",
-  "Холистични препоръки": "Форматиран текст от recommendations.holistic_recommendations",
+  "Специални хранителни насоки": {
+    "Храни за ограничаване": "Форматиран списък от recommendations.nutrition.foods_to_limit",
+    "Храни за добавяне": "Форматиран списък от recommendations.nutrition.foods_to_add"
+  },
+  "Препоръки за билки и добавки": {
+    "Билкови препоръки": "Форматиран списък от recommendations.herbs_and_supplements.herbs",
+    "Хранителни добавки": "Форматиран списък от recommendations.herbs_and_supplements.supplements",
+    "Хомеопатични средства": "Форматиран списък ако има homeopathy данни"
+  },
+  "Холистични препоръки": {
+    "Фундаментални принципи": "Форматиран списък от recommendations.holistic_recommendations.fundamental_principles",
+    "Целенасочени препоръки": "Форматиран списък от recommendations.holistic_recommendations.targeted_recommendations",
+    "Психология и емоции": "Текст от recommendations.holistic_recommendations.psychology_and_emotions"
+  },
   "Препоръки за проследяване": "Форматиран текст от recommendations.follow_up",
   "Задължителен отказ от отговорност": "${disclaimer}"
 }`;
