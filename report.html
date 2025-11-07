@@ -31,6 +31,8 @@
                 --status-high-color: #f59e0b;
                 --status-medium-bg: rgba(52, 211, 153, 0.85);
                 --status-medium-color: #10b981;
+                --status-low-bg: rgba(52, 211, 153, 0.85);
+                --status-low-color: #28a745;
             }
 
             body {
@@ -472,15 +474,15 @@
             }
 
             .progress-bar-fill.high {
-                background: linear-gradient(90deg, #dc3545, #e74c5c);
+                background: linear-gradient(90deg, var(--status-critical-color), #e74c5c);
             }
 
             .progress-bar-fill.medium {
-                background: linear-gradient(90deg, #ffc107, #ffcd38);
+                background: linear-gradient(90deg, var(--status-high-color), #ffcd38);
             }
 
             .progress-bar-fill.low {
-                background: linear-gradient(90deg, #28a745, #34ce57);
+                background: linear-gradient(90deg, var(--status-low-color), #34ce57);
             }
 
             .metric-status {
@@ -495,8 +497,9 @@
             /* КЛЮЧОВА ПРОМЯНА: Оптимизирани медийни заявки за мобилна визия */
             @media (max-width: 767px) {
                 /* Hide desktop charts, show mobile metric cards */
-                .chart-container {
-                    display: none !important;
+                .report-section .chart-container,
+                .content .chart-container {
+                    display: none;
                 }
                 
                 .metrics-list-container {
@@ -704,8 +707,9 @@
                     display: block;
                 }
                 
-                .metrics-list-container {
-                    display: none !important;
+                .report-section .metrics-list-container,
+                .content .metrics-list-container {
+                    display: none;
                 }
             }
 
@@ -1067,9 +1071,16 @@
              * @returns {Array} Array of metric objects with name, value, and status
              */
             function parseChartData(content, type) {
-                const text = typeof content === 'string' ? content.toLowerCase() : '';
+                const text = (content && typeof content === 'string') ? content.toLowerCase() : '';
                 
                 if (type === 'systems') {
+                    // Priority calculation constants
+                    const PRIORITY_MULTIPLIER = 25;
+                    const PRIORITY_BASE = 35;
+                    const PRIORITY_MAX_BASE = 85;
+                    const SEVERITY_BONUS_HIGH = 15;
+                    const SEVERITY_BONUS_MEDIUM = 8;
+                    
                     const systemKeywords = [
                         { name: 'Храносмилателна', keywords: ['храносмилат', 'черва', 'стомах'], icon: '🟠' },
                         { name: 'Нервна', keywords: ['нервн', 'стрес', 'мозък'], icon: '🟣' },
@@ -1085,13 +1096,14 @@
                     systemKeywords.forEach(sys => {
                         const matchCount = sys.keywords.filter(kw => text.includes(kw)).length;
                         if (matchCount > 0) {
-                            let value = Math.min(matchCount * 25 + 35, 85);
+                            // Calculate base priority using defined constants
+                            let value = Math.min(matchCount * PRIORITY_MULTIPLIER + PRIORITY_BASE, PRIORITY_MAX_BASE);
                             
-                            // Check for severity modifiers
+                            // Check for severity modifiers and apply bonuses
                             if (text.includes('приоритетн') || text.includes('критичн') || text.includes('важн')) {
-                                value = Math.min(value + 15, 100);
+                                value = Math.min(value + SEVERITY_BONUS_HIGH, 100);
                             } else if (text.includes('умерен') || text.includes('средн')) {
-                                value = Math.min(value + 8, 100);
+                                value = Math.min(value + SEVERITY_BONUS_MEDIUM, 100);
                             }
                             
                             let status = value >= 70 ? 'high' : value >= 50 ? 'medium' : 'low';
