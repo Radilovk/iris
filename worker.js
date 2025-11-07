@@ -1682,8 +1682,8 @@ async function runSearchPreview({
   const messagesData = await messagesResponse.json();
   const assistantMessage = Array.isArray(messagesData?.data)
     ? messagesData.data.find(
-        (message) => message && message.role === 'assistant' && message.run_id === completedRun.id
-      ) || messagesData.data.find((message) => message && message.role === 'assistant')
+      (message) => message && message.role === 'assistant' && message.run_id === completedRun.id
+    ) || messagesData.data.find((message) => message && message.role === 'assistant')
     : null;
 
   const assistantText = extractAssistantMessageText(assistantMessage);
@@ -1844,11 +1844,11 @@ function buildFallbackExternalContext(keywordHints, interpretationKnowledge, ide
 
   const signNames = Array.isArray(identifiedSigns)
     ? identifiedSigns
-        .map((sign) =>
-          sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''
-        )
-        .filter(Boolean)
-        .slice(0, 3)
+      .map((sign) =>
+        sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''
+      )
+      .filter(Boolean)
+      .slice(0, 3)
     : [];
 
   const summarySegments = [];
@@ -1916,12 +1916,12 @@ function normalizeExternalEntry(entry, bucket) {
       typeof entry.summary === 'string' && entry.summary.trim()
         ? entry.summary
         : (() => {
-            try {
-              return JSON.stringify(entry);
-            } catch {
-              return String(entry);
-            }
-          })();
+          try {
+            return JSON.stringify(entry);
+          } catch {
+            return String(entry);
+          }
+        })();
 
     const normalized = { source, summary: summaryValue };
     if (typeof entry.url === 'string' && entry.url.trim()) {
