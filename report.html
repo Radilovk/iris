@@ -795,38 +795,43 @@
                 ];
 
                 sectionOrder.forEach((key) => {
-                    const content = data[key];
-                    if (content) {
-                        let section;
-                        if (key === 'Холистични препоръки') {
-                            section = createRecommendationsSection(key, content);
-                        } else if (key === 'Специални хранителни насоки') {
-                            section = createNutritionalGuidelinesSection(key, content);
-                        } else if (key === 'Препоръки за билки и добавки') {
-                            section = createHerbsSupplementsSection(key, content);
-                        } else if (key === 'Системен и елиминативен анализ') {
-                            // Combined section - check if we have both data sources
-                            // ЗАБЕЛЕЖКА: Тази секция обединява данни от два различни ключа в API отговора:
-                            // - 'Приоритетни системи за подкрепа' (диаграма на системен баланс)
-                            // - 'Анализ на елиминативните канали' (диаграма на натовареност)
-                            const systemsData = data[DATA_KEYS.PRIORITY_SYSTEMS];
-                            const channelsData = data[DATA_KEYS.ELIMINATIVE_CHANNELS];
-                            if (systemsData || channelsData) {
-                                section = createCombinedSystemsChannelsSection(
-                                    systemsData,
-                                    channelsData
-                                );
-                            }
-                        } else {
-                            section = createCollapsibleSection(
-                                key,
-                                formatTextContent(content),
-                                false
+                    let section;
+                    
+                    // Handle combined section specially - it doesn't have a direct key in data
+                    if (key === 'Системен и елиминативен анализ') {
+                        // Combined section - check if we have both data sources
+                        // ЗАБЕЛЕЖКА: Тази секция обединява данни от два различни ключа в API отговора:
+                        // - 'Приоритетни системи за подкрепа' (диаграма на системен баланс)
+                        // - 'Анализ на елиминативните канали' (диаграма на натовареност)
+                        const systemsData = data[DATA_KEYS.PRIORITY_SYSTEMS];
+                        const channelsData = data[DATA_KEYS.ELIMINATIVE_CHANNELS];
+                        if (systemsData || channelsData) {
+                            section = createCombinedSystemsChannelsSection(
+                                systemsData,
+                                channelsData
                             );
                         }
-                        if (section) {
-                            container.appendChild(section);
+                    } else {
+                        const content = data[key];
+                        if (content) {
+                            if (key === 'Холистични препоръки') {
+                                section = createRecommendationsSection(key, content);
+                            } else if (key === 'Специални хранителни насоки') {
+                                section = createNutritionalGuidelinesSection(key, content);
+                            } else if (key === 'Препоръки за билки и добавки') {
+                                section = createHerbsSupplementsSection(key, content);
+                            } else {
+                                section = createCollapsibleSection(
+                                    key,
+                                    formatTextContent(content),
+                                    false
+                                );
+                            }
                         }
+                    }
+                    
+                    if (section) {
+                        container.appendChild(section);
                     }
                 });
 
