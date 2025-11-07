@@ -77,7 +77,7 @@
                 border: 2px solid #e2e8f0;
                 border-radius: 16px;
                 margin-bottom: 2rem;
-                box-shadow: 
+                box-shadow:
                     0 10px 20px rgba(10, 40, 100, 0.08),
                     0 4px 8px rgba(0, 0, 0, 0.04);
                 transition: all 0.4s ease;
@@ -87,7 +87,7 @@
             }
             details.report-section[open] {
                 border-color: #93c5fd;
-                box-shadow: 
+                box-shadow:
                     0 14px 28px rgba(59, 130, 246, 0.12),
                     0 6px 12px rgba(0, 0, 0, 0.06);
             }
@@ -219,7 +219,7 @@
                 padding: 2rem;
                 border: 2px solid #e2e8f0;
                 transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 
+                box-shadow:
                     0 4px 12px rgba(0, 0, 0, 0.05),
                     0 2px 6px rgba(0, 0, 0, 0.03);
                 position: relative;
@@ -237,7 +237,7 @@
                 box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
             }
             .info-card:hover {
-                box-shadow: 
+                box-shadow:
                     0 12px 28px rgba(59, 130, 246, 0.18),
                     0 6px 14px rgba(0, 0, 0, 0.08);
                 border-color: #93c5fd;
@@ -434,7 +434,7 @@
                 .report-hero p {
                     font-size: 0.95rem;
                 }
-                
+
                 /* Подобрени секции за мобилни устройства */
                 .report-section {
                     border-radius: 12px;
@@ -477,7 +477,7 @@
                     font-size: 0.95rem;
                     margin-bottom: 0.75rem;
                 }
-                
+
                 /* Оптимизирани карти за мобилни */
                 .report-grid {
                     grid-template-columns: 1fr;
@@ -511,7 +511,7 @@
                     font-size: 0.95rem;
                     line-height: 1.75;
                 }
-                
+
                 /* Подобрени канални анализи за мобилни */
                 .channel-analysis-item {
                     flex-direction: column;
@@ -527,7 +527,7 @@
                     width: 100%;
                     height: 12px;
                 }
-                
+
                 /* Оптимизирани графики за мобилни устройства */
                 .chart-container {
                     padding: 2rem 1.25rem;
@@ -551,7 +551,7 @@
                     width: 60px;
                     height: 4px;
                 }
-                
+
                 /* Touch-friendly бутони */
                 .button-group-report {
                     flex-direction: column;
@@ -565,7 +565,7 @@
                     font-size: 1rem;
                     border-radius: 12px;
                 }
-                
+
                 /* Оптимизиран disclaimer за мобилни */
                 .report-disclaimer {
                     padding: 1.25rem;
@@ -577,7 +577,7 @@
                     font-size: 1.25rem;
                 }
             }
-            
+
             /* Оптимизации за много малки екрани */
             @media (max-width: 480px) {
                 .container {
@@ -686,6 +686,9 @@
             const ICONS_CONFIG = {
                 'Резюме на анализа': { icon: 'fa-file-medical', color: '#06b6d4' },
                 'Конституционален анализ': { icon: 'fa-shield-halved', color: '#3b82f6' },
+                'Системен и елиминативен анализ': { icon: 'fa-chart-line', color: '#6366f1' },
+                // ЗАБЕЛЕЖКА: Следните секции са обединени в "Системен и елиминативен анализ"
+                // но техните конфигурации се запазват за икони и референции
                 'Приоритетни системи за подкрепа': { icon: 'fa-heart-pulse', color: '#ef4444' },
                 'Анализ на елиминативните канали': { icon: 'fa-recycle', color: '#10b981' },
                 'Ключови находки и тяхната връзка': {
@@ -701,6 +704,12 @@
                 'Психология и емоции': { icon: 'fa-brain', color: '#be185d' },
                 'Препоръки за проследяване': { icon: 'fa-calendar-check', color: '#7c3aed' },
                 default: { icon: 'fa-circle-info', color: '#6b7280' }
+            };
+
+            // Константи за ключовете на данните - използват се за картиране на обединени секции
+            const DATA_KEYS = {
+                PRIORITY_SYSTEMS: 'Приоритетни системи за подкрепа',
+                ELIMINATIVE_CHANNELS: 'Анализ на елиминативните канали'
             };
 
             // Функция за форматиране на Markdown към HTML
@@ -776,8 +785,7 @@
 
                 const sectionOrder = [
                     'Конституционален анализ',
-                    'Приоритетни системи за подкрепа',
-                    'Анализ на елиминативните канали',
+                    'Системен и елиминативен анализ',
                     'Ключови находки и тяхната връзка',
                     'План за действие',
                     'Специални хранителни насоки',
@@ -796,13 +804,19 @@
                             section = createNutritionalGuidelinesSection(key, content);
                         } else if (key === 'Препоръки за билки и добавки') {
                             section = createHerbsSupplementsSection(key, content);
-                        } else if (
-                            key === 'Анализ на елиминативните канали' &&
-                            typeof content === 'string'
-                        ) {
-                            section = createChannelsSection(key, content);
-                        } else if (key === 'Приоритетни системи за подкрепа') {
-                            section = createPrioritySystemsSection(key, content);
+                        } else if (key === 'Системен и елиминативен анализ') {
+                            // Combined section - check if we have both data sources
+                            // ЗАБЕЛЕЖКА: Тази секция обединява данни от два различни ключа в API отговора:
+                            // - 'Приоритетни системи за подкрепа' (диаграма на системен баланс)
+                            // - 'Анализ на елиминативните канали' (диаграма на натовареност)
+                            const systemsData = data[DATA_KEYS.PRIORITY_SYSTEMS];
+                            const channelsData = data[DATA_KEYS.ELIMINATIVE_CHANNELS];
+                            if (systemsData || channelsData) {
+                                section = createCombinedSystemsChannelsSection(
+                                    systemsData,
+                                    channelsData
+                                );
+                            }
                         } else {
                             section = createCollapsibleSection(
                                 key,
@@ -810,7 +824,9 @@
                                 false
                             );
                         }
-                        container.appendChild(section);
+                        if (section) {
+                            container.appendChild(section);
+                        }
                     }
                 });
 
@@ -955,6 +971,84 @@
 
                 contentHTML += '</div>';
                 return createCollapsibleSection(title, contentHTML, false);
+            }
+
+            function createCombinedSystemsChannelsSection(systemsData, channelsData) {
+                const title = 'Системен и елиминативен анализ';
+
+                // Create legend HTML
+                const legendHTML = `
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%); border-left: 4px solid #f59e0b; padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <h4 style="color: #92400e; margin-bottom: 1rem; border: none; padding: 0;">
+                            <i class="fas fa-info-circle" style="color: #f59e0b; margin-right: 0.5rem;"></i>Легенда за нивата на натоварване
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 16px; height: 16px; background: linear-gradient(90deg, #22c55e, #34ce57); border-radius: 4px;"></span>
+                                <span style="color: #166534; font-weight: 600;">0-20%: Ниско</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 16px; height: 16px; background: linear-gradient(90deg, #eab308, #ffcd38); border-radius: 4px;"></span>
+                                <span style="color: #854d0e; font-weight: 600;">21-50%: Средно</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 16px; height: 16px; background: linear-gradient(90deg, #fb923c, #fdba74); border-radius: 4px;"></span>
+                                <span style="color: #9a3412; font-weight: 600;">51-80%: Високо</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 16px; height: 16px; background: linear-gradient(90deg, #ef4444, #e74c5c); border-radius: 4px;"></span>
+                                <span style="color: #991b1b; font-weight: 600;">81-100%: Критично</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                let contentHTML = legendHTML;
+
+                // Add Priority Systems section
+                if (systemsData) {
+                    const systemsChartId = 'systemsChart_' + Date.now();
+                    const systemsTextHTML = formatTextContent(systemsData);
+                    contentHTML += `
+                        <h4><i class="fas fa-heart-pulse" style="color: #ef4444; margin-right: 0.75rem;"></i>Приоритетни системи за подкрепа</h4>
+                        <div class="chart-container medium">
+                            <div class="chart-title">Баланс на системите за подкрепа</div>
+                            <canvas id="${systemsChartId}"></canvas>
+                        </div>
+                        ${systemsTextHTML}
+                    `;
+
+                    // Schedule chart creation
+                    setTimeout(() => {
+                        const canvas = document.getElementById(systemsChartId);
+                        if (canvas) createSystemBalanceChart(systemsData, systemsChartId);
+                    }, 100);
+                }
+
+                // Add Eliminative Channels section
+                if (channelsData) {
+                    const channelsChartId = 'channelsChart_' + Date.now();
+                    const channelsTextHTML = formatTextContent(channelsData);
+                    contentHTML += `
+                        <h4 style="margin-top: 2.5rem;"><i class="fas fa-recycle" style="color: #10b981; margin-right: 0.75rem;"></i>Анализ на елиминативните канали</h4>
+                        ${channelsTextHTML}
+                        <div style="margin-top: 1.5rem;">
+                            <strong style="font-size: 1.05rem;">Визуална оценка на натовареността:</strong>
+                            <div class="chart-container medium" style="margin-top: 1rem;">
+                                <canvas id="${channelsChartId}"></canvas>
+                            </div>
+                        </div>
+                    `;
+
+                    // Schedule chart creation
+                    setTimeout(() => {
+                        const canvas = document.getElementById(channelsChartId);
+                        if (canvas) createChannelComparisonChart(channelsData, channelsChartId);
+                    }, 100);
+                }
+
+                // Create the collapsible section - OPEN by default
+                return createCollapsibleSection(title, contentHTML, true);
             }
 
             function createPrioritySystemsSection(title, content) {
@@ -1328,7 +1422,10 @@
                                                 level = 'Умерено натоварване';
                                                 icon = '🟡';
                                             }
-                                            return [`${icon} Натовареност: ${value}%`, `Статус: ${level}`];
+                                            return [
+                                                `${icon} Натовареност: ${value}%`,
+                                                `Статус: ${level}`
+                                            ];
                                         }
                                     }
                                 }
@@ -1381,23 +1478,25 @@
                             {
                                 label: 'Натовареност',
                                 data: data,
-                                backgroundColor: data.map((val) =>
-                                    val >= 81
-                                        ? 'rgba(239, 68, 68, 0.85)'     // червено (81-100%)
-                                        : val >= 51
-                                          ? 'rgba(251, 146, 60, 0.85)'   // оранжево (51-80%)
-                                          : val >= 21
-                                            ? 'rgba(234, 179, 8, 0.85)'   // жълто (21-50%)
-                                            : 'rgba(34, 197, 94, 0.85)'   // зелено (0-20%)
+                                backgroundColor: data.map(
+                                    (val) =>
+                                        val >= 81
+                                            ? 'rgba(239, 68, 68, 0.85)' // червено (81-100%)
+                                            : val >= 51
+                                              ? 'rgba(251, 146, 60, 0.85)' // оранжево (51-80%)
+                                              : val >= 21
+                                                ? 'rgba(234, 179, 8, 0.85)' // жълто (21-50%)
+                                                : 'rgba(34, 197, 94, 0.85)' // зелено (0-20%)
                                 ),
-                                borderColor: data.map((val) =>
-                                    val >= 81 
-                                        ? '#dc2626'      // червено
-                                        : val >= 51 
-                                          ? '#ea580c'     // оранжево
-                                          : val >= 21 
-                                            ? '#ca8a04'   // жълто
-                                            : '#16a34a'   // зелено
+                                borderColor: data.map(
+                                    (val) =>
+                                        val >= 81
+                                            ? '#dc2626' // червено
+                                            : val >= 51
+                                              ? '#ea580c' // оранжево
+                                              : val >= 21
+                                                ? '#ca8a04' // жълто
+                                                : '#16a34a' // зелено
                                 ),
                                 borderWidth: 3,
                                 borderRadius: 10,
