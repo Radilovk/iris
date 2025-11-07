@@ -756,7 +756,7 @@
         <div class="container">
             <section class="analysis-section" style="padding-top: 2rem">
                 <header class="report-header">
-                    <h2 class="fade-in-up">Вашият Ирис Доклад</h2>
+                    <h2 class="fade-in-up">Иридиологичен Доклад</h2>
                     <p class="fade-in-up delay-1">Пътят към вашето здраве започва тук.</p>
                 </header>
 
@@ -791,20 +791,20 @@
             const ICONS_CONFIG = {
                 'Резюме на анализа': { icon: 'fa-file-medical', color: '#06b6d4' },
                 'Конституционален анализ': { icon: 'fa-shield-halved', color: '#3b82f6' },
-                'Системи, нуждаещи се от подкрепа': { icon: 'fa-heart-pulse', color: '#ef4444' },
-                'Пътища за пречистване': { icon: 'fa-recycle', color: '#10b981' },
+                'Приоритетни системи за подкрепа': { icon: 'fa-heart-pulse', color: '#ef4444' },
+                'Анализ на елиминативните канали': { icon: 'fa-recycle', color: '#10b981' },
                 'Ключови находки и тяхната връзка': {
                     icon: 'fa-project-diagram',
                     color: '#8b5cf6'
                 },
                 'План за действие': { icon: 'fa-list-check', color: '#14b8a6' },
-                'Хранителни насоки': { icon: 'fa-apple-alt', color: '#f97316' },
+                'Специални хранителни насоки': { icon: 'fa-apple-alt', color: '#f97316' },
                 'Препоръки за билки и добавки': { icon: 'fa-leaf', color: '#059669' },
                 'Холистични препоръки': { icon: 'fa-seedling', color: '#f59e0b' },
                 'Фундаментални принципи': { icon: 'fa-lightbulb', color: '#1d4ed8' },
                 'Целенасочени препоръки': { icon: 'fa-bullseye', color: '#c2410c' },
                 'Психология и емоции': { icon: 'fa-brain', color: '#be185d' },
-                'Проследяване': { icon: 'fa-calendar-check', color: '#7c3aed' },
+                'Препоръки за проследяване': { icon: 'fa-calendar-check', color: '#7c3aed' },
                 default: { icon: 'fa-circle-info', color: '#6b7280' }
             };
 
@@ -881,14 +881,14 @@
 
                 const sectionOrder = [
                     'Конституционален анализ',
-                    'Системи, нуждаещи се от подкрепа',
-                    'Пътища за пречистване',
+                    'Приоритетни системи за подкрепа',
+                    'Анализ на елиминативните канали',
                     'Ключови находки и тяхната връзка',
                     'План за действие',
-                    'Хранителни насоки',
+                    'Специални хранителни насоки',
                     'Препоръки за билки и добавки',
                     'Холистични препоръки',
-                    'Проследяване'
+                    'Препоръки за проследяване'
                 ];
 
                 sectionOrder.forEach((key) => {
@@ -897,16 +897,16 @@
                         let section;
                         if (key === 'Холистични препоръки') {
                             section = createRecommendationsSection(key, content);
-                        } else if (key === 'Хранителни насоки') {
+                        } else if (key === 'Специални хранителни насоки') {
                             section = createNutritionalGuidelinesSection(key, content);
                         } else if (key === 'Препоръки за билки и добавки') {
                             section = createHerbsSupplementsSection(key, content);
                         } else if (
-                            key === 'Пътища за пречистване' &&
+                            key === 'Анализ на елиминативните канали' &&
                             typeof content === 'string'
                         ) {
                             section = createChannelsSection(key, content);
-                        } else if (key === 'Системи, нуждаещи се от подкрепа') {
+                        } else if (key === 'Приоритетни системи за подкрепа') {
                             section = createPrioritySystemsSection(key, content);
                         } else {
                             section = createCollapsibleSection(
@@ -1131,7 +1131,7 @@
                         let value = 20;
                         
                         if (text.includes(keyword)) {
-                            if (text.includes('най-натоварен') || text.includes('силно натоварен') || text.includes('най-обременен') || text.includes('силно обременен')) {
+                            if (text.includes('най-натоварен') || text.includes('силно натоварен')) {
                                 value = 85;
                             } else if (text.includes('умерен') || text.includes('средн')) {
                                 value = 60;
@@ -1158,8 +1158,8 @@
                 if (!container) return;
                 
                 container.innerHTML = metrics.map(metric => {
-                    const statusText = metric.status === 'high' ? 'Силно обременен' :
-                                      metric.status === 'medium' ? 'Умерено обременен' :
+                    const statusText = metric.status === 'high' ? 'Високо натоварен' :
+                                      metric.status === 'medium' ? 'Умерено натоварен' :
                                       'Нормално състояние';
                     const statusIcon = metric.status === 'high' ? '🔴' :
                                       metric.status === 'medium' ? '🟡' : '🟢';
@@ -1192,7 +1192,7 @@
 
                 const contentWithChart = `
                 <div class="chart-container medium">
-                    <div class="chart-title">Оценка на системите, нуждаещи се от подкрепа</div>
+                    <div class="chart-title">Баланс на системите за подкрепа</div>
                     <canvas id="${chartId}"></canvas>
                 </div>
                 <div class="metrics-list-container" id="${mobileContainerId}">
@@ -1225,7 +1225,7 @@
                 const mobileContainerId = 'mobileChannels_' + Date.now();
 
                 let barsHTML = `
-                <h4 style="margin-top: 1.5rem;">Оценка на обременеността на каналите:</h4>
+                <h4 style="margin-top: 1.5rem;">Визуална оценка на натовареността:</h4>
                 <div class="chart-container medium">
                     <canvas id="${chartId}"></canvas>
                 </div>
@@ -1462,7 +1462,7 @@
                             labels: systems,
                             datasets: [
                                 {
-                                    label: 'Нужда от подкрепа',
+                                    label: 'Приоритет за подкрепа',
                                     data: values,
                                     backgroundColor: backgroundColors,
                                     borderColor: colors,
@@ -1541,7 +1541,22 @@
                             },
                             plugins: {
                                 legend: {
-                                    display: false
+                                    display: true,
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        font: {
+                                            size: 13,
+                                            family: "'Poppins', sans-serif",
+                                            weight: '600'
+                                        },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        pointStyleWidth: 16,
+                                        color: '#334155',
+                                        boxWidth: 12,
+                                        boxHeight: 12
+                                    }
                                 },
                                 tooltip: {
                                     enabled: true,
@@ -1651,7 +1666,7 @@
                         labels: channels.map((ch) => ch.icon + ' ' + ch.name),
                         datasets: [
                             {
-                                label: 'Обремененост',
+                                label: 'Натовареност',
                                 data: data,
                                 backgroundColor: data.map((val) =>
                                     val >= 70
@@ -1770,17 +1785,17 @@
                                         let status = '';
                                         let icon = '';
                                         if (value >= 70) {
-                                            status = 'Силно обременен';
+                                            status = 'Високо натоварен';
                                             icon = '🔴';
                                         } else if (value >= 50) {
-                                            status = 'Умерено обременен';
+                                            status = 'Умерено натоварен';
                                             icon = '🟡';
                                         } else {
                                             status = 'Нормално състояние';
                                             icon = '🟢';
                                         }
                                         return [
-                                            `${icon} Обремененост: ${value}%`,
+                                            `${icon} Натовареност: ${value}%`,
                                             `Статус: ${status}`
                                         ];
                                     }
