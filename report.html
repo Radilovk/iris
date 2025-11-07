@@ -682,24 +682,15 @@
         <script type="module">
             import { WORKER_URL } from './config.js';
 
-            // Константи за ключовете на данните - използват се за картиране на обединени секции
-            const DATA_KEYS = {
-                PRIORITY_SYSTEMS: 'Приоритетни системи за подкрепа',
-                ELIMINATIVE_CHANNELS: 'Анализ на елиминативните канали'
-            };
-
-            // Константа за името на обединената секция в sectionOrder
-            const COMBINED_SECTION_NAME = 'Системен и елиминативен анализ';
-
             // *** КЛЮЧОВА ПРОМЯНА: Актуализирана конфигурация на секциите ***
             const ICONS_CONFIG = {
                 'Резюме на анализа': { icon: 'fa-file-medical', color: '#06b6d4' },
                 'Конституционален анализ': { icon: 'fa-shield-halved', color: '#3b82f6' },
-                [COMBINED_SECTION_NAME]: { icon: 'fa-chart-line', color: '#6366f1' },
+                'Системен и елиминативен анализ': { icon: 'fa-chart-line', color: '#6366f1' },
                 // ЗАБЕЛЕЖКА: Следните секции са обединени в "Системен и елиминативен анализ"
                 // но техните конфигурации се запазват за икони и референции
-                [DATA_KEYS.PRIORITY_SYSTEMS]: { icon: 'fa-heart-pulse', color: '#ef4444' },
-                [DATA_KEYS.ELIMINATIVE_CHANNELS]: { icon: 'fa-recycle', color: '#10b981' },
+                'Приоритетни системи за подкрепа': { icon: 'fa-heart-pulse', color: '#ef4444' },
+                'Анализ на елиминативните канали': { icon: 'fa-recycle', color: '#10b981' },
                 'Ключови находки и тяхната връзка': {
                     icon: 'fa-project-diagram',
                     color: '#8b5cf6'
@@ -713,6 +704,12 @@
                 'Психология и емоции': { icon: 'fa-brain', color: '#be185d' },
                 'Препоръки за проследяване': { icon: 'fa-calendar-check', color: '#7c3aed' },
                 default: { icon: 'fa-circle-info', color: '#6b7280' }
+            };
+
+            // Константи за ключовете на данните - използват се за картиране на обединени секции
+            const DATA_KEYS = {
+                PRIORITY_SYSTEMS: 'Приоритетни системи за подкрепа',
+                ELIMINATIVE_CHANNELS: 'Анализ на елиминативните канали'
             };
 
             // Функция за форматиране на Markdown към HTML
@@ -788,7 +785,7 @@
 
                 const sectionOrder = [
                     'Конституционален анализ',
-                    COMBINED_SECTION_NAME,
+                    'Системен и елиминативен анализ',
                     'Ключови находки и тяхната връзка',
                     'План за действие',
                     'Специални хранителни насоки',
@@ -798,47 +795,38 @@
                 ];
 
                 sectionOrder.forEach((key) => {
-                    let section;
-                    
-                    // Special handling for combined section that aggregates data from multiple API keys
-                    // IMPORTANT: This section doesn't exist as a direct key in the API response data.
-                    // Instead, it combines data from two separate keys (PRIORITY_SYSTEMS and ELIMINATIVE_CHANNELS)
-                    // that are returned by the worker. This allows us to present a unified view of systems
-                    // and elimination channels analysis while keeping them as separate data points in the API.
-                    if (key === COMBINED_SECTION_NAME) {
-                        // Combined section - check if we have data from either source
-                        // ЗАБЕЛЕЖКА: Тази секция обединява данни от два различни ключа в API отговора:
-                        // - 'Приоритетни системи за подкрепа' (диаграма на системен баланс)
-                        // - 'Анализ на елиминативните канали' (диаграма на натовареност)
-                        const systemsData = data[DATA_KEYS.PRIORITY_SYSTEMS];
-                        const channelsData = data[DATA_KEYS.ELIMINATIVE_CHANNELS];
-                        if (systemsData || channelsData) {
-                            section = createCombinedSystemsChannelsSection(
-                                systemsData,
-                                channelsData
-                            );
-                        }
-                    } else {
-                        const content = data[key];
-                        if (content) {
-                            if (key === 'Холистични препоръки') {
-                                section = createRecommendationsSection(key, content);
-                            } else if (key === 'Специални хранителни насоки') {
-                                section = createNutritionalGuidelinesSection(key, content);
-                            } else if (key === 'Препоръки за билки и добавки') {
-                                section = createHerbsSupplementsSection(key, content);
-                            } else {
-                                section = createCollapsibleSection(
-                                    key,
-                                    formatTextContent(content),
-                                    false
+                    const content = data[key];
+                    if (content) {
+                        let section;
+                        if (key === 'Холистични препоръки') {
+                            section = createRecommendationsSection(key, content);
+                        } else if (key === 'Специални хранителни насоки') {
+                            section = createNutritionalGuidelinesSection(key, content);
+                        } else if (key === 'Препоръки за билки и добавки') {
+                            section = createHerbsSupplementsSection(key, content);
+                        } else if (key === 'Системен и елиминативен анализ') {
+                            // Combined section - check if we have both data sources
+                            // ЗАБЕЛЕЖКА: Тази секция обединява данни от два различни ключа в API отговора:
+                            // - 'Приоритетни системи за подкрепа' (диаграма на системен баланс)
+                            // - 'Анализ на елиминативните канали' (диаграма на натовареност)
+                            const systemsData = data[DATA_KEYS.PRIORITY_SYSTEMS];
+                            const channelsData = data[DATA_KEYS.ELIMINATIVE_CHANNELS];
+                            if (systemsData || channelsData) {
+                                section = createCombinedSystemsChannelsSection(
+                                    systemsData,
+                                    channelsData
                                 );
                             }
+                        } else {
+                            section = createCollapsibleSection(
+                                key,
+                                formatTextContent(content),
+                                false
+                            );
                         }
-                    }
-                    
-                    if (section) {
-                        container.appendChild(section);
+                        if (section) {
+                            container.appendChild(section);
+                        }
                     }
                 });
 
@@ -986,7 +974,7 @@
             }
 
             function createCombinedSystemsChannelsSection(systemsData, channelsData) {
-                const title = COMBINED_SECTION_NAME;
+                const title = 'Системен и елиминативен анализ';
 
                 // Create legend HTML
                 const legendHTML = `
