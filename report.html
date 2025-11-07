@@ -798,13 +798,13 @@
                     color: '#8b5cf6'
                 },
                 'План за действие': { icon: 'fa-list-check', color: '#14b8a6' },
-                'Специални хранителни насоки': { icon: 'fa-apple-alt', color: '#f97316' },
+                'Хранителни насоки': { icon: 'fa-apple-alt', color: '#f97316' },
                 'Препоръки за билки и добавки': { icon: 'fa-leaf', color: '#059669' },
                 'Холистични препоръки': { icon: 'fa-seedling', color: '#f59e0b' },
                 'Фундаментални принципи': { icon: 'fa-lightbulb', color: '#1d4ed8' },
                 'Целенасочени препоръки': { icon: 'fa-bullseye', color: '#c2410c' },
                 'Психология и емоции': { icon: 'fa-brain', color: '#be185d' },
-                'Препоръки за проследяване': { icon: 'fa-calendar-check', color: '#7c3aed' },
+                'Проследяване': { icon: 'fa-calendar-check', color: '#7c3aed' },
                 default: { icon: 'fa-circle-info', color: '#6b7280' }
             };
 
@@ -885,10 +885,10 @@
                     'Пътища за пречистване',
                     'Ключови находки и тяхната връзка',
                     'План за действие',
-                    'Специални хранителни насоки',
+                    'Хранителни насоки',
                     'Препоръки за билки и добавки',
                     'Холистични препоръки',
-                    'Препоръки за проследяване'
+                    'Проследяване'
                 ];
 
                 sectionOrder.forEach((key) => {
@@ -897,7 +897,7 @@
                         let section;
                         if (key === 'Холистични препоръки') {
                             section = createRecommendationsSection(key, content);
-                        } else if (key === 'Специални хранителни насоки') {
+                        } else if (key === 'Хранителни насоки') {
                             section = createNutritionalGuidelinesSection(key, content);
                         } else if (key === 'Препоръки за билки и добавки') {
                             section = createHerbsSupplementsSection(key, content);

@@ -3100,7 +3100,7 @@ ${JSON.stringify(recommendations, null, 2)}
 - Фокус върху приложими действия
 
 **ВАЖНО ЗА СТРУКТУРАТА:**
-1. "Специални хранителни насоки" трябва да бъде обект със следната структура:
+1. "Хранителни насоки" трябва да бъде обект със следната структура:
    {
      "Храни за ограничаване": "Списък с храни и причини за ограничаването им",
      "Храни за добавяне": "Списък с храни, количества и ползи"
@@ -3129,7 +3129,7 @@ ${JSON.stringify(recommendations, null, 2)}
   "Системи, нуждаещи се от подкрепа": "Форматиран списък от signsInterpretation.priority_systems",
   "Ключови находки и тяхната връзка": "Форматиран текст от signsInterpretation.key_findings + synergistic_effect",
   "План за действие": "Форматиран текст от recommendations.action_plan",
-  "Специални хранителни насоки": {
+  "Хранителни насоки": {
     "Храни за ограничаване": "Форматиран списък от recommendations.nutrition.foods_to_limit",
     "Храни за добавяне": "Форматиран списък от recommendations.nutrition.foods_to_add"
   },
@@ -3143,7 +3143,7 @@ ${JSON.stringify(recommendations, null, 2)}
     "Целенасочени препоръки": "Форматиран списък от recommendations.holistic_recommendations.targeted_recommendations",
     "Психология и емоции": "Текст от recommendations.holistic_recommendations.psychology_and_emotions"
   },
-  "Препоръки за проследяване": "Форматиран текст от recommendations.follow_up",
+  "Проследяване": "Форматиран текст от recommendations.follow_up",
   "Задължителен отказ от отговорност": "${disclaimer}"
 }`;
 
