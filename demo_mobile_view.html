@@ -1,644 +1,648 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="bg">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Мобилен преглед на доклада</title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Мобилен преглед на доклада</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background: #f5f5f7;
-                padding: 2rem;
-                min-height: 100vh;
-            }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f5f5f7;
+        padding: 2rem;
+        min-height: 100vh;
+      }
 
-            .desktop-container {
-                max-width: 1400px;
-                margin: 0 auto;
-            }
+      .desktop-container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
 
-            .page-title {
-                text-align: center;
-                margin-bottom: 3rem;
-            }
+      .page-title {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
 
-            .page-title h1 {
-                font-size: 2rem;
-                color: #1d1d1f;
-                margin-bottom: 0.5rem;
-            }
+      .page-title h1 {
+        font-size: 2rem;
+        color: #1d1d1f;
+        margin-bottom: 0.5rem;
+      }
 
-            .page-title p {
-                color: #86868b;
-                font-size: 1.1rem;
-            }
+      .page-title p {
+        color: #86868b;
+        font-size: 1.1rem;
+      }
 
-            .device-frame {
-                max-width: 400px;
-                margin: 0 auto;
-                background: #1d1d1f;
-                border-radius: 40px;
-                padding: 12px;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                position: relative;
-            }
+      .device-frame {
+        max-width: 400px;
+        margin: 0 auto;
+        background: #1d1d1f;
+        border-radius: 40px;
+        padding: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
 
-            .device-frame::before {
-                content: '';
-                position: absolute;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 120px;
-                height: 25px;
-                background: #1d1d1f;
-                border-radius: 0 0 20px 20px;
-                z-index: 10;
-            }
+      .device-frame::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 25px;
+        background: #1d1d1f;
+        border-radius: 0 0 20px 20px;
+        z-index: 10;
+      }
 
-            .device-screen {
-                background: white;
-                border-radius: 32px;
-                overflow: hidden;
-                position: relative;
-                height: 750px;
-                overflow-y: auto;
-            }
+      .device-screen {
+        background: white;
+        border-radius: 32px;
+        overflow: hidden;
+        position: relative;
+        height: 750px;
+        overflow-y: auto;
+      }
 
-            .device-screen::-webkit-scrollbar {
-                width: 6px;
-            }
+      .device-screen::-webkit-scrollbar {
+        width: 6px;
+      }
 
-            .device-screen::-webkit-scrollbar-track {
-                background: transparent;
-            }
+      .device-screen::-webkit-scrollbar-track {
+        background: transparent;
+      }
 
-            .device-screen::-webkit-scrollbar-thumb {
-                background: #d1d1d6;
-                border-radius: 3px;
-            }
+      .device-screen::-webkit-scrollbar-thumb {
+        background: #d1d1d6;
+        border-radius: 3px;
+      }
 
-            /* Mobile Report Styles */
-            .mobile-report {
-                background: linear-gradient(135deg, #437dcb 0%, #2e5a9b 100%);
-                min-height: 100%;
-                padding: 1rem;
-            }
+      /* Mobile Report Styles */
+      .mobile-report {
+        background: linear-gradient(135deg, #437dcb 0%, #2e5a9b 100%);
+        min-height: 100%;
+        padding: 1rem;
+      }
 
-            .mobile-header {
-                text-align: center;
-                color: white;
-                margin-bottom: 1.5rem;
-                padding-top: 2rem;
-            }
+      .mobile-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 1.5rem;
+        padding-top: 2rem;
+      }
 
-            .mobile-header h2 {
-                font-size: 1.5rem;
-                margin-bottom: 0.5rem;
-                text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            }
+      .mobile-header h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
 
-            .mobile-header p {
-                font-size: 0.9rem;
-                opacity: 0.95;
-            }
+      .mobile-header p {
+        font-size: 0.9rem;
+        opacity: 0.95;
+      }
 
-            .mobile-hero {
-                background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
-                border-radius: 12px;
-                padding: 1.5rem;
-                text-align: center;
-                margin-bottom: 1rem;
-                border: 1px solid #e0e7ff;
-            }
+      .mobile-hero {
+        background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        border: 1px solid #e0e7ff;
+      }
 
-            .mobile-hero h3 {
-                font-size: 1.1rem;
-                font-weight: 600;
-                color: #1a253c;
-                margin-bottom: 0.5rem;
-            }
+      .mobile-hero h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1a253c;
+        margin-bottom: 0.5rem;
+      }
 
-            .mobile-hero p {
-                font-size: 0.85rem;
-                color: #5a647e;
-            }
+      .mobile-hero p {
+        font-size: 0.85rem;
+        color: #5a647e;
+      }
 
-            .mobile-section {
-                background-color: #ffffff;
-                border: 1px solid #e8eef7;
-                border-radius: 12px;
-                margin-bottom: 1rem;
-                box-shadow: 0 4px 8px rgba(10, 40, 100, 0.05);
-                overflow: hidden;
-            }
+      .mobile-section {
+        background-color: #ffffff;
+        border: 1px solid #e8eef7;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 8px rgba(10, 40, 100, 0.05);
+        overflow: hidden;
+      }
 
-            .mobile-section-header {
-                padding: 1rem 1.25rem;
-                font-weight: 600;
-                font-size: 1rem;
-                color: #1a253c;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-                border-bottom: 1px solid #e8eef7;
-            }
+      .mobile-section-header {
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        font-size: 1rem;
+        color: #1a253c;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border-bottom: 1px solid #e8eef7;
+      }
 
-            .mobile-icon {
-                min-width: 32px;
-                height: 32px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                font-size: 0.9rem;
-                color: #fff;
-            }
+      .mobile-icon {
+        min-width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 0.9rem;
+        color: #fff;
+      }
 
-            .mobile-content {
-                padding: 1rem 1.25rem;
-                color: #334155;
-                line-height: 1.7;
-                font-size: 0.9rem;
-            }
+      .mobile-content {
+        padding: 1rem 1.25rem;
+        color: #334155;
+        line-height: 1.7;
+        font-size: 0.9rem;
+      }
 
-            .mobile-content p {
-                margin-bottom: 0.75rem;
-            }
+      .mobile-content p {
+        margin-bottom: 0.75rem;
+      }
 
-            .mobile-content ul {
-                list-style: none;
-                padding-left: 1rem;
-                margin: 0.75rem 0;
-            }
+      .mobile-content ul {
+        list-style: none;
+        padding-left: 1rem;
+        margin: 0.75rem 0;
+      }
 
-            .mobile-content li {
-                margin-bottom: 0.6rem;
-                position: relative;
-                padding-left: 0.25rem;
-            }
+      .mobile-content li {
+        margin-bottom: 0.6rem;
+        position: relative;
+        padding-left: 0.25rem;
+      }
 
-            .mobile-content li::before {
-                content: '●';
-                color: #3b82f6;
-                font-weight: 700;
-                position: absolute;
-                left: -1rem;
-            }
+      .mobile-content li::before {
+        content: "●";
+        color: #3b82f6;
+        font-weight: 700;
+        position: absolute;
+        left: -1rem;
+      }
 
-            .mobile-content strong {
-                color: #1e3a8a;
-                font-weight: 700;
-                background: linear-gradient(
-                    135deg,
-                    rgba(59, 130, 246, 0.08) 0%,
-                    rgba(59, 130, 246, 0.03) 100%
-                );
-                padding: 0.1rem 0.25rem;
-                border-radius: 3px;
-            }
+      .mobile-content strong {
+        color: #1e3a8a;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.08) 0%,
+          rgba(59, 130, 246, 0.03) 100%
+        );
+        padding: 0.1rem 0.25rem;
+        border-radius: 3px;
+      }
 
-            .mobile-chart-container {
-                background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 50%, #ffffff 100%);
-                border-radius: 16px;
-                padding: 1.5rem 1rem;
-                margin: 1rem 0;
-                box-shadow: 0 4px 8px -2px rgba(59, 130, 246, 0.1);
-                border: 1px solid rgba(59, 130, 246, 0.15);
-            }
+      .mobile-chart-container {
+        background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 50%, #ffffff 100%);
+        border-radius: 16px;
+        padding: 1.5rem 1rem;
+        margin: 1rem 0;
+        box-shadow: 0 4px 8px -2px rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.15);
+      }
 
-            .mobile-chart-title {
-                text-align: center;
-                font-weight: 700;
-                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                margin-bottom: 1rem;
-                font-size: 1rem;
-                position: relative;
-                padding-bottom: 0.5rem;
-            }
+      .mobile-chart-title {
+        text-align: center;
+        font-weight: 700;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+        position: relative;
+        padding-bottom: 0.5rem;
+      }
 
-            .mobile-chart-title::after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 60px;
-                height: 3px;
-                background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-                border-radius: 2px;
-            }
+      .mobile-chart-title::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        border-radius: 2px;
+      }
 
-            .mobile-chart-placeholder {
-                background: white;
-                border-radius: 12px;
-                padding: 2rem 1rem;
-                text-align: center;
-                border: 2px dashed #cbd5e1;
-                margin-top: 0.75rem;
-            }
+      .mobile-chart-placeholder {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem 1rem;
+        text-align: center;
+        border: 2px dashed #cbd5e1;
+        margin-top: 0.75rem;
+      }
 
-            .mobile-chart-placeholder-icon {
-                font-size: 2.5rem;
-                margin-bottom: 0.5rem;
-            }
+      .mobile-chart-placeholder-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
 
-            .mobile-chart-placeholder-text {
-                color: #64748b;
-                font-size: 0.85rem;
-                line-height: 1.5;
-            }
+      .mobile-chart-placeholder-text {
+        color: #64748b;
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
 
-            .mobile-info-card {
-                background: linear-gradient(135deg, #fefeff 0%, #f8fafc 100%);
-                border-radius: 12px;
-                padding: 1.25rem;
-                border: 1px solid #e2e8f0;
-                margin-bottom: 1rem;
-                position: relative;
-                overflow: hidden;
-            }
+      .mobile-info-card {
+        background: linear-gradient(135deg, #fefeff 0%, #f8fafc 100%);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+        position: relative;
+        overflow: hidden;
+      }
 
-            .mobile-info-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 4px;
-                height: 100%;
-                background: linear-gradient(180deg, #3b82f6, #60a5fa);
-            }
+      .mobile-info-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #3b82f6, #60a5fa);
+      }
 
-            .mobile-info-card h4 {
-                font-weight: 700;
-                margin-bottom: 0.75rem;
-                color: #1e293b;
-                font-size: 1rem;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
+      .mobile-info-card h4 {
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #1e293b;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
 
-            .mobile-info-card-icon {
-                font-size: 1.1rem;
-                color: #3b82f6;
-            }
+      .mobile-info-card-icon {
+        font-size: 1.1rem;
+        color: #3b82f6;
+      }
 
-            .mobile-bar {
-                display: flex;
-                align-items: center;
-                margin-bottom: 0.75rem;
-                padding: 0.4rem 0;
-            }
+      .mobile-bar {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 0.4rem 0;
+      }
 
-            .mobile-bar-label {
-                min-width: 80px;
-                font-weight: 600;
-                font-size: 0.85rem;
-                color: #1e293b;
-            }
+      .mobile-bar-label {
+        min-width: 80px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #1e293b;
+      }
 
-            .mobile-bar-track {
-                flex-grow: 1;
-                height: 10px;
-                border-radius: 6px;
-                background: #e9ecef;
-                overflow: hidden;
-                box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-            }
+      .mobile-bar-track {
+        flex-grow: 1;
+        height: 10px;
+        border-radius: 6px;
+        background: #e9ecef;
+        overflow: hidden;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
 
-            .mobile-bar-fill {
-                height: 100%;
-                border-radius: 6px;
-                transition: width 0.8s ease-out;
-            }
+      .mobile-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        transition: width 0.8s ease-out;
+      }
 
-            .mobile-bar-fill.high {
-                background: linear-gradient(90deg, #dc3545, #e74c5c);
-            }
+      .mobile-bar-fill.high {
+        background: linear-gradient(90deg, #dc3545, #e74c5c);
+      }
 
-            .mobile-bar-fill.medium {
-                background: linear-gradient(90deg, #ffc107, #ffcd38);
-            }
+      .mobile-bar-fill.medium {
+        background: linear-gradient(90deg, #ffc107, #ffcd38);
+      }
 
-            .mobile-bar-fill.low {
-                background: linear-gradient(90deg, #28a745, #34ce57);
-            }
+      .mobile-bar-fill.low {
+        background: linear-gradient(90deg, #28a745, #34ce57);
+      }
 
-            .mobile-buttons {
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-                margin-top: 1.5rem;
-            }
+      .mobile-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+      }
 
-            .mobile-btn {
-                padding: 0.75rem;
-                border: none;
-                border-radius: 10px;
-                font-weight: 600;
-                font-size: 0.9rem;
-                text-align: center;
-                text-decoration: none;
-                display: block;
-            }
+      .mobile-btn {
+        padding: 0.75rem;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+      }
 
-            .mobile-btn-primary {
-                background: linear-gradient(135deg, #3a86ff 0%, #00a8e8 100%);
-                color: white;
-                box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
-            }
+      .mobile-btn-primary {
+        background: linear-gradient(135deg, #3a86ff 0%, #00a8e8 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
+      }
 
-            .mobile-btn-secondary {
-                background: #e2e8f0;
-                color: #475569;
-            }
+      .mobile-btn-secondary {
+        background: #e2e8f0;
+        color: #475569;
+      }
 
-            .features-section {
-                margin-top: 3rem;
-                padding: 2rem;
-                background: white;
-                border-radius: 20px;
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-            }
+      .features-section {
+        margin-top: 3rem;
+        padding: 2rem;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      }
 
-            .features-title {
-                font-size: 1.5rem;
-                color: #1d1d1f;
-                margin-bottom: 1.5rem;
-                text-align: center;
-            }
+      .features-title {
+        font-size: 1.5rem;
+        color: #1d1d1f;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
 
-            .feature-list {
-                list-style: none;
-                padding: 0;
-            }
+      .feature-list {
+        list-style: none;
+        padding: 0;
+      }
 
-            .feature-list li {
-                padding: 1rem 0;
-                border-bottom: 1px solid #f0f0f0;
-                display: flex;
-                align-items: flex-start;
-                gap: 1rem;
-            }
+      .feature-list li {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+      }
 
-            .feature-list li:last-child {
-                border-bottom: none;
-            }
+      .feature-list li:last-child {
+        border-bottom: none;
+      }
 
-            .feature-icon {
-                font-size: 1.5rem;
-                flex-shrink: 0;
-            }
+      .feature-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
 
-            .feature-content h3 {
-                font-size: 1rem;
-                color: #1d1d1f;
-                margin-bottom: 0.25rem;
-            }
+      .feature-content h3 {
+        font-size: 1rem;
+        color: #1d1d1f;
+        margin-bottom: 0.25rem;
+      }
 
-            .feature-content p {
-                font-size: 0.9rem;
-                color: #86868b;
-                line-height: 1.6;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="desktop-container">
-            <div class="page-title">
-                <h1>📱 Мобилен преглед на доклада</h1>
-                <p>Как изглежда подобреният доклад на мобилен телефон</p>
+      .feature-content p {
+        font-size: 0.9rem;
+        color: #86868b;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="desktop-container">
+      <div class="page-title">
+        <h1>📱 Мобилен преглед на доклада</h1>
+        <p>Как изглежда подобреният доклад на мобилен телефон</p>
+      </div>
+
+      <div class="device-frame">
+        <div class="device-screen">
+          <div class="mobile-report">
+            <!-- Header -->
+            <div class="mobile-header">
+              <h2>Иридиологичен Доклад</h2>
+              <p>Вашият персонален анализ</p>
             </div>
 
-            <div class="device-frame">
-                <div class="device-screen">
-                    <div class="mobile-report">
-                        <!-- Header -->
-                        <div class="mobile-header">
-                            <h2>Иридиологичен Доклад</h2>
-                            <p>Вашият персонален анализ</p>
-                        </div>
+            <!-- Hero Section -->
+            <div class="mobile-hero">
+              <h3>Анализ за Иван Петров</h3>
+              <p>Генериран: 6 ноември 2025</p>
+            </div>
 
-                        <!-- Hero Section -->
-                        <div class="mobile-hero">
-                            <h3>Анализ за Иван Петров</h3>
-                            <p>Генериран: 6 ноември 2025</p>
-                        </div>
-
-                        <!-- Section 1: System Balance -->
-                        <div class="mobile-section">
-                            <div class="mobile-section-header">
-                                <span class="mobile-icon" style="background-color: #ef4444">
-                                    ❤️
-                                </span>
-                                <span>Приоритетни системи</span>
-                            </div>
-                            <div class="mobile-content">
-                                <div class="mobile-chart-container">
-                                    <div class="mobile-chart-title">Баланс на системите</div>
-                                    <div class="mobile-chart-placeholder">
-                                        <div class="mobile-chart-placeholder-icon">📊</div>
-                                        <div class="mobile-chart-placeholder-text">
-                                            Polar Area Chart с плавни анимации,<br />
-                                            staggered delays и emoji tooltips 🔴🟡🟢
-                                        </div>
-                                    </div>
-                                </div>
-                                <p>
-                                    Вашите системи показват различни нива на натовареност.
-                                    <strong>Храносмилателната система</strong> изисква най-много
-                                    внимание.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Section 2: Channel Load -->
-                        <div class="mobile-section">
-                            <div class="mobile-section-header">
-                                <span class="mobile-icon" style="background-color: #10b981">
-                                    ♻️
-                                </span>
-                                <span>Елиминативни канали</span>
-                            </div>
-                            <div class="mobile-content">
-                                <div class="mobile-chart-container">
-                                    <div class="mobile-chart-title">Оценка на натовареността</div>
-                                    <div style="margin-top: 1rem">
-                                        <div class="mobile-bar">
-                                            <span class="mobile-bar-label">🔄 Черва</span>
-                                            <div class="mobile-bar-track">
-                                                <div
-                                                    class="mobile-bar-fill high"
-                                                    style="width: 85%"
-                                                ></div>
-                                            </div>
-                                        </div>
-                                        <div class="mobile-bar">
-                                            <span class="mobile-bar-label">💧 Бъбреци</span>
-                                            <div class="mobile-bar-track">
-                                                <div
-                                                    class="mobile-bar-fill medium"
-                                                    style="width: 60%"
-                                                ></div>
-                                            </div>
-                                        </div>
-                                        <div class="mobile-bar">
-                                            <span class="mobile-bar-label">🌊 Лимфа</span>
-                                            <div class="mobile-bar-track">
-                                                <div
-                                                    class="mobile-bar-fill low"
-                                                    style="width: 40%"
-                                                ></div>
-                                            </div>
-                                        </div>
-                                        <div class="mobile-bar">
-                                            <span class="mobile-bar-label">✨ Кожа</span>
-                                            <div class="mobile-bar-track">
-                                                <div
-                                                    class="mobile-bar-fill medium"
-                                                    style="width: 65%"
-                                                ></div>
-                                            </div>
-                                        </div>
-                                        <div class="mobile-bar">
-                                            <span class="mobile-bar-label">💨 Дробове</span>
-                                            <div class="mobile-bar-track">
-                                                <div
-                                                    class="mobile-bar-fill low"
-                                                    style="width: 50%"
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p>
-                                    <strong>Чревата</strong> показват високо натовареване и се
-                                    нуждаят от специално внимание.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Section 3: Recommendations -->
-                        <div class="mobile-section">
-                            <div class="mobile-section-header">
-                                <span class="mobile-icon" style="background-color: #f59e0b">
-                                    🍎
-                                </span>
-                                <span>Хранителни насоки</span>
-                            </div>
-                            <div class="mobile-content">
-                                <div class="mobile-info-card">
-                                    <h4>
-                                        <span class="mobile-info-card-icon">🚫</span>
-                                        Храни за ограничаване
-                                    </h4>
-                                    <ul>
-                                        <li>Рафинирани въглехидрати</li>
-                                        <li>Обработени храни</li>
-                                        <li>Млечни продукти</li>
-                                    </ul>
-                                </div>
-                                <div class="mobile-info-card">
-                                    <h4>
-                                        <span class="mobile-info-card-icon">✅</span>
-                                        Храни за добавяне
-                                    </h4>
-                                    <ul>
-                                        <li>Листни зеленчуци</li>
-                                        <li>Ферментирали храни</li>
-                                        <li>Пресни плодове</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Buttons -->
-                        <div class="mobile-buttons">
-                            <button class="mobile-btn mobile-btn-primary">📄 Запази PDF</button>
-                            <button class="mobile-btn mobile-btn-secondary">
-                                🔄 Повтори анализа
-                            </button>
-                        </div>
+            <!-- Section 1: System Balance -->
+            <div class="mobile-section">
+              <div class="mobile-section-header">
+                <span class="mobile-icon" style="background-color: #ef4444">
+                  ❤️
+                </span>
+                <span>Приоритетни системи</span>
+              </div>
+              <div class="mobile-content">
+                <div class="mobile-chart-container">
+                  <div class="mobile-chart-title">Баланс на системите</div>
+                  <div class="mobile-chart-placeholder">
+                    <div class="mobile-chart-placeholder-icon">📊</div>
+                    <div class="mobile-chart-placeholder-text">
+                      Polar Area Chart с плавни анимации,<br />
+                      staggered delays и emoji tooltips 🔴🟡🟢
                     </div>
+                  </div>
                 </div>
+                <p>
+                  Вашите системи показват различни нива на натовареност.
+                  <strong>Храносмилателната система</strong> изисква най-много
+                  внимание.
+                </p>
+              </div>
             </div>
 
-            <!-- Features Section -->
-            <div class="features-section">
-                <h2 class="features-title">Мобилни подобрения</h2>
-                <ul class="feature-list">
-                    <li>
-                        <span class="feature-icon">📱</span>
-                        <div class="feature-content">
-                            <h3>Адаптивен дизайн</h3>
-                            <p>
-                                Всички секции са оптимизирани за мобилни екрани с по-малки padding-и
-                                и font размери
-                            </p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="feature-icon">🎨</span>
-                        <div class="feature-content">
-                            <h3>Подобрени градиенти</h3>
-                            <p>
-                                Chart контейнерите запазват красивите си триколорни градиенти и на
-                                мобилни устройства
-                            </p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="feature-icon">📊</span>
-                        <div class="feature-content">
-                            <h3>Emoji икони</h3>
-                            <p>
-                                Визуалните индикатори (🔄💧🌊✨💨) остават ясно видими на малки
-                                екрани
-                            </p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="feature-icon">📏</span>
-                        <div class="feature-content">
-                            <h3>Компактни барове</h3>
-                            <p>
-                                Horizontal bar chart-ът е оптимизиран с по-малки етикети и по-добро
-                                разпределение
-                            </p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="feature-icon">✨</span>
-                        <div class="feature-content">
-                            <h3>Плавни анимации</h3>
-                            <p>
-                                Запазени са staggered animations и smooth transitions за
-                                професионален вид
-                            </p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="feature-icon">🔤</span>
-                        <div class="feature-content">
-                            <h3>Четимост</h3>
-                            <p>
-                                Line-height 1.7, оптимизирани font размери (0.9rem) и по-компактни
-                                разстояния
-                            </p>
-                        </div>
-                    </li>
-                </ul>
+            <!-- Section 2: Channel Load -->
+            <div class="mobile-section">
+              <div class="mobile-section-header">
+                <span class="mobile-icon" style="background-color: #10b981">
+                  ♻️
+                </span>
+                <span>Елиминативни канали</span>
+              </div>
+              <div class="mobile-content">
+                <div class="mobile-chart-container">
+                  <div class="mobile-chart-title">Оценка на натовареността</div>
+                  <div style="margin-top: 1rem">
+                    <div class="mobile-bar">
+                      <span class="mobile-bar-label">🔄 Черва</span>
+                      <div class="mobile-bar-track">
+                        <div
+                          class="mobile-bar-fill high"
+                          style="width: 85%"
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="mobile-bar">
+                      <span class="mobile-bar-label">💧 Бъбреци</span>
+                      <div class="mobile-bar-track">
+                        <div
+                          class="mobile-bar-fill medium"
+                          style="width: 60%"
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="mobile-bar">
+                      <span class="mobile-bar-label">🌊 Лимфа</span>
+                      <div class="mobile-bar-track">
+                        <div
+                          class="mobile-bar-fill low"
+                          style="width: 40%"
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="mobile-bar">
+                      <span class="mobile-bar-label">✨ Кожа</span>
+                      <div class="mobile-bar-track">
+                        <div
+                          class="mobile-bar-fill medium"
+                          style="width: 65%"
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="mobile-bar">
+                      <span class="mobile-bar-label">💨 Дробове</span>
+                      <div class="mobile-bar-track">
+                        <div
+                          class="mobile-bar-fill low"
+                          style="width: 50%"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p>
+                  <strong>Чревата</strong> показват високо натовареване и се
+                  нуждаят от специално внимание.
+                </p>
+              </div>
             </div>
+
+            <!-- Section 3: Recommendations -->
+            <div class="mobile-section">
+              <div class="mobile-section-header">
+                <span class="mobile-icon" style="background-color: #f59e0b">
+                  🍎
+                </span>
+                <span>Хранителни насоки</span>
+              </div>
+              <div class="mobile-content">
+                <div class="mobile-info-card">
+                  <h4>
+                    <span class="mobile-info-card-icon">🚫</span>
+                    Храни за ограничаване
+                  </h4>
+                  <ul>
+                    <li>Рафинирани въглехидрати</li>
+                    <li>Обработени храни</li>
+                    <li>Млечни продукти</li>
+                  </ul>
+                </div>
+                <div class="mobile-info-card">
+                  <h4>
+                    <span class="mobile-info-card-icon">✅</span>
+                    Храни за добавяне
+                  </h4>
+                  <ul>
+                    <li>Листни зеленчуци</li>
+                    <li>Ферментирали храни</li>
+                    <li>Пресни плодове</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="mobile-buttons">
+              <button class="mobile-btn mobile-btn-primary">
+                📄 Запази PDF
+              </button>
+              <button class="mobile-btn mobile-btn-secondary">
+                🔄 Повтори анализа
+              </button>
+            </div>
+          </div>
         </div>
-    </body>
+      </div>
+
+      <!-- Features Section -->
+      <div class="features-section">
+        <h2 class="features-title">
+          Мобилни подобрения
+        </h2>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">📱</span>
+            <div class="feature-content">
+              <h3>Адаптивен дизайн</h3>
+              <p>
+                Всички секции са оптимизирани за мобилни екрани с по-малки
+                padding-и и font размери
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">🎨</span>
+            <div class="feature-content">
+              <h3>Подобрени градиенти</h3>
+              <p>
+                Chart контейнерите запазват красивите си триколорни градиенти и
+                на мобилни устройства
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">📊</span>
+            <div class="feature-content">
+              <h3>Emoji икони</h3>
+              <p>
+                Визуалните индикатори (🔄💧🌊✨💨) остават ясно видими на малки
+                екрани
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">📏</span>
+            <div class="feature-content">
+              <h3>Компактни барове</h3>
+              <p>
+                Horizontal bar chart-ът е оптимизиран с по-малки етикети и
+                по-добро разпределение
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">✨</span>
+            <div class="feature-content">
+              <h3>Плавни анимации</h3>
+              <p>
+                Запазени са staggered animations и smooth transitions за
+                професионален вид
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">🔤</span>
+            <div class="feature-content">
+              <h3>Четимост</h3>
+              <p>
+                Line-height 1.7, оптимизирани font размери (0.9rem) и
+                по-компактни разстояния
+              </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
 </html>

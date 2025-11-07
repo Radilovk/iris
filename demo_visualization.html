@@ -1,635 +1,656 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="bg">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Демонстрация на подобренията във визуализацията</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-        />
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Демонстрация на подобренията във визуализацията</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-            body {
-                font-family: 'Poppins', sans-serif;
-                background: linear-gradient(135deg, #437dcb 0%, #2e5a9b 100%);
-                padding: 2rem;
-                min-height: 100vh;
-            }
+      body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #437dcb 0%, #2e5a9b 100%);
+        padding: 2rem;
+        min-height: 100vh;
+      }
 
-            .container {
-                max-width: 1000px;
-                margin: 0 auto;
-            }
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
 
-            .header {
-                text-align: center;
-                color: white;
-                margin-bottom: 3rem;
-            }
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 3rem;
+      }
 
-            .header h1 {
-                font-size: 2.5rem;
-                margin-bottom: 1rem;
-                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            }
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
 
-            .header p {
-                font-size: 1.1rem;
-                opacity: 0.95;
-            }
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+      }
 
-            /* Chart containers - exactly as in report.html */
-            .chart-container {
-                position: relative;
-                margin: 1.5rem auto;
-                padding: 2.5rem 2rem;
-                background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 50%, #ffffff 100%);
-                border-radius: 20px;
-                box-shadow:
-                    0 8px 16px -4px rgba(59, 130, 246, 0.1),
-                    0 4px 8px -2px rgba(0, 0, 0, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
-                border: 1px solid rgba(59, 130, 246, 0.15);
-                overflow: visible;
-                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            }
+      /* Chart containers - exactly as in report.html */
+      .chart-container {
+        position: relative;
+        margin: 1.5rem auto;
+        padding: 2.5rem 2rem;
+        background: linear-gradient(
+          135deg,
+          #fafbff 0%,
+          #f0f4ff 50%,
+          #ffffff 100%
+        );
+        border-radius: 20px;
+        box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.1),
+          0 4px 8px -2px rgba(0, 0, 0, 0.05),
+          inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(59, 130, 246, 0.15);
+        overflow: visible;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-            .chart-container:hover {
-                box-shadow:
-                    0 20px 30px -8px rgba(59, 130, 246, 0.18),
-                    0 8px 16px -4px rgba(0, 0, 0, 0.08),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
-                transform: translateY(-4px) scale(1.01);
-                border-color: rgba(59, 130, 246, 0.3);
-            }
+      .chart-container:hover {
+        box-shadow: 0 20px 30px -8px rgba(59, 130, 246, 0.18),
+          0 8px 16px -4px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+        transform: translateY(-4px) scale(1.01);
+        border-color: rgba(59, 130, 246, 0.3);
+      }
 
-            .chart-container.medium {
-                max-width: 700px;
-                min-height: 480px;
-            }
+      .chart-container.medium {
+        max-width: 700px;
+        min-height: 480px;
+      }
 
-            .chart-container canvas {
-                max-width: 100%;
-                max-height: 100%;
-                filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.08));
-            }
+      .chart-container canvas {
+        max-width: 100%;
+        max-height: 100%;
+        filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.08));
+      }
 
-            .chart-title {
-                text-align: center;
-                font-weight: 700;
-                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-                margin-bottom: 2rem;
-                font-size: 1.35rem;
-                letter-spacing: -0.03em;
-                position: relative;
-                padding-bottom: 0.75rem;
-            }
+      .chart-title {
+        text-align: center;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          #1e3a8a 0%,
+          #3b82f6 50%,
+          #60a5fa 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 2rem;
+        font-size: 1.35rem;
+        letter-spacing: -0.03em;
+        position: relative;
+        padding-bottom: 0.75rem;
+      }
 
-            .chart-title::after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 80px;
-                height: 4px;
-                background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-                border-radius: 2px;
-            }
+      .chart-title::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        border-radius: 2px;
+      }
 
-            /* Info card styling */
-            .info-card {
-                background: linear-gradient(135deg, #fefeff 0%, #f8fafc 100%);
-                border-radius: 14px;
-                padding: 1.75rem;
-                border: 1px solid #e2e8f0;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-                position: relative;
-                overflow: hidden;
-                margin-bottom: 1.5rem;
-            }
+      /* Info card styling */
+      .info-card {
+        background: linear-gradient(135deg, #fefeff 0%, #f8fafc 100%);
+        border-radius: 14px;
+        padding: 1.75rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+      }
 
-            .info-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 4px;
-                height: 0;
-                background: linear-gradient(180deg, #3b82f6, #60a5fa);
-                transition: height 0.3s ease;
-            }
+      .info-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 0;
+        background: linear-gradient(180deg, #3b82f6, #60a5fa);
+        transition: height 0.3s ease;
+      }
 
-            .info-card:hover {
-                box-shadow: 0 8px 20px rgba(59, 130, 246, 0.12);
-                border-color: #bfdbfe;
-                transform: translateY(-4px);
-            }
+      .info-card:hover {
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.12);
+        border-color: #bfdbfe;
+        transform: translateY(-4px);
+      }
 
-            .info-card:hover::before {
-                height: 100%;
-            }
+      .info-card:hover::before {
+        height: 100%;
+      }
 
-            .info-card h3 {
-                font-weight: 700;
-                margin-bottom: 1rem;
-                color: #1e293b;
-                display: flex;
-                align-items: center;
-                font-size: 1.15rem;
-                gap: 0.75rem;
-            }
+      .info-card h3 {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        font-size: 1.15rem;
+        gap: 0.75rem;
+      }
 
-            .info-card h3 i {
-                font-size: 1.3rem;
-                color: #3b82f6;
-            }
+      .info-card h3 i {
+        font-size: 1.3rem;
+        color: #3b82f6;
+      }
 
-            .info-card p {
-                color: #475569;
-                line-height: 1.7;
-                margin-bottom: 0.75rem;
-            }
+      .info-card p {
+        color: #475569;
+        line-height: 1.7;
+        margin-bottom: 0.75rem;
+      }
 
-            .info-card ul {
-                list-style: none;
-                padding-left: 0;
-            }
+      .info-card ul {
+        list-style: none;
+        padding-left: 0;
+      }
 
-            .info-card ul li {
-                margin-bottom: 0.6rem;
-                line-height: 1.7;
-                color: #475569;
-                padding-left: 1.5rem;
-                position: relative;
-            }
+      .info-card ul li {
+        margin-bottom: 0.6rem;
+        line-height: 1.7;
+        color: #475569;
+        padding-left: 1.5rem;
+        position: relative;
+      }
 
-            .info-card ul li::before {
-                content: '●';
-                color: #3b82f6;
-                font-weight: 700;
-                position: absolute;
-                left: 0.5rem;
-            }
+      .info-card ul li::before {
+        content: "●";
+        color: #3b82f6;
+        font-weight: 700;
+        position: absolute;
+        left: 0.5rem;
+      }
 
-            .info-card strong {
-                color: #1e3a8a;
-                font-weight: 700;
-                background: linear-gradient(
-                    135deg,
-                    rgba(59, 130, 246, 0.08) 0%,
-                    rgba(59, 130, 246, 0.03) 100%
-                );
-                padding: 0.1rem 0.35rem;
-                border-radius: 3px;
-            }
+      .info-card strong {
+        color: #1e3a8a;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.08) 0%,
+          rgba(59, 130, 246, 0.03) 100%
+        );
+        padding: 0.1rem 0.35rem;
+        border-radius: 3px;
+      }
 
-            .demo-section {
-                margin-bottom: 3rem;
-            }
+      .demo-section {
+        margin-bottom: 3rem;
+      }
 
-            .badge {
-                display: inline-block;
-                padding: 0.35rem 0.75rem;
-                background: rgba(59, 130, 246, 0.1);
-                color: #1e3a8a;
-                border-radius: 20px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                margin-bottom: 1rem;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>✨ Подобрения във визуализацията</h1>
-                <p>Демонстрация на новите графики и стилове в анализния доклад</p>
-            </div>
+      .badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        background: rgba(59, 130, 246, 0.1);
+        color: #1e3a8a;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>✨ Подобрения във визуализацията</h1>
+        <p>
+          Демонстрация на новите графики и стилове в анализния доклад
+        </p>
+      </div>
 
-            <!-- Chart 1: Polar Area -->
-            <div class="demo-section">
-                <span class="badge">Графика 1</span>
-                <div class="chart-container medium">
-                    <div class="chart-title">Баланс на системите за подкрепа</div>
-                    <canvas id="systemsChart"></canvas>
-                </div>
-                <div class="info-card">
-                    <h3><i class="fas fa-sparkles"></i>Подобрения</h3>
-                    <ul>
-                        <li>
-                            <strong>Анимация:</strong> 2000ms с плавен easeInOutCubic ефект и
-                            staggered delay от 150ms между елементи
-                        </li>
-                        <li>
-                            <strong>Tooltips:</strong> Emoji икони (🔴🟡🟢) с детайлна информация за
-                            оценка и приоритет
-                        </li>
-                        <li>
-                            <strong>Визия:</strong> По-дебели граници (3px/5px), по-големи точки в
-                            легендата (16px)
-                        </li>
-                        <li>
-                            <strong>Етикети:</strong> По-големи шрифтове (14px) с жирен стил
-                            (weight: 700)
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Chart 2: Horizontal Bars -->
-            <div class="demo-section">
-                <span class="badge">Графика 2</span>
-                <div class="chart-container medium">
-                    <div class="chart-title">Визуална оценка на натовареността</div>
-                    <canvas id="channelsChart"></canvas>
-                </div>
-                <div class="info-card">
-                    <h3><i class="fas fa-palette"></i>Подобрения</h3>
-                    <ul>
-                        <li>
-                            <strong>Emoji икони:</strong> 🔄 Черва, 💧 Бъбреци, 🌊 Лимфа, ✨ Кожа,
-                            💨 Бели дробове
-                        </li>
-                        <li>
-                            <strong>Анимация:</strong> 2000ms с easeInOutQuart ефект и staggered
-                            delay от 200ms
-                        </li>
-                        <li>
-                            <strong>Стил:</strong> Закръглени барове (10px), градиентни фонове,
-                            по-дебели граници
-                        </li>
-                        <li>
-                            <strong>Tooltips:</strong> Emoji статус икони с детайлна информация за
-                            натовареност
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Text Formatting Example -->
-            <div class="demo-section">
-                <span class="badge">Текстово форматиране</span>
-                <div class="info-card">
-                    <h3><i class="fas fa-align-left"></i>Пример за форматиране</h3>
-                    <p>
-                        Текстът е подобрен с <strong>по-добра четливост</strong> чрез увеличен
-                        line-height (1.8), justified alignment и automatic hyphens.
-                    </p>
-                    <ul>
-                        <li>Списъците имат <strong>цветни маркери</strong> в син цвят (#3b82f6)</li>
-                        <li>
-                            Strong елементите имат <strong>градиентен фон</strong> за по-добра
-                            видимост
-                        </li>
-                        <li>
-                            По-големи разстояния между елементите за
-                            <strong>по-лесно четене</strong>
-                        </li>
-                    </ul>
-                    <p>
-                        Всички промени са направени с внимание към детайлите за
-                        <strong>оптимална визуална презентация</strong> и професионален вид.
-                    </p>
-                </div>
-            </div>
+      <!-- Chart 1: Polar Area -->
+      <div class="demo-section">
+        <span class="badge">Графика 1</span>
+        <div class="chart-container medium">
+          <div class="chart-title">Баланс на системите за подкрепа</div>
+          <canvas id="systemsChart"></canvas>
         </div>
+        <div class="info-card">
+          <h3><i class="fas fa-sparkles"></i>Подобрения</h3>
+          <ul>
+            <li>
+              <strong>Анимация:</strong> 2000ms с плавен easeInOutCubic ефект и
+              staggered delay от 150ms между елементи
+            </li>
+            <li>
+              <strong>Tooltips:</strong> Emoji икони (🔴🟡🟢) с детайлна
+              информация за оценка и приоритет
+            </li>
+            <li>
+              <strong>Визия:</strong> По-дебели граници (3px/5px), по-големи
+              точки в легендата (16px)
+            </li>
+            <li>
+              <strong>Етикети:</strong> По-големи шрифтове (14px) с жирен стил
+              (weight: 700)
+            </li>
+          </ul>
+        </div>
+      </div>
 
-        <script>
-            // Polar Area Chart - System Balance
-            const systemsCtx = document.getElementById('systemsChart');
-            new Chart(systemsCtx, {
-                type: 'polarArea',
-                data: {
-                    labels: [
-                        'Храносмилателна',
-                        'Нервна',
-                        'Лимфна',
-                        'Сърдечно-съдова',
-                        'Дихателна',
-                        'Елиминативна'
-                    ],
-                    datasets: [
-                        {
-                            label: 'Приоритет за подкрепа',
-                            data: [75, 60, 85, 45, 55, 70],
-                            backgroundColor: [
-                                'rgba(245, 158, 11, 0.75)',
-                                'rgba(139, 92, 246, 0.75)',
-                                'rgba(16, 185, 129, 0.75)',
-                                'rgba(239, 68, 68, 0.75)',
-                                'rgba(6, 182, 212, 0.75)',
-                                'rgba(132, 204, 22, 0.75)'
-                            ],
-                            borderColor: [
-                                '#f59e0b',
-                                '#8b5cf6',
-                                '#10b981',
-                                '#ef4444',
-                                '#06b6d4',
-                                '#84cc16'
-                            ],
-                            borderWidth: 3,
-                            hoverBorderWidth: 5,
-                            hoverBorderColor: '#ffffff',
-                            hoverBackgroundColor: [
-                                'rgba(245, 158, 11, 0.9)',
-                                'rgba(139, 92, 246, 0.9)',
-                                'rgba(16, 185, 129, 0.9)',
-                                'rgba(239, 68, 68, 0.9)',
-                                'rgba(6, 182, 212, 0.9)',
-                                'rgba(132, 204, 22, 0.9)'
-                            ]
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 1.3,
-                    animation: {
-                        animateRotate: true,
-                        animateScale: true,
-                        duration: 2000,
-                        easing: 'easeInOutCubic',
-                        delay: (context) => {
-                            return context.dataIndex * 150;
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        intersect: true
-                    },
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 20,
-                                font: {
-                                    size: 12,
-                                    family: "'Poppins', sans-serif",
-                                    weight: '500'
-                                },
-                                backdropColor: 'rgba(255, 255, 255, 0.95)',
-                                backdropPadding: 6,
-                                color: '#475569',
-                                showLabelBackdrop: true,
-                                callback: function (value) {
-                                    return value + '%';
-                                }
-                            },
-                            pointLabels: {
-                                font: {
-                                    size: 14,
-                                    weight: '700',
-                                    family: "'Poppins', sans-serif"
-                                },
-                                color: '#1e293b',
-                                padding: 12
-                            },
-                            grid: {
-                                color: 'rgba(148, 163, 184, 0.2)',
-                                lineWidth: 2,
-                                circular: true
-                            },
-                            angleLines: {
-                                color: 'rgba(100, 116, 139, 0.25)',
-                                lineWidth: 2
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                font: {
-                                    size: 13,
-                                    family: "'Poppins', sans-serif",
-                                    weight: '600'
-                                },
-                                usePointStyle: true,
-                                pointStyle: 'circle',
-                                pointStyleWidth: 16,
-                                color: '#334155',
-                                boxWidth: 12,
-                                boxHeight: 12
-                            }
-                        },
-                        tooltip: {
-                            enabled: true,
-                            backgroundColor: 'rgba(15, 23, 42, 0.96)',
-                            titleColor: '#ffffff',
-                            bodyColor: '#e2e8f0',
-                            titleFont: {
-                                size: 15,
-                                weight: '700',
-                                family: "'Poppins', sans-serif"
-                            },
-                            bodyFont: {
-                                size: 14,
-                                family: "'Poppins', sans-serif",
-                                weight: '500'
-                            },
-                            padding: 16,
-                            borderColor: 'rgba(255, 255, 255, 0.3)',
-                            borderWidth: 2,
-                            displayColors: true,
-                            boxPadding: 6,
-                            callbacks: {
-                                title: function (context) {
-                                    return context[0].label;
-                                },
-                                label: function (context) {
-                                    const value = context.parsed.r;
-                                    let level = 'Нормален';
-                                    let icon = '●';
-                                    if (value >= 75) {
-                                        level = 'Висок приоритет';
-                                        icon = '🔴';
-                                    } else if (value >= 50) {
-                                        level = 'Среден приоритет';
-                                        icon = '🟡';
-                                    } else if (value >= 30) {
-                                        level = 'Нисък приоритет';
-                                        icon = '🟢';
-                                    }
-                                    return [`${icon} Оценка: ${value}%`, `Ниво: ${level}`];
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+      <!-- Chart 2: Horizontal Bars -->
+      <div class="demo-section">
+        <span class="badge">Графика 2</span>
+        <div class="chart-container medium">
+          <div class="chart-title">Визуална оценка на натовареността</div>
+          <canvas id="channelsChart"></canvas>
+        </div>
+        <div class="info-card">
+          <h3><i class="fas fa-palette"></i>Подобрения</h3>
+          <ul>
+            <li>
+              <strong>Emoji икони:</strong> 🔄 Черва, 💧 Бъбреци, 🌊 Лимфа, ✨
+              Кожа, 💨 Бели дробове
+            </li>
+            <li>
+              <strong>Анимация:</strong> 2000ms с easeInOutQuart ефект и
+              staggered delay от 200ms
+            </li>
+            <li>
+              <strong>Стил:</strong> Закръглени барове (10px), градиентни
+              фонове, по-дебели граници
+            </li>
+            <li>
+              <strong>Tooltips:</strong> Emoji статус икони с детайлна
+              информация за натовареност
+            </li>
+          </ul>
+        </div>
+      </div>
 
-            // Horizontal Bar Chart - Channel Load
-            const channelsCtx = document.getElementById('channelsChart');
-            new Chart(channelsCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['🔄 Черва', '💧 Бъбреци', '🌊 Лимфа', '✨ Кожа', '💨 Бели дробове'],
-                    datasets: [
-                        {
-                            label: 'Натовареност',
-                            data: [85, 60, 40, 65, 50],
-                            backgroundColor: [
-                                'rgba(239, 68, 68, 0.85)',
-                                'rgba(251, 191, 36, 0.85)',
-                                'rgba(52, 211, 153, 0.85)',
-                                'rgba(251, 191, 36, 0.85)',
-                                'rgba(52, 211, 153, 0.85)'
-                            ],
-                            borderColor: ['#dc2626', '#f59e0b', '#10b981', '#f59e0b', '#10b981'],
-                            borderWidth: 3,
-                            borderRadius: 10,
-                            borderSkipped: false,
-                            barThickness: 'flex',
-                            maxBarThickness: 50,
-                            hoverBackgroundColor: [
-                                'rgba(239, 68, 68, 0.95)',
-                                'rgba(251, 191, 36, 0.95)',
-                                'rgba(52, 211, 153, 0.95)',
-                                'rgba(251, 191, 36, 0.95)',
-                                'rgba(52, 211, 153, 0.95)'
-                            ],
-                            hoverBorderWidth: 4
-                        }
-                    ]
+      <!-- Text Formatting Example -->
+      <div class="demo-section">
+        <span class="badge">Текстово форматиране</span>
+        <div class="info-card">
+          <h3><i class="fas fa-align-left"></i>Пример за форматиране</h3>
+          <p>
+            Текстът е подобрен с <strong>по-добра четливост</strong> чрез
+            увеличен line-height (1.8), justified alignment и automatic hyphens.
+          </p>
+          <ul>
+            <li>
+              Списъците имат <strong>цветни маркери</strong> в син цвят (#3b82f6)
+            </li>
+            <li>
+              Strong елементите имат <strong>градиентен фон</strong> за по-добра
+              видимост
+            </li>
+            <li>
+              По-големи разстояния между елементите за <strong>по-лесно
+              четене</strong>
+            </li>
+          </ul>
+          <p>
+            Всички промени са направени с внимание към детайлите за
+            <strong>оптимална визуална презентация</strong> и професионален вид.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Polar Area Chart - System Balance
+      const systemsCtx = document.getElementById("systemsChart");
+      new Chart(systemsCtx, {
+        type: "polarArea",
+        data: {
+          labels: [
+            "Храносмилателна",
+            "Нервна",
+            "Лимфна",
+            "Сърдечно-съдова",
+            "Дихателна",
+            "Елиминативна",
+          ],
+          datasets: [
+            {
+              label: "Приоритет за подкрепа",
+              data: [75, 60, 85, 45, 55, 70],
+              backgroundColor: [
+                "rgba(245, 158, 11, 0.75)",
+                "rgba(139, 92, 246, 0.75)",
+                "rgba(16, 185, 129, 0.75)",
+                "rgba(239, 68, 68, 0.75)",
+                "rgba(6, 182, 212, 0.75)",
+                "rgba(132, 204, 22, 0.75)",
+              ],
+              borderColor: [
+                "#f59e0b",
+                "#8b5cf6",
+                "#10b981",
+                "#ef4444",
+                "#06b6d4",
+                "#84cc16",
+              ],
+              borderWidth: 3,
+              hoverBorderWidth: 5,
+              hoverBorderColor: "#ffffff",
+              hoverBackgroundColor: [
+                "rgba(245, 158, 11, 0.9)",
+                "rgba(139, 92, 246, 0.9)",
+                "rgba(16, 185, 129, 0.9)",
+                "rgba(239, 68, 68, 0.9)",
+                "rgba(6, 182, 212, 0.9)",
+                "rgba(132, 204, 22, 0.9)",
+              ],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          aspectRatio: 1.3,
+          animation: {
+            animateRotate: true,
+            animateScale: true,
+            duration: 2000,
+            easing: "easeInOutCubic",
+            delay: (context) => {
+              return context.dataIndex * 150;
+            },
+          },
+          interaction: {
+            mode: "nearest",
+            intersect: true,
+          },
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                stepSize: 20,
+                font: {
+                  size: 12,
+                  family: "'Poppins', sans-serif",
+                  weight: "500",
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    indexAxis: 'y',
-                    animation: {
-                        duration: 2000,
-                        easing: 'easeInOutQuart',
-                        delay: (context) => {
-                            return context.dataIndex * 200;
-                        }
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: {
-                                color: 'rgba(148, 163, 184, 0.15)',
-                                lineWidth: 1,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    size: 12,
-                                    family: "'Poppins', sans-serif",
-                                    weight: '600'
-                                },
-                                color: '#475569',
-                                padding: 8,
-                                callback: function (value) {
-                                    return value + '%';
-                                }
-                            },
-                            border: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                font: {
-                                    size: 13,
-                                    weight: '700',
-                                    family: "'Poppins', sans-serif"
-                                },
-                                color: '#1e293b',
-                                padding: 12,
-                                crossAlign: 'far'
-                            },
-                            border: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            enabled: true,
-                            backgroundColor: 'rgba(15, 23, 42, 0.96)',
-                            titleColor: '#ffffff',
-                            bodyColor: '#e2e8f0',
-                            titleFont: {
-                                size: 15,
-                                weight: '700',
-                                family: "'Poppins', sans-serif"
-                            },
-                            bodyFont: {
-                                size: 14,
-                                family: "'Poppins', sans-serif",
-                                weight: '500'
-                            },
-                            padding: 16,
-                            borderColor: 'rgba(255, 255, 255, 0.3)',
-                            borderWidth: 2,
-                            displayColors: false,
-                            callbacks: {
-                                title: function (context) {
-                                    return context[0].label;
-                                },
-                                label: function (context) {
-                                    const value = context.parsed.x;
-                                    let status = '';
-                                    let icon = '';
-                                    if (value >= 70) {
-                                        status = 'Високо натоварен';
-                                        icon = '🔴';
-                                    } else if (value >= 50) {
-                                        status = 'Умерено натоварен';
-                                        icon = '🟡';
-                                    } else {
-                                        status = 'Нормално състояние';
-                                        icon = '🟢';
-                                    }
-                                    return [`${icon} Натовареност: ${value}%`, `Статус: ${status}`];
-                                }
-                            }
-                        }
-                    },
-                    layout: {
-                        padding: {
-                            left: 10,
-                            right: 20,
-                            top: 10,
-                            bottom: 10
-                        }
-                    }
-                }
-            });
-        </script>
-    </body>
+                backdropColor: "rgba(255, 255, 255, 0.95)",
+                backdropPadding: 6,
+                color: "#475569",
+                showLabelBackdrop: true,
+                callback: function (value) {
+                  return value + "%";
+                },
+              },
+              pointLabels: {
+                font: {
+                  size: 14,
+                  weight: "700",
+                  family: "'Poppins', sans-serif",
+                },
+                color: "#1e293b",
+                padding: 12,
+              },
+              grid: {
+                color: "rgba(148, 163, 184, 0.2)",
+                lineWidth: 2,
+                circular: true,
+              },
+              angleLines: {
+                color: "rgba(100, 116, 139, 0.25)",
+                lineWidth: 2,
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: "bottom",
+              labels: {
+                padding: 20,
+                font: {
+                  size: 13,
+                  family: "'Poppins', sans-serif",
+                  weight: "600",
+                },
+                usePointStyle: true,
+                pointStyle: "circle",
+                pointStyleWidth: 16,
+                color: "#334155",
+                boxWidth: 12,
+                boxHeight: 12,
+              },
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: "rgba(15, 23, 42, 0.96)",
+              titleColor: "#ffffff",
+              bodyColor: "#e2e8f0",
+              titleFont: {
+                size: 15,
+                weight: "700",
+                family: "'Poppins', sans-serif",
+              },
+              bodyFont: {
+                size: 14,
+                family: "'Poppins', sans-serif",
+                weight: "500",
+              },
+              padding: 16,
+              borderColor: "rgba(255, 255, 255, 0.3)",
+              borderWidth: 2,
+              displayColors: true,
+              boxPadding: 6,
+              callbacks: {
+                title: function (context) {
+                  return context[0].label;
+                },
+                label: function (context) {
+                  const value = context.parsed.r;
+                  let level = "Нормален";
+                  let icon = "●";
+                  if (value >= 75) {
+                    level = "Висок приоритет";
+                    icon = "🔴";
+                  } else if (value >= 50) {
+                    level = "Среден приоритет";
+                    icon = "🟡";
+                  } else if (value >= 30) {
+                    level = "Нисък приоритет";
+                    icon = "🟢";
+                  }
+                  return [`${icon} Оценка: ${value}%`, `Ниво: ${level}`];
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Horizontal Bar Chart - Channel Load
+      const channelsCtx = document.getElementById("channelsChart");
+      new Chart(channelsCtx, {
+        type: "bar",
+        data: {
+          labels: [
+            "🔄 Черва",
+            "💧 Бъбреци",
+            "🌊 Лимфа",
+            "✨ Кожа",
+            "💨 Бели дробове",
+          ],
+          datasets: [
+            {
+              label: "Натовареност",
+              data: [85, 60, 40, 65, 50],
+              backgroundColor: [
+                "rgba(239, 68, 68, 0.85)",
+                "rgba(251, 191, 36, 0.85)",
+                "rgba(52, 211, 153, 0.85)",
+                "rgba(251, 191, 36, 0.85)",
+                "rgba(52, 211, 153, 0.85)",
+              ],
+              borderColor: ["#dc2626", "#f59e0b", "#10b981", "#f59e0b", "#10b981"],
+              borderWidth: 3,
+              borderRadius: 10,
+              borderSkipped: false,
+              barThickness: "flex",
+              maxBarThickness: 50,
+              hoverBackgroundColor: [
+                "rgba(239, 68, 68, 0.95)",
+                "rgba(251, 191, 36, 0.95)",
+                "rgba(52, 211, 153, 0.95)",
+                "rgba(251, 191, 36, 0.95)",
+                "rgba(52, 211, 153, 0.95)",
+              ],
+              hoverBorderWidth: 4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          indexAxis: "y",
+          animation: {
+            duration: 2000,
+            easing: "easeInOutQuart",
+            delay: (context) => {
+              return context.dataIndex * 200;
+            },
+          },
+          interaction: {
+            mode: "index",
+            intersect: false,
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              max: 100,
+              grid: {
+                color: "rgba(148, 163, 184, 0.15)",
+                lineWidth: 1,
+                drawBorder: false,
+              },
+              ticks: {
+                font: {
+                  size: 12,
+                  family: "'Poppins', sans-serif",
+                  weight: "600",
+                },
+                color: "#475569",
+                padding: 8,
+                callback: function (value) {
+                  return value + "%";
+                },
+              },
+              border: {
+                display: false,
+              },
+            },
+            y: {
+              grid: {
+                display: false,
+              },
+              ticks: {
+                font: {
+                  size: 13,
+                  weight: "700",
+                  family: "'Poppins', sans-serif",
+                },
+                color: "#1e293b",
+                padding: 12,
+                crossAlign: "far",
+              },
+              border: {
+                display: false,
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: "rgba(15, 23, 42, 0.96)",
+              titleColor: "#ffffff",
+              bodyColor: "#e2e8f0",
+              titleFont: {
+                size: 15,
+                weight: "700",
+                family: "'Poppins', sans-serif",
+              },
+              bodyFont: {
+                size: 14,
+                family: "'Poppins', sans-serif",
+                weight: "500",
+              },
+              padding: 16,
+              borderColor: "rgba(255, 255, 255, 0.3)",
+              borderWidth: 2,
+              displayColors: false,
+              callbacks: {
+                title: function (context) {
+                  return context[0].label;
+                },
+                label: function (context) {
+                  const value = context.parsed.x;
+                  let status = "";
+                  let icon = "";
+                  if (value >= 70) {
+                    status = "Високо натоварен";
+                    icon = "🔴";
+                  } else if (value >= 50) {
+                    status = "Умерено натоварен";
+                    icon = "🟡";
+                  } else {
+                    status = "Нормално състояние";
+                    icon = "🟢";
+                  }
+                  return [
+                    `${icon} Натовареност: ${value}%`,
+                    `Статус: ${status}`,
+                  ];
+                },
+              },
+            },
+          },
+          layout: {
+            padding: {
+              left: 10,
+              right: 20,
+              top: 10,
+              bottom: 10,
+            },
+          },
+        },
+      });
+    </script>
+  </body>
 </html>
