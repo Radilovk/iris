@@ -704,6 +704,12 @@
                 default: { icon: 'fa-circle-info', color: '#6b7280' }
             };
 
+            // Константи за ключовете на данните - използват се за картиране на обединени секции
+            const DATA_KEYS = {
+                PRIORITY_SYSTEMS: 'Приоритетни системи за подкрепа',
+                ELIMINATIVE_CHANNELS: 'Анализ на елиминативните канали'
+            };
+
             // Функция за форматиране на Markdown към HTML
             function formatTextContent(text) {
                 if (text == null) return '';
@@ -798,8 +804,11 @@
                             section = createHerbsSupplementsSection(key, content);
                         } else if (key === 'Системен и елиминативен анализ') {
                             // Combined section - check if we have both data sources
-                            const systemsData = data['Приоритетни системи за подкрепа'];
-                            const channelsData = data['Анализ на елиминативните канали'];
+                            // ЗАБЕЛЕЖКА: Тази секция обединява данни от два различни ключа в API отговора:
+                            // - 'Приоритетни системи за подкрепа' (диаграма на системен баланс)
+                            // - 'Анализ на елиминативните канали' (диаграма на натовареност)
+                            const systemsData = data[DATA_KEYS.PRIORITY_SYSTEMS];
+                            const channelsData = data[DATA_KEYS.ELIMINATIVE_CHANNELS];
                             if (systemsData || channelsData) {
                                 section = createCombinedSystemsChannelsSection(
                                     systemsData,
