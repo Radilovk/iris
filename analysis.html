@@ -295,7 +295,7 @@
 
                     <!-- СТЪПКА 3: КАЧВАНЕ НА СНИМКИ -->
                     <div class="form-step" data-step="3">
-                        <h3>Стъпка 3: Качете снимки на вашите очи</h3>
+                        <h3>Стъпка 3: Центрирайте и качете снимки на вашите очи</h3>
                         <div class="upload-instructions">
                             <h4>Инструкции за перфектната снимка:</h4>
                             <ul>
@@ -312,8 +312,92 @@
                                     <i class="fas fa-check-circle"></i> Приближете максимално,
                                     докато ирисът е <strong>на фокус</strong>.
                                 </li>
+                                <li>
+                                    <i class="fas fa-check-circle"></i> След качване, <strong>центрирайте ириса</strong> в кръга с помощта на overlay-а.
+                                </li>
+                                <li>
+                                    <i class="fas fa-check-circle"></i> Използвайте <strong>един пръст за преместване</strong> и <strong>два пръста за мащабиране</strong>.
+                                </li>
                             </ul>
                         </div>
+
+                        <!-- Ляво око overlay tool -->
+                        <div class="iris-overlay-container" id="left-eye-container" style="display:none;">
+                            <h4>Ляво око - Центрирайте ириса</h4>
+                            <div class="stage-wrap">
+                                <div class="stage">
+                                    <img class="photo" id="left-eye-photo" alt="left eye" style="display:none;">
+                                    <div class="overlay-wrap">
+                                        <div class="overlay-box">
+                                            <svg class="iris-overlay" viewBox="-400 -400 800 800" width="100%" height="100%">
+                                                <defs>
+                                                    <filter id="leftOuterGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
+                                                    <filter id="leftCenterGlow"><feGaussianBlur stdDeviation="4" result="blur"/></filter>
+                                                    <linearGradient id="leftRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                        <stop offset="0%" style="stop-color:#ff00cc" />
+                                                        <stop offset="50%" style="stop-color:#00f0ff" />
+                                                        <stop offset="100%" style="stop-color:#ff00cc" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <circle r="320" class="ring-main"/>
+                                                <circle r="350" class="outer-ring-grad"/>
+                                                <circle r="10" class="center-dot"/>
+                                                <path d="M-500,-500 h1000 v1000 h-1000Z M0,360 a360,360 0 1,0 0,-720 a360,360 0 1,0 0,720Z" 
+                                                      fill="#040608" fill-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overlay-controls">
+                                <button type="button" class="btn btn-secondary reset-btn" data-eye="left">
+                                    <i class="fas fa-redo"></i> Нулиране
+                                </button>
+                                <button type="button" class="btn btn-primary capture-btn" data-eye="left">
+                                    <i class="fas fa-check"></i> Потвърди
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Дясно око overlay tool -->
+                        <div class="iris-overlay-container" id="right-eye-container" style="display:none;">
+                            <h4>Дясно око - Центрирайте ириса</h4>
+                            <div class="stage-wrap">
+                                <div class="stage">
+                                    <img class="photo" id="right-eye-photo" alt="right eye" style="display:none;">
+                                    <div class="overlay-wrap">
+                                        <div class="overlay-box">
+                                            <svg class="iris-overlay" viewBox="-400 -400 800 800" width="100%" height="100%">
+                                                <defs>
+                                                    <filter id="rightOuterGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
+                                                    <filter id="rightCenterGlow"><feGaussianBlur stdDeviation="4" result="blur"/></filter>
+                                                    <linearGradient id="rightRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                        <stop offset="0%" style="stop-color:#ff00cc" />
+                                                        <stop offset="50%" style="stop-color:#00f0ff" />
+                                                        <stop offset="100%" style="stop-color:#ff00cc" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <circle r="320" class="ring-main"/>
+                                                <circle r="350" class="outer-ring-grad"/>
+                                                <circle r="10" class="center-dot"/>
+                                                <path d="M-500,-500 h1000 v1000 h-1000Z M0,360 a360,360 0 1,0 0,-720 a360,360 0 1,0 0,720Z" 
+                                                      fill="#040608" fill-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overlay-controls">
+                                <button type="button" class="btn btn-secondary reset-btn" data-eye="right">
+                                    <i class="fas fa-redo"></i> Нулиране
+                                </button>
+                                <button type="button" class="btn btn-primary capture-btn" data-eye="right">
+                                    <i class="fas fa-check"></i> Потвърди
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Upload area -->
                         <div class="upload-area-container">
                             <div class="upload-area form-group">
                                 <label for="left-eye-upload">Ляво око</label>
