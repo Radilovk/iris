@@ -506,6 +506,14 @@
                     display: block;
                 }
                 
+                /* Show visual composite on mobile only */
+                .visual-composite-container {
+                    display: block;
+                    padding: 1.5rem;
+                    margin: 1.5rem auto;
+                    max-width: 100%;
+                }
+                
                 .container {
                     padding: 1rem;
                 }
@@ -713,8 +721,9 @@
                 }
             }
 
-            /* Visual Composite Styles */
+            /* Visual Composite Styles - Hidden by default, shown only on mobile */
             .visual-composite-container {
+                display: none; /* Hidden on desktop */
                 position: relative;
                 width: 100%;
                 max-width: 700px;
@@ -922,8 +931,7 @@
                     page-break-inside: avoid;
                 }
                 .visual-composite-container {
-                    page-break-inside: avoid;
-                    background: #f5f5f5;
+                    display: none; /* Hide on print - mobile-only feature */
                 }
             }
         </style>
