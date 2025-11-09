@@ -1243,38 +1243,17 @@
                         ) {
                             img.src = imageData;
                             img.onload = () => {
+                                // Изчисляване на трансформация
+                                // Целевият радиус на SVG е 320px
+                                const targetRadius = 320;
+                                const scale = targetRadius / ensureNumber(alignment.radius_px, 1);
+
                                 // Получаване на размерите на контейнера
                                 const container = img.parentElement;
                                 const containerWidth = container.clientWidth;
                                 const containerHeight = container.clientHeight;
 
-                                // Намираме SVG елемента и получаваме неговите действителни размери
-                                const svg = container.querySelector('.iris-overlay-svg');
-                                if (!svg) {
-                                    console.error('SVG overlay не е намерен');
-                                    return;
-                                }
-
-                                // Получаваме действителния размер на SVG елемента в пиксели
-                                const svgRect = svg.getBoundingClientRect();
-                                const svgWidth = svgRect.width;
-                                const svgHeight = svgRect.height;
-
-                                // SVG viewBox е "-380 -380 760 760", с радиус на външния кръг 320 единици
-                                // Изчисляваме scaling factor между viewBox единици и пиксели
-                                const viewBoxRadius = 320; // Радиус на външния кръг в viewBox координати
-                                const viewBoxSize = 760; // Общ размер на viewBox
-                                
-                                // Действителен радиус в пиксели (предполагаме квадратен SVG)
-                                const actualSvgRadius = (Math.min(svgWidth, svgHeight) / viewBoxSize) * viewBoxRadius;
-
-                                // Изчисляване на мащаба: колко трябва да увеличим/намалим изображението
-                                // за да съвпадне радиусът на ириса с радиуса на SVG overlay
-                                const scale = actualSvgRadius / ensureNumber(alignment.radius_px, 1);
-
                                 // Центриране на alignment.center към центъра на контейнера
-                                // Трябва да преместим изображението така че центърът на ириса
-                                // да съвпадне със центъра на SVG overlay
                                 const translateX =
                                     containerWidth / 2 - ensureNumber(alignment.center_x) * scale;
                                 const translateY =
@@ -1282,13 +1261,13 @@
 
                                 img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
 
-                                // Рендиране на маркери за знаците с актуализиран радиус
+                                // Рендиране на маркери за знаците
                                 if (signs && signs.length > 0) {
                                     renderSignMarkers(
                                         signs,
                                         containerWidth / 2,
                                         containerHeight / 2,
-                                        actualSvgRadius,
+                                        targetRadius,
                                         uniqueId
                                     );
                                 }
