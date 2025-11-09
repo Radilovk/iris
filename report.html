@@ -506,6 +506,14 @@
                     display: block;
                 }
                 
+                /* Show visual composite on mobile only */
+                .visual-composite-container {
+                    display: block;
+                    padding: 1.5rem;
+                    margin: 1.5rem auto;
+                    max-width: 100%;
+                }
+                
                 .container {
                     padding: 1rem;
                 }
@@ -713,6 +721,179 @@
                 }
             }
 
+            /* Visual Composite Styles - Hidden by default, shown only on mobile */
+            .visual-composite-container {
+                display: none; /* Hidden on desktop */
+                position: relative;
+                width: 100%;
+                max-width: 700px;
+                margin: 2rem auto;
+                padding: 2rem;
+                background: linear-gradient(135deg, #0f1820 0%, #1a2332 100%);
+                border-radius: 20px;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+                overflow: hidden;
+            }
+
+            .visual-composite {
+                position: relative;
+                width: 100%;
+                padding-top: 100%; /* 1:1 aspect ratio */
+                background: #000;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+
+            .visual-composite-inner {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #iris-image {
+                position: absolute;
+                max-width: none;
+                transform-origin: center center;
+                will-change: transform;
+                pointer-events: none;
+            }
+
+            .iris-overlay-svg {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: min(92%, 640px);
+                height: min(92%, 640px);
+                pointer-events: none;
+                z-index: 10;
+            }
+
+            .iris-overlay-svg .overlay-ring {
+                stroke: #FF00CC;
+                stroke-width: 2;
+                stroke-opacity: 0.4;
+                fill: none;
+            }
+
+            .iris-overlay-svg .overlay-outer {
+                stroke: #FF00CC;
+                stroke-width: 4;
+                fill: none;
+            }
+
+            .iris-overlay-svg .overlay-sector-line {
+                stroke: #FF00CC;
+                stroke-width: 1.2;
+                stroke-opacity: 0.28;
+            }
+
+            .iris-overlay-svg .overlay-number {
+                font: 700 32px/1 Arial, Helvetica, sans-serif;
+                fill: #FF00CC;
+                text-anchor: middle;
+                dominant-baseline: middle;
+            }
+
+            .iris-overlay-svg .overlay-center {
+                fill: #FF00CC;
+            }
+
+            .sign-marker {
+                position: absolute;
+                width: 12px;
+                height: 12px;
+                background: #FFD700;
+                border: 2px solid #FFF;
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+                z-index: 20;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            #sign-markers-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none; /* Позволява кликове да преминават към изображението */
+            }
+
+            #sign-markers-container .sign-marker {
+                pointer-events: auto; /* Маркерите са кликваеми */
+            }
+
+            .sign-marker:hover {
+                transform: translate(-50%, -50%) scale(1.5);
+                box-shadow: 0 0 20px rgba(255, 215, 0, 1);
+            }
+
+            .sign-marker-tooltip {
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-bottom: 8px;
+                padding: 8px 12px;
+                background: rgba(0, 0, 0, 0.9);
+                color: #FFF;
+                font-size: 12px;
+                border-radius: 6px;
+                white-space: nowrap;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 30;
+            }
+
+            .sign-marker:hover .sign-marker-tooltip {
+                opacity: 1;
+            }
+
+            .alignment-info {
+                margin-top: 1rem;
+                padding: 1rem;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                font-size: 0.9rem;
+                color: rgba(255, 255, 255, 0.7);
+            }
+
+            .alignment-info .confidence-badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 0.85rem;
+                margin-left: 8px;
+            }
+
+            .alignment-info .confidence-high {
+                background: rgba(16, 185, 129, 0.2);
+                color: #10b981;
+                border: 1px solid #10b981;
+            }
+
+            .alignment-info .confidence-medium {
+                background: rgba(251, 191, 36, 0.2);
+                color: #fbbf24;
+                border: 1px solid #fbbf24;
+            }
+
+            .alignment-info .confidence-low {
+                background: rgba(239, 68, 68, 0.2);
+                color: #ef4444;
+                border: 1px solid #ef4444;
+            }
+
             /* Print styles for PDF export */
             @media print {
                 body {
@@ -748,6 +929,9 @@
                 }
                 .info-card {
                     page-break-inside: avoid;
+                }
+                .visual-composite-container {
+                    display: none; /* Hide on print - mobile-only feature */
                 }
             }
         </style>
@@ -853,6 +1037,220 @@
                 return processedBlocks.join('');
             }
 
+            /**
+             * Създава визуален композит с изображение на ириса и SVG overlay
+             * @param {Object} leftEyeData - Данни за лявото око (alignment + identified_signs)
+             * @param {Object} rightEyeData - Данни за дясното око
+             * @returns {HTMLElement|null} - Контейнер с визуалния композит или null ако няма данни
+             */
+            function createVisualComposite(leftEyeData, rightEyeData) {
+                // Проверка дали има alignment данни
+                if (!leftEyeData?.alignment && !rightEyeData?.alignment) {
+                    console.log('Няма alignment данни за визуален композит');
+                    return null;
+                }
+
+                const container = document.createElement('div');
+                container.className = 'visual-composite-container';
+                
+                // Избираме данните с по-висока confidence
+                const eyeData = (leftEyeData?.alignment?.confidence || 0) >= (rightEyeData?.alignment?.confidence || 0)
+                    ? leftEyeData
+                    : rightEyeData;
+                
+                const alignment = eyeData.alignment;
+                const signs = eyeData.identified_signs || [];
+                const eyeLabel = eyeData.eye || 'око';
+
+                container.innerHTML = `
+                    <h3 style="text-align: center; color: #fff; margin-bottom: 1.5rem; font-size: 1.3rem;">
+                        <i class="fas fa-eye" style="margin-right: 0.5rem;"></i>
+                        Геометрична нормализация (${eyeLabel})
+                    </h3>
+                    <div class="visual-composite">
+                        <div class="visual-composite-inner">
+                            <img id="iris-image" alt="Iris">
+                            <svg class="iris-overlay-svg" viewBox="-380 -380 760 760" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feGaussianBlur stdDeviation="3.2" result="blur"/>
+                                        <feMerge>
+                                            <feMergeNode in="blur"/>
+                                            <feMergeNode in="SourceGraphic"/>
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                                
+                                <!-- Inner and middle zone rings -->
+                                <circle r="112" class="overlay-ring"/>
+                                <circle r="256" class="overlay-ring"/>
+                                
+                                <!-- Sector lines (12 sectors) -->
+                                <g class="overlay-sector-lines">
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(0)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(30)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(60)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(90)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(120)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(150)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(180)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(210)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(240)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(270)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(300)"/>
+                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(330)"/>
+                                </g>
+                                
+                                <!-- Numbers (12 hour positions) -->
+                                <g class="overlay-numbers">
+                                    <text x="0" y="-372" class="overlay-number">12</text>
+                                    <text x="186" y="-322" class="overlay-number">1</text>
+                                    <text x="322" y="-186" class="overlay-number">2</text>
+                                    <text x="372" y="0" class="overlay-number">3</text>
+                                    <text x="322" y="186" class="overlay-number">4</text>
+                                    <text x="186" y="322" class="overlay-number">5</text>
+                                    <text x="0" y="372" class="overlay-number">6</text>
+                                    <text x="-186" y="322" class="overlay-number">7</text>
+                                    <text x="-322" y="186" class="overlay-number">8</text>
+                                    <text x="-372" y="0" class="overlay-number">9</text>
+                                    <text x="-322" y="-186" class="overlay-number">10</text>
+                                    <text x="-186" y="-322" class="overlay-number">11</text>
+                                </g>
+                                
+                                <!-- Outer ring and center -->
+                                <circle r="320" class="overlay-outer" filter="url(#glow)"/>
+                                <circle r="8" class="overlay-center" filter="url(#glow)"/>
+                                <g stroke-opacity="0.22">
+                                    <line x1="-16" y1="0" x2="16" y2="0" class="overlay-sector-line"/>
+                                    <line x1="0" y1="-16" x2="0" y2="16" class="overlay-sector-line"/>
+                                </g>
+                            </svg>
+                            <div id="sign-markers-container"></div>
+                        </div>
+                    </div>
+                    <div class="alignment-info">
+                        <strong>Alignment информация:</strong> 
+                        Център (${alignment.center_x.toFixed(0)}, ${alignment.center_y.toFixed(0)}px), 
+                        Радиус ${alignment.radius_px.toFixed(0)}px
+                        <span class="confidence-badge confidence-${alignment.confidence >= 0.9 ? 'high' : alignment.confidence >= 0.6 ? 'medium' : 'low'}">
+                            Confidence: ${(alignment.confidence * 100).toFixed(0)}%
+                        </span>
+                        <br>
+                        <em style="font-size: 0.85rem;">${alignment.validation_message || ''}</em>
+                    </div>
+                `;
+
+                // Apply image transformation after insertion into DOM
+                requestAnimationFrame(() => {
+                    applyIrisTransformation(alignment, signs);
+                });
+
+                return container;
+            }
+
+            /**
+             * Прилага CSS трансформация върху изображението на ириса
+             * @param {Object} alignment - Обект с center_x, center_y, radius_px
+             * @param {Array} signs - Масив с идентифицирани знаци
+             */
+            function applyIrisTransformation(alignment, signs) {
+                const img = document.getElementById('iris-image');
+                if (!img) return;
+
+                // Опит да заредим изображението от localStorage
+                try {
+                    const formData = localStorage.getItem('iridologyFormData');
+                    if (formData) {
+                        const data = JSON.parse(formData);
+                        // Търсим изображение (left или right eye)
+                        const imageData = data['left-eye-upload'] || data['right-eye-upload'];
+                        if (imageData && typeof imageData === 'string' && imageData.startsWith('data:')) {
+                            img.src = imageData;
+                            img.onload = () => {
+                                // Изчисляване на трансформация
+                                // Целевият радиус на SVG е 320px
+                                const targetRadius = 320;
+                                const scale = targetRadius / alignment.radius_px;
+                                
+                                // Получаване на размерите на контейнера
+                                const container = img.parentElement;
+                                const containerWidth = container.clientWidth;
+                                const containerHeight = container.clientHeight;
+                                
+                                // Центриране на alignment.center към центъра на контейнера
+                                const translateX = (containerWidth / 2) - (alignment.center_x * scale);
+                                const translateY = (containerHeight / 2) - (alignment.center_y * scale);
+                                
+                                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                                
+                                // Рендиране на маркери за знаците
+                                if (signs && signs.length > 0) {
+                                    renderSignMarkers(signs, containerWidth / 2, containerHeight / 2, targetRadius);
+                                }
+                            };
+                        }
+                    }
+                } catch (e) {
+                    console.error('Грешка при зареждане на изображение:', e);
+                }
+            }
+
+            /**
+             * Рендира маркери за идентифицираните знаци
+             * @param {Array} signs - Масив с идентифицирани знаци
+             * @param {number} centerX - X координата на центъра в контейнера
+             * @param {number} centerY - Y координата на центъра в контейнера
+             * @param {number} radius - Радиусът на външния пръстен (320px)
+             */
+            function renderSignMarkers(signs, centerX, centerY, radius) {
+                const container = document.getElementById('sign-markers-container');
+                if (!container) return;
+
+                container.innerHTML = ''; // Изчистваме предишни маркери
+
+                signs.forEach((sign, index) => {
+                    if (!sign.sector || !sign.zone) return;
+
+                    // Изчисляване на позиция базирана на sector и zone
+                    const sector = parseInt(sign.sector);
+                    if (isNaN(sector) || sector < 1 || sector > 12) return;
+
+                    // Преобразуване на sector в ъгъл (12 = 0°, 1 = 30°, ..., растящ по часовниковата стрелка)
+                    const angle = ((12 - sector) * 30) * (Math.PI / 180);
+
+                    // Определяне на радиалната дистанция базирана на zone
+                    let zoneRadius;
+                    const zone = sign.zone.toLowerCase();
+                    if (zone === 'inner') {
+                        zoneRadius = radius * 0.25; // Зона 1-2 (25% от радиуса)
+                    } else if (zone === 'ciliary') {
+                        zoneRadius = radius * 0.6; // Зона 3-5 (60% от радиуса)
+                    } else if (zone === 'outer') {
+                        zoneRadius = radius * 0.9; // Зона 6-7 (90% от радиуса)
+                    } else {
+                        zoneRadius = radius * 0.5; // Default
+                    }
+
+                    // Изчисляване на позиция
+                    const x = centerX + Math.cos(angle) * zoneRadius;
+                    const y = centerY - Math.sin(angle) * zoneRadius; // Минус защото Y расте надолу
+
+                    // Създаване на маркер
+                    const marker = document.createElement('div');
+                    marker.className = 'sign-marker';
+                    marker.style.left = `${x}px`;
+                    marker.style.top = `${y}px`;
+
+                    // Добавяне на tooltip
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'sign-marker-tooltip';
+                    tooltip.textContent = sign.sign_name || `Знак ${index + 1}`;
+                    marker.appendChild(tooltip);
+
+                    container.appendChild(marker);
+                });
+            }
+
             function renderReport(data) {
                 const container = document.getElementById('report-container');
                 container.innerHTML = '';
@@ -877,6 +1275,18 @@
                     <div style="color: #78350f; font-size: 1.05rem; line-height: 1.7; text-align: left;">${formatTextContent(data['Резюме на анализа'])}</div>
                 `;
                     container.appendChild(summaryBox);
+                }
+
+                // Добавяме визуален композит ако има alignment данни
+                // Проверяваме дали има _analytics данни с информация за очите
+                if (data._analytics || data.left_eye_analysis || data.right_eye_analysis) {
+                    const leftEyeData = data.left_eye_analysis || {};
+                    const rightEyeData = data.right_eye_analysis || {};
+                    
+                    const visualComposite = createVisualComposite(leftEyeData, rightEyeData);
+                    if (visualComposite) {
+                        container.appendChild(visualComposite);
+                    }
                 }
 
                 const sectionOrder = [

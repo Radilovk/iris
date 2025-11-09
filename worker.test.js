@@ -1374,3 +1374,74 @@ test('generateMultiQueryReport извършва 4 фокусирани AI зая
     global.fetch = originalFetch;
   }
 });
+
+test('validateAlignment връща confidence 1.0 при валидни данни', () => {
+  const { validateAlignment } = __testables__;
+  
+  const alignment = {
+    center_x: 512,
+    center_y: 512,
+    radius_px: 320
+  };
+  
+  const result = validateAlignment(alignment, 1024, 1024);
+  
+  assert.equal(result.confidence, 1.0);
+  assert.equal(result.center_x, 512);
+  assert.equal(result.center_y, 512);
+  assert.equal(result.radius_px, 320);
+  assert.ok(result.validation_message.includes('валидни'));
+});
+
+test('validateAlignment връща confidence 0.5 при радиус извън границите', () => {
+  const { validateAlignment } = __testables__;
+  
+  // Радиус твърде малък (< 15%)
+  const alignment = {
+    center_x: 512,
+    center_y: 512,
+    radius_px: 50 // Само ~5% от 1024
+  };
+  
+  const result = validateAlignment(alignment, 1024, 1024);
+  
+  assert.equal(result.confidence, 0.5);
+  assert.ok(result.validation_message.includes('извън допустимите граници'));
+});
+
+test('validateAlignment връща default стойности при липсващи данни', () => {
+  const { validateAlignment } = __testables__;
+  
+  const result = validateAlignment(null, 1024, 768);
+  
+  assert.equal(result.confidence, 0.5);
+  assert.equal(result.center_x, 512); // 1024 / 2
+  assert.equal(result.center_y, 384); // 768 / 2
+  assert.ok(result.validation_message.includes('Липсват alignment данни'));
+});
+
+test('validateAlignment връща confidence 0.7 при център близо до границата', () => {
+  const { validateAlignment } = __testables__;
+  
+  const alignment = {
+    center_x: -200, // Извън границата с margin (radius 300 * 1.2 = 360, така -200 > -360 но близо)
+    center_y: 512,
+    radius_px: 250
+  };
+  
+  const result = validateAlignment(alignment, 1024, 1024);
+  
+  // margin = 250 * 1.2 = 300, така че -200 > -300 и е валидно
+  // Нека проверим с център който е далеч извън
+  // С radius 250, margin е 300, -400 < -300 трябва да даде 0.7
+  const alignment2 = {
+    center_x: -400,
+    center_y: 512,
+    radius_px: 250
+  };
+  
+  const result2 = validateAlignment(alignment2, 1024, 1024);
+  assert.equal(result2.confidence, 0.7);
+  assert.ok(result2.validation_message.includes('близо до границата'));
+});
+
