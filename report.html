@@ -1084,6 +1084,17 @@
             }
 
             /**
+             * Осигурява че стойността е валидно число
+             * @param {any} value - Стойността за конвертиране
+             * @param {number} defaultValue - Стойност по подразбиране, ако конвертирането не е успешно
+             * @returns {number} - Валидно число
+             */
+            function ensureNumber(value, defaultValue = 0) {
+                const num = Number(value);
+                return isFinite(num) ? num : defaultValue;
+            }
+
+            /**
              * Създава визуален композит с изображение на ириса и SVG overlay
              * @param {Object} leftEyeData - Данни за лявото око (alignment + identified_signs)
              * @param {Object} rightEyeData - Данни за дясното око
@@ -1179,10 +1190,10 @@
                     </div>
                     <div class="alignment-info">
                         <strong>Alignment информация:</strong> 
-                        Център (${alignment.center_x.toFixed(0)}px, ${alignment.center_y.toFixed(0)}px), 
-                        Радиус ${alignment.radius_px.toFixed(0)}px
+                        Център (${ensureNumber(alignment.center_x).toFixed(0)}px, ${ensureNumber(alignment.center_y).toFixed(0)}px), 
+                        Радиус ${ensureNumber(alignment.radius_px).toFixed(0)}px
                         <span class="confidence-badge confidence-${alignment.confidence >= 0.9 ? 'high' : alignment.confidence >= 0.6 ? 'medium' : 'low'}">
-                            Confidence: ${(alignment.confidence * 100).toFixed(0)}%
+                            Confidence: ${(ensureNumber(alignment.confidence, 0) * 100).toFixed(0)}%
                         </span>
                         <br>
                         <em style="font-size: 0.85rem;">${DOMPurify.sanitize(alignment.validation_message || '')}</em>
@@ -1219,7 +1230,7 @@
                                 // Изчисляване на трансформация
                                 // Целевият радиус на SVG е 320px
                                 const targetRadius = 320;
-                                const scale = targetRadius / alignment.radius_px;
+                                const scale = targetRadius / ensureNumber(alignment.radius_px, 1);
                                 
                                 // Получаване на размерите на контейнера
                                 const container = img.parentElement;
@@ -1227,8 +1238,8 @@
                                 const containerHeight = container.clientHeight;
                                 
                                 // Центриране на alignment.center към центъра на контейнера
-                                const translateX = (containerWidth / 2) - (alignment.center_x * scale);
-                                const translateY = (containerHeight / 2) - (alignment.center_y * scale);
+                                const translateX = (containerWidth / 2) - (ensureNumber(alignment.center_x) * scale);
+                                const translateY = (containerHeight / 2) - (ensureNumber(alignment.center_y) * scale);
                                 
                                 img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
                                 
