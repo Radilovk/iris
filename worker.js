@@ -1423,6 +1423,26 @@ async function generateMultiQueryReport(
   );
 
   finalReport._analytics = analyticsMetrics;
+  
+  // Добавяме данните за alignment и identified_signs за визуален композит
+  finalReport.left_eye_analysis = {
+    eye: leftEyeAnalysis.eye,
+    alignment: leftEyeAnalysis.alignment,
+    identified_signs: identifiedSigns.filter(sign => 
+      sign && leftEyeAnalysis.identified_signs && 
+      leftEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+    )
+  };
+  
+  finalReport.right_eye_analysis = {
+    eye: rightEyeAnalysis.eye,
+    alignment: rightEyeAnalysis.alignment,
+    identified_signs: identifiedSigns.filter(sign => 
+      sign && rightEyeAnalysis.identified_signs &&
+      rightEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+    )
+  };
+  
   return finalReport;
 }
 
@@ -1612,6 +1632,26 @@ async function generateSingleQueryReport(
     const reportData = JSON.parse(jsonText);
     // Добавяме аналитичните метрики към доклада
     reportData._analytics = analyticsMetrics;
+    
+    // Добавяме данните за alignment и identified_signs за визуален композит
+    reportData.left_eye_analysis = {
+      eye: leftEyeAnalysis.eye,
+      alignment: leftEyeAnalysis.alignment,
+      identified_signs: identifiedSigns.filter(sign => 
+        sign && leftEyeAnalysis.identified_signs && 
+        leftEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+      )
+    };
+    
+    reportData.right_eye_analysis = {
+      eye: rightEyeAnalysis.eye,
+      alignment: rightEyeAnalysis.alignment,
+      identified_signs: identifiedSigns.filter(sign => 
+        sign && rightEyeAnalysis.identified_signs &&
+        rightEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+      )
+    };
+    
     return reportData;
   } catch (e) {
     // Логване на пълния отговор и грешката за debugging
