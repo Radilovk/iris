@@ -709,18 +709,6 @@
                 }
             }
 
-            /* Desktop view - show charts, hide mobile cards */
-            @media (min-width: 768px) {
-                .chart-container {
-                    display: block;
-                }
-                
-                .report-section .metrics-list-container,
-                .content .metrics-list-container {
-                    display: none;
-                }
-            }
-
             /* Visual Composite Styles - Hidden by default, shown only on mobile */
             .visual-composite-container {
                 display: none; /* Hidden on desktop */
@@ -733,6 +721,23 @@
                 border-radius: 20px;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
                 overflow: hidden;
+            }
+
+            /* Desktop view - show charts, hide mobile cards */
+            @media (min-width: 768px) {
+                .chart-container {
+                    display: block;
+                }
+                
+                .report-section .metrics-list-container,
+                .content .metrics-list-container {
+                    display: none;
+                }
+                
+                /* Explicitly hide visual composite on desktop */
+                .visual-composite-container {
+                    display: none !important;
+                }
             }
 
             .visual-composite {
