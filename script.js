@@ -68,6 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
       let isFieldValid = true;
       if (field.type === 'file') {
         if (field.files.length === 0) isFieldValid = false;
+        // Special validation for step 3 - check if images are centered
+        if (currentStep === 3 && field.files.length > 0) {
+          const eyeSide = field.id.includes('left') ? 'left' : 'right';
+          if (!overlayStates[eyeSide].centered) {
+            isFieldValid = false;
+            showMessage(`Моля, центрирайте ${eyeSide === 'left' ? 'лявото' : 'дясното'} око преди да продължите.`, 'error');
+          }
+        }
       } else {
         if (!field.value.trim()) isFieldValid = false;
       }
@@ -79,12 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    if (!isStepValid) {
+    if (!isStepValid && currentStep !== 3) {
       showMessage('Моля, попълнете задължителните полета.', 'error');
       if (firstInvalidField) {
         firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    } else {
+    } else if (isStepValid) {
       clearMessage();
     }
 
@@ -138,6 +146,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- КАЧВАНЕ НА ФАЙЛОВЕ ---
+  const overlayStates = {
+    left: { scale: 1, tx: 0, ty: 0, pointers: new Map(), file: null, centered: false },
+    right: { scale: 1, tx: 0, ty: 0, pointers: new Map(), file: null, centered: false }
+  };
+
   form.querySelectorAll('input[type="file"]').forEach((input) => {
     const preview = document.getElementById(input.id.replace('-upload', '-preview'));
     if (!preview) return;
@@ -165,16 +178,202 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Determine which eye (left or right)
+      const eyeSide = this.id.includes('left') ? 'left' : 'right';
+
+      // Store the original file
+      overlayStates[eyeSide].file = file;
+      overlayStates[eyeSide].centered = false;
+
+      // Show preview
       const reader = new FileReader();
       reader.onload = (e) => {
         preview.querySelector('i').style.display = 'none';
         preview.querySelector('p').style.display = 'none';
         preview.style.backgroundImage = `url(${e.target.result})`;
         preview.style.borderStyle = 'solid';
+
+        // Show overlay tool
+        showOverlayTool(eyeSide, e.target.result);
       };
       reader.readAsDataURL(file);
     });
   });
+
+  // --- OVERLAY TOOL FUNCTIONALITY ---
+  function showOverlayTool(eyeSide, imageDataUrl) {
+    const container = document.getElementById(`${eyeSide}-eye-container`);
+    const img = document.getElementById(`${eyeSide}-eye-photo`);
+
+    container.style.display = 'block';
+    img.onload = () => {
+      img.style.display = 'block';
+      resetOverlay(eyeSide);
+    };
+    img.src = imageDataUrl;
+
+    // Scroll to the overlay tool
+    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function resetOverlay(eyeSide) {
+    const state = overlayStates[eyeSide];
+    state.scale = 1;
+    state.tx = 0;
+    state.ty = 0;
+    state.pointers.clear();
+    applyTransform(eyeSide);
+  }
+
+  function applyTransform(eyeSide) {
+    const img = document.getElementById(`${eyeSide}-eye-photo`);
+    const state = overlayStates[eyeSide];
+    img.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+  }
+
+  // Setup pointer events for both overlays
+  ['left', 'right'].forEach(eyeSide => {
+    const container = document.getElementById(`${eyeSide}-eye-container`);
+    if (!container) return;
+
+    const stageWrap = container.querySelector('.stage-wrap');
+    const img = document.getElementById(`${eyeSide}-eye-photo`);
+    const state = overlayStates[eyeSide];
+
+    // Reset button
+    const resetBtn = container.querySelector('.reset-btn');
+    resetBtn.addEventListener('click', () => resetOverlay(eyeSide));
+
+    // Capture button
+    const captureBtn = container.querySelector('.capture-btn');
+    captureBtn.addEventListener('click', () => captureImage(eyeSide));
+
+    // Pointer events for pan and pinch-zoom
+    stageWrap.addEventListener('pointerdown', (e) => {
+      if (img.style.display === 'none') return;
+      img.setPointerCapture(e.pointerId);
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (state.pointers.size === 1) {
+        const p = state.pointers.values().next().value;
+        state.last = { x: p.x, y: p.y };
+      }
+      if (state.pointers.size === 2) {
+        const pts = Array.from(state.pointers.values());
+        state.startDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        state.startScale = state.scale;
+        state.startMid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+        state.startTx = state.tx;
+        state.startTy = state.ty;
+      }
+    });
+
+    stageWrap.addEventListener('pointermove', (e) => {
+      if (!state.pointers.has(e.pointerId)) return;
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (state.pointers.size === 1) {
+        // Pan with one finger
+        const p = state.pointers.values().next().value;
+        if (!state.last) state.last = { x: p.x, y: p.y };
+        const dx = p.x - state.last.x;
+        const dy = p.y - state.last.y;
+        state.tx += dx;
+        state.ty += dy;
+        state.last = { x: p.x, y: p.y };
+        applyTransform(eyeSide);
+      } else if (state.pointers.size === 2) {
+        // Pinch zoom with two fingers
+        const pts = Array.from(state.pointers.values());
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        if (state.startDist > 0) {
+          const k = dist / state.startDist;
+          state.scale = Math.min(5, Math.max(0.3, state.startScale * k));
+          const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+          state.tx = state.startTx + (mid.x - state.startMid.x);
+          state.ty = state.startTy + (mid.y - state.startMid.y);
+          applyTransform(eyeSide);
+        }
+      }
+    });
+
+    function endPointer(e) {
+      if (img.hasPointerCapture(e.pointerId)) img.releasePointerCapture(e.pointerId);
+      state.pointers.delete(e.pointerId);
+      if (state.pointers.size < 2) state.startDist = 0;
+      if (state.pointers.size === 0) state.last = null;
+    }
+
+    stageWrap.addEventListener('pointerup', endPointer);
+    stageWrap.addEventListener('pointercancel', endPointer);
+    stageWrap.addEventListener('pointerleave', (e) => {
+      if (state.pointers.has(e.pointerId)) endPointer(e);
+    });
+  });
+
+  // Capture the centered image from the overlay
+  async function captureImage(eyeSide) {
+    const state = overlayStates[eyeSide];
+    const img = document.getElementById(`${eyeSide}-eye-photo`);
+    const container = document.getElementById(`${eyeSide}-eye-container`);
+    const stageWrap = container.querySelector('.stage-wrap');
+
+    // Create a canvas with the overlay size
+    const canvas = document.createElement('canvas');
+    const overlaySize = 800; // Match the SVG viewBox size
+    canvas.width = overlaySize;
+    canvas.height = overlaySize;
+    const ctx = canvas.getContext('2d');
+
+    // Calculate the visible area dimensions
+    const rect = stageWrap.getBoundingClientRect();
+    const canvasSize = Math.min(rect.width, rect.height);
+
+    // Calculate scaling factor
+    const scaleFactor = overlaySize / canvasSize;
+
+    // Apply transformations
+    ctx.save();
+    ctx.translate(overlaySize / 2, overlaySize / 2);
+    ctx.scale(state.scale * scaleFactor, state.scale * scaleFactor);
+    ctx.translate(state.tx / state.scale, state.ty / state.scale);
+
+    // Calculate image position to center it
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+    ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+    ctx.restore();
+
+    // Convert canvas to blob
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        const fileName = state.file.name.replace(/\.[^/.]+$/, '_centered.png');
+        const centeredFile = new File([blob], fileName, { type: 'image/png' });
+
+        // Update the file input
+        const fileInput = document.getElementById(`${eyeSide}-eye-upload`);
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(centeredFile);
+        fileInput.files = dataTransfer.files;
+
+        // Mark as centered
+        state.centered = true;
+        state.centeredFile = centeredFile;
+
+        // Hide overlay tool
+        container.style.display = 'none';
+
+        // Update preview with centered image
+        const preview = document.getElementById(`${eyeSide}-eye-preview`);
+        preview.style.backgroundImage = `url(${canvas.toDataURL()})`;
+
+        showMessage(`${eyeSide === 'left' ? 'Ляво' : 'Дясно'} око центрирано успешно!`, 'success');
+        setTimeout(() => clearMessage(), 2000);
+
+        resolve(centeredFile);
+      }, 'image/png', 0.95);
+    });
+  }
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
   form.addEventListener('submit', async function(e) {
@@ -190,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
     progressBar.style.width = '0%';
 
     const progressSteps = [
-      { percent: 25, message: 'Оптимизираме вашите изображения...' },
+      { percent: 25, message: 'Подготвяме вашите центрирани изображения...' },
       { percent: 50, message: 'Изпращаме данните за визуален анализ...' },
       { percent: 75, message: 'AI извършва холистичен синтез...' },
       { percent: 95, message: 'Генерираме вашия персонален доклад...' }
@@ -209,14 +408,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const formData = new FormData(form);
 
-      const leftInput = document.getElementById('left-eye-upload');
-      const rightInput = document.getElementById('right-eye-upload');
-      const [leftOptimized, rightOptimized] = await Promise.all([
-        leftInput.files[0] ? optimizeImage(leftInput.files[0]) : null,
-        rightInput.files[0] ? optimizeImage(rightInput.files[0]) : null
-      ]);
-      if (leftOptimized) formData.set('left-eye-upload', leftOptimized, leftOptimized.name);
-      if (rightOptimized) formData.set('right-eye-upload', rightOptimized, rightOptimized.name);
+      // Use the centered images directly (no need for optimizeImage since they're already processed)
+      // The centered files are already in the file inputs from captureImage function
+      // No need to optimize or resize - images are already centered by the user
 
       // ===================================================================
       // ▼▼▼ НОВО: Запазваме данните за бутона "Повтори анализа" ▼▼▼

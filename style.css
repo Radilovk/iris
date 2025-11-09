@@ -1074,3 +1074,123 @@ button:focus {
 html {
   scroll-behavior: smooth;
 }
+
+/* ====== IRIS OVERLAY TOOL STYLES ====== */
+.iris-overlay-container {
+  margin: 2rem 0;
+  background: linear-gradient(135deg, #13181e 0%, #1a222a 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.iris-overlay-container h4 {
+  color: #00f0ff;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.stage-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #000;
+  border-radius: 12px;
+  touch-action: none;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo {
+  position: absolute;
+  max-width: none;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.overlay-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.overlay-box {
+  position: relative;
+  width: min(92%, 92vh);
+  aspect-ratio: 1;
+}
+
+.iris-overlay {
+  display: block;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
+}
+
+.ring-main {
+  stroke: #00f0ff;
+  stroke-width: 2.5;
+  stroke-opacity: 0.8;
+  fill: none;
+}
+
+.outer-ring-grad {
+  stroke: url(#leftRingGradient);
+  stroke-width: 4;
+  fill: none;
+  filter: url(#leftOuterGlow);
+}
+
+.center-dot {
+  fill: #ff00cc;
+  filter: url(#leftCenterGlow);
+}
+
+.overlay-controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.overlay-controls .btn {
+  min-width: 140px;
+}
+
+.overlay-hint {
+  text-align: center;
+  color: #7a8a9a;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Mobile optimizations for overlay */
+@media (max-width: 768px) {
+  .iris-overlay-container {
+    padding: 1rem;
+  }
+
+  .stage-wrap {
+    max-width: 100%;
+  }
+
+  .overlay-controls {
+    flex-direction: column;
+  }
+
+  .overlay-controls .btn {
+    width: 100%;
+  }
+}
