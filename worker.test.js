@@ -1451,3 +1451,26 @@ test('validateAlignment връща confidence 0.7 при център близо
   assert.ok(result2.validation_message.includes('близо до границата'));
 });
 
+test('validateAlignment конвертира стрингови стойности към default числа', () => {
+  const { validateAlignment } = __testables__;
+
+  // AI може да върне стрингови стойности вместо числа
+  const alignment = {
+    center_x: '512',
+    center_y: '384',
+    radius_px: '300'
+  };
+
+  const result = validateAlignment(alignment, 1024, 768);
+
+  // Трябва да върне default стойности, защото типовете са невалидни
+  assert.equal(result.confidence, 0.5);
+  assert.equal(typeof result.center_x, 'number', 'center_x трябва да е число');
+  assert.equal(typeof result.center_y, 'number', 'center_y трябва да е число');
+  assert.equal(typeof result.radius_px, 'number', 'radius_px трябва да е число');
+  assert.equal(result.center_x, 512); // imageWidth / 2
+  assert.equal(result.center_y, 384); // imageHeight / 2
+  assert.ok(result.validation_message.includes('Невалидни типове данни'));
+});
+
+

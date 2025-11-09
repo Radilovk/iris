@@ -473,7 +473,9 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
   if (typeof center_x !== 'number' || typeof center_y !== 'number' || typeof radius_px !== 'number' ||
       !isFinite(center_x) || !isFinite(center_y) || !isFinite(radius_px) || radius_px <= 0) {
     return {
-      ...alignment,
+      center_x: imageWidth / 2,
+      center_y: imageHeight / 2,
+      radius_px: Math.min(imageWidth, imageHeight) * DEFAULT_RADIUS_PERCENTAGE,
       confidence: 0.5,
       validation_message: 'Невалидни типове данни в alignment'
     };
