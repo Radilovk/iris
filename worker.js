@@ -406,6 +406,50 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
 // --- Помощни функции за комуникация с AI ---
 
 /**
+ * Извлича размерите на изображението от arraybuffer
+ * Поддържа JPEG и PNG формати
+ * @param {ArrayBuffer} arrayBuffer - Данните на изображението
+ * @returns {Object|null} - {width, height} или null ако не може да се извлече
+ */
+function getImageDimensions(arrayBuffer) {
+  const view = new DataView(arrayBuffer);
+
+  try {
+    // Проверка за PNG (сигнатура: 89 50 4E 47)
+    if (view.getUint32(0) === 0x89504E47) {
+      // PNG формат - размерите са в IHDR chunk (bytes 16-23)
+      const width = view.getUint32(16);
+      const height = view.getUint32(20);
+      return { width, height };
+    }
+
+    // Проверка за JPEG (сигнатура: FF D8)
+    if (view.getUint16(0) === 0xFFD8) {
+      let offset = 2;
+      while (offset < view.byteLength) {
+        // Търсене на SOF0 (Start of Frame) marker (0xFFC0)
+        const marker = view.getUint16(offset);
+        if (marker >= 0xFFC0 && marker <= 0xFFC3) {
+          // Намерихме SOF marker - размерите са на offset + 5 и + 7
+          const height = view.getUint16(offset + 5);
+          const width = view.getUint16(offset + 7);
+          return { width, height };
+        }
+        // Преминаваме към следващия marker
+        offset += 2 + view.getUint16(offset + 2);
+      }
+    }
+  } catch (e) {
+    console.warn('Грешка при извличане на размери от изображението:', e.message);
+  }
+
+  return null;
+}
+
+// Default radius percentage for missing alignment data (30% falls within the 15-50% validation range)
+const DEFAULT_RADIUS_PERCENTAGE = 0.3;
+
+/**
  * Валидира геометричната информация за alignment на ириса
  * @param {Object} alignment - Обект с center_x, center_y, radius_px
  * @param {number} imageWidth - Ширина на изображението
@@ -417,16 +461,17 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
     return {
       center_x: imageWidth / 2,
       center_y: imageHeight / 2,
-      radius_px: Math.min(imageWidth, imageHeight) * 0.3,
+      radius_px: Math.min(imageWidth, imageHeight) * DEFAULT_RADIUS_PERCENTAGE,
       confidence: 0.5,
       validation_message: 'Липсват alignment данни от AI'
     };
   }
 
   const { center_x, center_y, radius_px } = alignment;
-  
-  // Проверка за валидни числа
-  if (typeof center_x !== 'number' || typeof center_y !== 'number' || typeof radius_px !== 'number') {
+
+  // Проверка за валидни числа включително NaN, Infinity и отрицателни стойности
+  if (typeof center_x !== 'number' || typeof center_y !== 'number' || typeof radius_px !== 'number' ||
+      !isFinite(center_x) || !isFinite(center_y) || !isFinite(radius_px) || radius_px <= 0) {
     return {
       ...alignment,
       confidence: 0.5,
@@ -618,13 +663,22 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
 
   try {
     const result = JSON.parse(jsonText);
-    
-    // Получаване на размерите на изображението
-    // Бележка: File API не предоставя директно размери, но можем да използваме разумни стойности
-    // или да изчислим от type и size. За момента използваме типичен размер.
-    const imageWidth = 1024; // Типичен размер за ирисови снимки
-    const imageHeight = 1024;
-    
+
+    // Получаване на размерите на изображението от arraybuffer
+    let imageWidth = 1024; // Fallback стойност
+    let imageHeight = 1024;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const dimensions = getImageDimensions(arrayBuffer);
+      if (dimensions) {
+        imageWidth = dimensions.width;
+        imageHeight = dimensions.height;
+      }
+    } catch (dimError) {
+      console.warn(`Неуспешно извличане на реални размери за ${eyeIdentifier}, използваме fallback 1024x1024:`, dimError.message);
+    }
+
     // Валидиране на alignment данните, ако са налични
     if (result.alignment) {
       result.alignment = validateAlignment(result.alignment, imageWidth, imageHeight);
@@ -634,7 +688,7 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
       result.alignment = validateAlignment(null, imageWidth, imageHeight);
       console.warn(`AI не върна alignment данни за ${eyeIdentifier}, използваме default стойности`);
     }
-    
+
     return result;
   } catch (e) {
     // Логване на пълния отговор и грешката за debugging
@@ -1423,26 +1477,26 @@ async function generateMultiQueryReport(
   );
 
   finalReport._analytics = analyticsMetrics;
-  
+
   // Добавяме данните за alignment и identified_signs за визуален композит
   finalReport.left_eye_analysis = {
     eye: leftEyeAnalysis.eye,
     alignment: leftEyeAnalysis.alignment,
-    identified_signs: identifiedSigns.filter(sign => 
-      sign && leftEyeAnalysis.identified_signs && 
+    identified_signs: identifiedSigns.filter(sign =>
+      sign && leftEyeAnalysis.identified_signs &&
       leftEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
     )
   };
-  
+
   finalReport.right_eye_analysis = {
     eye: rightEyeAnalysis.eye,
     alignment: rightEyeAnalysis.alignment,
-    identified_signs: identifiedSigns.filter(sign => 
+    identified_signs: identifiedSigns.filter(sign =>
       sign && rightEyeAnalysis.identified_signs &&
       rightEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
     )
   };
-  
+
   return finalReport;
 }
 
@@ -1632,26 +1686,26 @@ async function generateSingleQueryReport(
     const reportData = JSON.parse(jsonText);
     // Добавяме аналитичните метрики към доклада
     reportData._analytics = analyticsMetrics;
-    
+
     // Добавяме данните за alignment и identified_signs за визуален композит
     reportData.left_eye_analysis = {
       eye: leftEyeAnalysis.eye,
       alignment: leftEyeAnalysis.alignment,
-      identified_signs: identifiedSigns.filter(sign => 
-        sign && leftEyeAnalysis.identified_signs && 
+      identified_signs: identifiedSigns.filter(sign =>
+        sign && leftEyeAnalysis.identified_signs &&
         leftEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
       )
     };
-    
+
     reportData.right_eye_analysis = {
       eye: rightEyeAnalysis.eye,
       alignment: rightEyeAnalysis.alignment,
-      identified_signs: identifiedSigns.filter(sign => 
+      identified_signs: identifiedSigns.filter(sign =>
         sign && rightEyeAnalysis.identified_signs &&
         rightEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
       )
     };
-    
+
     return reportData;
   } catch (e) {
     // Логване на пълния отговор и грешката за debugging

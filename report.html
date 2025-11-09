@@ -1061,11 +1061,14 @@
                 const alignment = eyeData.alignment;
                 const signs = eyeData.identified_signs || [];
                 const eyeLabel = eyeData.eye || 'око';
+                
+                // Sanitize user inputs to prevent XSS
+                const safeEyeLabel = DOMPurify.sanitize(eyeLabel);
 
                 container.innerHTML = `
                     <h3 style="text-align: center; color: #fff; margin-bottom: 1.5rem; font-size: 1.3rem;">
                         <i class="fas fa-eye" style="margin-right: 0.5rem;"></i>
-                        Геометрична нормализация (${eyeLabel})
+                        Геометрична нормализация (${safeEyeLabel})
                     </h3>
                     <div class="visual-composite">
                         <div class="visual-composite-inner">
@@ -1130,13 +1133,13 @@
                     </div>
                     <div class="alignment-info">
                         <strong>Alignment информация:</strong> 
-                        Център (${alignment.center_x.toFixed(0)}, ${alignment.center_y.toFixed(0)}px), 
+                        Център (${alignment.center_x.toFixed(0)}px, ${alignment.center_y.toFixed(0)}px), 
                         Радиус ${alignment.radius_px.toFixed(0)}px
                         <span class="confidence-badge confidence-${alignment.confidence >= 0.9 ? 'high' : alignment.confidence >= 0.6 ? 'medium' : 'low'}">
                             Confidence: ${(alignment.confidence * 100).toFixed(0)}%
                         </span>
                         <br>
-                        <em style="font-size: 0.85rem;">${alignment.validation_message || ''}</em>
+                        <em style="font-size: 0.85rem;">${DOMPurify.sanitize(alignment.validation_message || '')}</em>
                     </div>
                 `;
 
@@ -1215,8 +1218,8 @@
                     const sector = parseInt(sign.sector);
                     if (isNaN(sector) || sector < 1 || sector > 12) return;
 
-                    // Преобразуване на sector в ъгъл (12 = 0°, 1 = 30°, ..., растящ по часовниковата стрелка)
-                    const angle = ((12 - sector) * 30) * (Math.PI / 180);
+                    // Преобразуване на sector в ъгъл за часовникова стрелка (12 = 0°, 3 = 90°, 6 = 180°, 9 = 270°)
+                    const angle = ((sector - 12) * 30) * (Math.PI / 180);
 
                     // Определяне на радиалната дистанция базирана на zone
                     let zoneRadius;
