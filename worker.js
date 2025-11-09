@@ -406,6 +406,68 @@ async function handlePostRequest(request, env, corsHeaders = {}) {
 // --- Помощни функции за комуникация с AI ---
 
 /**
+ * Валидира геометричната информация за alignment на ириса
+ * @param {Object} alignment - Обект с center_x, center_y, radius_px
+ * @param {number} imageWidth - Ширина на изображението
+ * @param {number} imageHeight - Височина на изображението
+ * @returns {Object} - alignment обект с добавено confidence поле
+ */
+function validateAlignment(alignment, imageWidth, imageHeight) {
+  if (!alignment || typeof alignment !== 'object') {
+    return {
+      center_x: imageWidth / 2,
+      center_y: imageHeight / 2,
+      radius_px: Math.min(imageWidth, imageHeight) * 0.3,
+      confidence: 0.5,
+      validation_message: 'Липсват alignment данни от AI'
+    };
+  }
+
+  const { center_x, center_y, radius_px } = alignment;
+  
+  // Проверка за валидни числа
+  if (typeof center_x !== 'number' || typeof center_y !== 'number' || typeof radius_px !== 'number') {
+    return {
+      ...alignment,
+      confidence: 0.5,
+      validation_message: 'Невалидни типове данни в alignment'
+    };
+  }
+
+  // Изчисляване на минималния размер на изображението
+  const minDimension = Math.min(imageWidth, imageHeight);
+  const minRadius = minDimension * 0.15; // 15%
+  const maxRadius = minDimension * 0.50; // 50%
+
+  // Валидация на радиуса
+  if (radius_px < minRadius || radius_px > maxRadius) {
+    return {
+      ...alignment,
+      confidence: 0.5,
+      validation_message: `Радиус ${radius_px}px извън допустимите граници (${minRadius.toFixed(0)}-${maxRadius.toFixed(0)}px)`
+    };
+  }
+
+  // Валидация на центъра - трябва да е в рамките на изображението
+  const margin = radius_px * 1.2; // Допускаме 20% извън границите
+  if (center_x < -margin || center_x > imageWidth + margin ||
+      center_y < -margin || center_y > imageHeight + margin) {
+    return {
+      ...alignment,
+      confidence: 0.7, // По-висока увереност, но не перфектна
+      validation_message: 'Центърът е близо до границата на изображението'
+    };
+  }
+
+  // Всичко е валидно
+  return {
+    ...alignment,
+    confidence: 1.0,
+    validation_message: 'Alignment данните са валидни'
+  };
+}
+
+/**
  * *** КЛЮЧОВА ПРОМЯНА ***
  * Тази функция е напълно преработена, за да поддържа както Gemini, така и OpenAI за визуален анализ.
  * Вече няма да пропуска анализа на снимките, ако е избран OpenAI.
@@ -555,7 +617,25 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
     .trim();
 
   try {
-    return JSON.parse(jsonText);
+    const result = JSON.parse(jsonText);
+    
+    // Получаване на размерите на изображението
+    // Бележка: File API не предоставя директно размери, но можем да използваме разумни стойности
+    // или да изчислим от type и size. За момента използваме типичен размер.
+    const imageWidth = 1024; // Типичен размер за ирисови снимки
+    const imageHeight = 1024;
+    
+    // Валидиране на alignment данните, ако са налични
+    if (result.alignment) {
+      result.alignment = validateAlignment(result.alignment, imageWidth, imageHeight);
+      console.log(`Alignment валидация за ${eyeIdentifier}:`, result.alignment.validation_message);
+    } else {
+      // Ако AI не е върнал alignment данни, създаваме default с ниска confidence
+      result.alignment = validateAlignment(null, imageWidth, imageHeight);
+      console.warn(`AI не върна alignment данни за ${eyeIdentifier}, използваме default стойности`);
+    }
+    
+    return result;
   } catch (e) {
     // Логване на пълния отговор и грешката за debugging
     console.error('Грешка при парсване на JSON от AI (визуален анализ):');
@@ -3167,6 +3247,7 @@ async function arrayBufferToBase64(buffer) {
 
 export const __testables__ = {
   analyzeImageWithVision,
+  validateAlignment,
   generateHolisticReport,
   generateMultiQueryReport,
   generateSingleQueryReport,
