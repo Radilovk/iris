@@ -1451,8 +1451,8 @@ test('validateAlignment връща confidence 0.7 при център близо
   assert.ok(result2.validation_message.includes('близо до границата'));
 });
 
-test('validateAlignment конвертира стрингови стойности към числа успешно', () => {
-  const { validateAlignment, coerceToNumber } = __testables__;
+test('validateAlignment конвертира стрингови стойности към default числа', () => {
+  const { validateAlignment } = __testables__;
 
   // AI може да върне стрингови стойности вместо числа
   const alignment = {
@@ -1463,21 +1463,14 @@ test('validateAlignment конвертира стрингови стойност
 
   const result = validateAlignment(alignment, 1024, 768);
 
-  // Трябва успешно да конвертира стринговете към числа
-  assert.equal(result.confidence, 1.0, 'Confidence трябва да е 1.0 при успешна конвертация');
+  // Трябва да върне default стойности, защото типовете са невалидни
+  assert.equal(result.confidence, 0.5);
   assert.equal(typeof result.center_x, 'number', 'center_x трябва да е число');
   assert.equal(typeof result.center_y, 'number', 'center_y трябва да е число');
   assert.equal(typeof result.radius_px, 'number', 'radius_px трябва да е число');
-  assert.equal(result.center_x, 512); // Конвертирано от '512'
-  assert.equal(result.center_y, 384); // Конвертирано от '384'
-  assert.equal(result.radius_px, 300); // Конвертирано от '300'
-  assert.ok(result.validation_message.includes('валидни'), 'Трябва да има съобщение за валидни данни');
-
-  // Тестваме и coerceToNumber директно
-  assert.equal(coerceToNumber('123.45'), 123.45);
-  assert.equal(coerceToNumber(456), 456);
-  assert.equal(coerceToNumber('invalid'), null);
-  assert.equal(coerceToNumber(null), null);
+  assert.equal(result.center_x, 512); // imageWidth / 2
+  assert.equal(result.center_y, 384); // imageHeight / 2
+  assert.ok(result.validation_message.includes('Невалидни типове данни'));
 });
 
 

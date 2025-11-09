@@ -450,22 +450,6 @@ function getImageDimensions(arrayBuffer) {
 const DEFAULT_RADIUS_PERCENTAGE = 0.3;
 
 /**
- * Конвертира стойност към число, обработвайки различни типове данни
- * @param {any} value - Стойност за конвертиране
- * @returns {number|null} - Числото или null ако конвертирането е неуспешно
- */
-function coerceToNumber(value) {
-  if (typeof value === 'number') {
-    return isFinite(value) ? value : null;
-  }
-  if (typeof value === 'string') {
-    const parsed = parseFloat(value);
-    return isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-/**
  * Валидира геометричната информация за alignment на ириса
  * @param {Object} alignment - Обект с center_x, center_y, radius_px
  * @param {number} imageWidth - Ширина на изображението
@@ -483,13 +467,11 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
     };
   }
 
-  // Опит за конвертиране на стойностите към числа
-  const center_x = coerceToNumber(alignment.center_x);
-  const center_y = coerceToNumber(alignment.center_y);
-  const radius_px = coerceToNumber(alignment.radius_px);
+  const { center_x, center_y, radius_px } = alignment;
 
-  // Проверка за валидни числа след конвертиране
-  if (center_x === null || center_y === null || radius_px === null || radius_px <= 0) {
+  // Проверка за валидни числа включително NaN, Infinity и отрицателни стойности
+  if (typeof center_x !== 'number' || typeof center_y !== 'number' || typeof radius_px !== 'number' ||
+      !isFinite(center_x) || !isFinite(center_y) || !isFinite(radius_px) || radius_px <= 0) {
     return {
       center_x: imageWidth / 2,
       center_y: imageHeight / 2,
@@ -507,9 +489,7 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
   // Валидация на радиуса
   if (radius_px < minRadius || radius_px > maxRadius) {
     return {
-      center_x,
-      center_y,
-      radius_px,
+      ...alignment,
       confidence: 0.5,
       validation_message: `Радиус ${radius_px}px извън допустимите граници (${minRadius.toFixed(0)}-${maxRadius.toFixed(0)}px)`
     };
@@ -520,19 +500,15 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
   if (center_x < -margin || center_x > imageWidth + margin ||
       center_y < -margin || center_y > imageHeight + margin) {
     return {
-      center_x,
-      center_y,
-      radius_px,
+      ...alignment,
       confidence: 0.7, // По-висока увереност, но не перфектна
       validation_message: 'Центърът е близо до границата на изображението'
     };
   }
 
-  // Всичко е валидно - използваме конвертираните числови стойности
+  // Всичко е валидно
   return {
-    center_x,
-    center_y,
-    radius_px,
+    ...alignment,
     confidence: 1.0,
     validation_message: 'Alignment данните са валидни'
   };
@@ -3368,7 +3344,6 @@ async function arrayBufferToBase64(buffer) {
 export const __testables__ = {
   analyzeImageWithVision,
   validateAlignment,
-  coerceToNumber,
   generateHolisticReport,
   generateMultiQueryReport,
   generateSingleQueryReport,
