@@ -23,7 +23,7 @@
                 /* Дефинираме цветове тук, за да са достъпни */
                 --white: #ffffff;
                 --gradient: linear-gradient(135deg, #437dcb 0%, #2e5a9b 100%);
-                
+
                 /* Status colors for mobile metric cards */
                 --status-critical-bg: rgba(239, 68, 68, 0.85);
                 --status-critical-color: #dc2626;
@@ -87,7 +87,7 @@
                 border: 2px solid #e2e8f0;
                 border-radius: 16px;
                 margin-bottom: 2rem;
-                box-shadow: 
+                box-shadow:
                     0 10px 20px rgba(10, 40, 100, 0.08),
                     0 4px 8px rgba(0, 0, 0, 0.04);
                 transition: all 0.4s ease;
@@ -97,7 +97,7 @@
             }
             details.report-section[open] {
                 border-color: #93c5fd;
-                box-shadow: 
+                box-shadow:
                     0 14px 28px rgba(59, 130, 246, 0.12),
                     0 6px 12px rgba(0, 0, 0, 0.06);
             }
@@ -229,7 +229,7 @@
                 padding: 2rem;
                 border: 2px solid #e2e8f0;
                 transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 
+                box-shadow:
                     0 4px 12px rgba(0, 0, 0, 0.05),
                     0 2px 6px rgba(0, 0, 0, 0.03);
                 position: relative;
@@ -247,7 +247,7 @@
                 box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
             }
             .info-card:hover {
-                box-shadow: 
+                box-shadow:
                     0 12px 28px rgba(59, 130, 246, 0.18),
                     0 6px 14px rgba(0, 0, 0, 0.08);
                 border-color: #93c5fd;
@@ -501,11 +501,11 @@
                 .content .chart-container {
                     display: none;
                 }
-                
+
                 .metrics-list-container {
                     display: block;
                 }
-                
+
                 /* Show visual composite on mobile only */
                 .visual-composite-container {
                     display: block;
@@ -513,7 +513,7 @@
                     margin: 1.5rem auto;
                     max-width: 100%;
                 }
-                
+
                 .container {
                     padding: 1rem;
                 }
@@ -535,7 +535,7 @@
                 .report-hero p {
                     font-size: 0.95rem;
                 }
-                
+
                 /* Подобрени секции за мобилни устройства */
                 .report-section {
                     border-radius: 12px;
@@ -578,7 +578,7 @@
                     font-size: 0.95rem;
                     margin-bottom: 0.75rem;
                 }
-                
+
                 /* Оптимизирани карти за мобилни */
                 .report-grid {
                     grid-template-columns: 1fr;
@@ -612,7 +612,7 @@
                     font-size: 0.95rem;
                     line-height: 1.75;
                 }
-                
+
                 /* Подобрени канални анализи за мобилни */
                 .channel-analysis-item {
                     flex-direction: column;
@@ -628,7 +628,7 @@
                     width: 100%;
                     height: 12px;
                 }
-                
+
                 /* Оптимизирани графики за мобилни устройства */
                 .chart-container {
                     padding: 2rem 1.25rem;
@@ -652,7 +652,7 @@
                     width: 60px;
                     height: 4px;
                 }
-                
+
                 /* Touch-friendly бутони */
                 .button-group-report {
                     flex-direction: column;
@@ -666,7 +666,7 @@
                     font-size: 1rem;
                     border-radius: 12px;
                 }
-                
+
                 /* Оптимизиран disclaimer за мобилни */
                 .report-disclaimer {
                     padding: 1.25rem;
@@ -678,7 +678,7 @@
                     font-size: 1.25rem;
                 }
             }
-            
+
             /* Оптимизации за много малки екрани */
             @media (max-width: 480px) {
                 .container {
@@ -707,42 +707,42 @@
                 .chart-title {
                     font-size: 1.1rem;
                 }
-                
+
                 /* Visual composite optimizations for very small screens */
                 .visual-composite-container {
                     padding: 1rem;
                     margin: 1rem auto;
                 }
-                
+
                 .visual-composite-container h3 {
                     font-size: 1.1rem !important;
                     margin-bottom: 1rem !important;
                 }
-                
+
                 .alignment-info {
                     font-size: 0.8rem;
                     padding: 0.75rem;
                 }
-                
+
                 /* Enhance SVG visibility on small screens */
                 .iris-overlay-svg .overlay-ring {
                     stroke-width: 2.5;
                     stroke-opacity: 0.5;
                 }
-                
+
                 .iris-overlay-svg .overlay-outer {
                     stroke-width: 5;
                 }
-                
+
                 .iris-overlay-svg .overlay-sector-line {
                     stroke-width: 1.5;
                     stroke-opacity: 0.35;
                 }
-                
+
                 .iris-overlay-svg .overlay-number {
                     font-size: 28px;
                 }
-                
+
                 .sign-marker {
                     width: 14px;
                     height: 14px;
@@ -750,9 +750,8 @@
                 }
             }
 
-            /* Visual Composite Styles - Hidden by default, shown only on mobile */
+            /* Visual Composite Styles - Shown on mobile, hidden on desktop */
             .visual-composite-container {
-                display: none; /* Hidden on desktop */
                 position: relative;
                 width: 100%;
                 max-width: 700px;
@@ -764,20 +763,20 @@
                 overflow: hidden;
             }
 
-            /* Desktop view - show charts, hide mobile cards */
+            /* Desktop view - show charts, hide mobile cards and visual composite */
             @media (min-width: 768px) {
                 .chart-container {
                     display: block;
                 }
-                
+
                 .report-section .metrics-list-container,
                 .content .metrics-list-container {
                     display: none;
                 }
-                
-                /* Explicitly hide visual composite on desktop */
+
+                /* Hide visual composite on desktop */
                 .visual-composite-container {
-                    display: none !important;
+                    display: none;
                 }
             }
 
@@ -821,41 +820,44 @@
             }
 
             .iris-overlay-svg .overlay-ring {
-                stroke: #FF00CC;
+                stroke: #ff00cc;
                 stroke-width: 2;
                 stroke-opacity: 0.4;
                 fill: none;
             }
 
             .iris-overlay-svg .overlay-outer {
-                stroke: #FF00CC;
+                stroke: #ff00cc;
                 stroke-width: 4;
                 fill: none;
             }
 
             .iris-overlay-svg .overlay-sector-line {
-                stroke: #FF00CC;
+                stroke: #ff00cc;
                 stroke-width: 1.2;
                 stroke-opacity: 0.28;
             }
 
             .iris-overlay-svg .overlay-number {
-                font: 700 32px/1 Arial, Helvetica, sans-serif;
-                fill: #FF00CC;
+                font:
+                    700 32px/1 Arial,
+                    Helvetica,
+                    sans-serif;
+                fill: #ff00cc;
                 text-anchor: middle;
                 dominant-baseline: middle;
             }
 
             .iris-overlay-svg .overlay-center {
-                fill: #FF00CC;
+                fill: #ff00cc;
             }
 
             .sign-marker {
                 position: absolute;
                 width: 12px;
                 height: 12px;
-                background: #FFD700;
-                border: 2px solid #FFF;
+                background: #ffd700;
+                border: 2px solid #fff;
                 border-radius: 50%;
                 transform: translate(-50%, -50%);
                 box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
@@ -890,7 +892,7 @@
                 margin-bottom: 8px;
                 padding: 8px 12px;
                 background: rgba(0, 0, 0, 0.9);
-                color: #FFF;
+                color: #fff;
                 font-size: 12px;
                 border-radius: 6px;
                 white-space: nowrap;
@@ -977,7 +979,8 @@
                     page-break-inside: avoid;
                 }
                 .visual-composite-container {
-                    display: none; /* Hide on print - mobile-only feature */
+                    display: block !important; /* Show on print/PDF */
+                    page-break-inside: avoid;
                 }
             }
         </style>
@@ -1109,16 +1112,18 @@
 
                 const container = document.createElement('div');
                 container.className = 'visual-composite-container';
-                
+
                 // Избираме данните с по-висока confidence
-                const eyeData = (leftEyeData?.alignment?.confidence || 0) >= (rightEyeData?.alignment?.confidence || 0)
-                    ? leftEyeData
-                    : rightEyeData;
-                
+                const eyeData =
+                    (leftEyeData?.alignment?.confidence || 0) >=
+                    (rightEyeData?.alignment?.confidence || 0)
+                        ? leftEyeData
+                        : rightEyeData;
+
                 const alignment = eyeData.alignment;
                 const signs = eyeData.identified_signs || [];
                 const eyeLabel = eyeData.eye || 'око';
-                
+
                 // Sanitize user inputs to prevent XSS
                 const safeEyeLabel = DOMPurify.sanitize(eyeLabel);
 
@@ -1224,28 +1229,39 @@
                         const data = JSON.parse(formData);
                         // Търсим изображение (left или right eye)
                         const imageData = data['left-eye-upload'] || data['right-eye-upload'];
-                        if (imageData && typeof imageData === 'string' && imageData.startsWith('data:')) {
+                        if (
+                            imageData &&
+                            typeof imageData === 'string' &&
+                            imageData.startsWith('data:')
+                        ) {
                             img.src = imageData;
                             img.onload = () => {
                                 // Изчисляване на трансформация
                                 // Целевият радиус на SVG е 320px
                                 const targetRadius = 320;
                                 const scale = targetRadius / ensureNumber(alignment.radius_px, 1);
-                                
+
                                 // Получаване на размерите на контейнера
                                 const container = img.parentElement;
                                 const containerWidth = container.clientWidth;
                                 const containerHeight = container.clientHeight;
-                                
+
                                 // Центриране на alignment.center към центъра на контейнера
-                                const translateX = (containerWidth / 2) - (ensureNumber(alignment.center_x) * scale);
-                                const translateY = (containerHeight / 2) - (ensureNumber(alignment.center_y) * scale);
-                                
+                                const translateX =
+                                    containerWidth / 2 - ensureNumber(alignment.center_x) * scale;
+                                const translateY =
+                                    containerHeight / 2 - ensureNumber(alignment.center_y) * scale;
+
                                 img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-                                
+
                                 // Рендиране на маркери за знаците
                                 if (signs && signs.length > 0) {
-                                    renderSignMarkers(signs, containerWidth / 2, containerHeight / 2, targetRadius);
+                                    renderSignMarkers(
+                                        signs,
+                                        containerWidth / 2,
+                                        containerHeight / 2,
+                                        targetRadius
+                                    );
                                 }
                             };
                         }
@@ -1276,7 +1292,7 @@
                     if (isNaN(sector) || sector < 1 || sector > 12) return;
 
                     // Преобразуване на sector в ъгъл за часовникова стрелка (12 = 0°, 3 = 90°, 6 = 180°, 9 = 270°)
-                    const angle = ((sector - 12) * 30) * (Math.PI / 180);
+                    const angle = (sector - 12) * 30 * (Math.PI / 180);
 
                     // Определяне на радиалната дистанция базирана на zone
                     let zoneRadius;
@@ -1342,7 +1358,7 @@
                 if (data._analytics || data.left_eye_analysis || data.right_eye_analysis) {
                     const leftEyeData = data.left_eye_analysis || {};
                     const rightEyeData = data.right_eye_analysis || {};
-                    
+
                     const visualComposite = createVisualComposite(leftEyeData, rightEyeData);
                     if (visualComposite) {
                         container.appendChild(visualComposite);
@@ -1541,8 +1557,8 @@
              * @returns {Array} Array of metric objects with name, value, and status
              */
             function parseChartData(content, type) {
-                const text = (content && typeof content === 'string') ? content.toLowerCase() : '';
-                
+                const text = content && typeof content === 'string' ? content.toLowerCase() : '';
+
                 if (type === 'systems') {
                     // Priority calculation constants
                     const PRIORITY_MULTIPLIER = 25;
@@ -1550,43 +1566,64 @@
                     const PRIORITY_MAX_BASE = 85;
                     const SEVERITY_BONUS_HIGH = 15;
                     const SEVERITY_BONUS_MEDIUM = 8;
-                    
+
                     const systemKeywords = [
-                        { name: 'Храносмилателна', keywords: ['храносмилат', 'черва', 'стомах'], icon: '🟠' },
+                        {
+                            name: 'Храносмилателна',
+                            keywords: ['храносмилат', 'черва', 'стомах'],
+                            icon: '🟠'
+                        },
                         { name: 'Нервна', keywords: ['нервн', 'стрес', 'мозък'], icon: '🟣' },
                         { name: 'Лимфна', keywords: ['лимфа', 'имун'], icon: '🟢' },
-                        { name: 'Сърдечно-съдова', keywords: ['сърдечн', 'кръв', 'съдов'], icon: '🔴' },
+                        {
+                            name: 'Сърдечно-съдова',
+                            keywords: ['сърдечн', 'кръв', 'съдов'],
+                            icon: '🔴'
+                        },
                         { name: 'Дихателна', keywords: ['дихат', 'белодробн'], icon: '🔵' },
-                        { name: 'Елиминативна', keywords: ['детокс', 'бъбрек', 'елиминат'], icon: '🟡' },
+                        {
+                            name: 'Елиминативна',
+                            keywords: ['детокс', 'бъбрек', 'елиминат'],
+                            icon: '🟡'
+                        },
                         { name: 'Хормонална', keywords: ['хормон', 'ендокрин'], icon: '🟣' },
                         { name: 'Метаболична', keywords: ['метаболи', 'енерги'], icon: '🟠' }
                     ];
-                    
+
                     const metrics = [];
-                    systemKeywords.forEach(sys => {
-                        const matchCount = sys.keywords.filter(kw => text.includes(kw)).length;
+                    systemKeywords.forEach((sys) => {
+                        const matchCount = sys.keywords.filter((kw) => text.includes(kw)).length;
                         if (matchCount > 0) {
                             // Calculate base priority using defined constants
-                            let value = Math.min(matchCount * PRIORITY_MULTIPLIER + PRIORITY_BASE, PRIORITY_MAX_BASE);
-                            
+                            let value = Math.min(
+                                matchCount * PRIORITY_MULTIPLIER + PRIORITY_BASE,
+                                PRIORITY_MAX_BASE
+                            );
+
                             // Check for severity modifiers and apply bonuses
-                            if (text.includes('приоритетн') || text.includes('критичн') || text.includes('важн')) {
+                            if (
+                                text.includes('приоритетн') ||
+                                text.includes('критичн') ||
+                                text.includes('важн')
+                            ) {
                                 value = Math.min(value + SEVERITY_BONUS_HIGH, 100);
                             } else if (text.includes('умерен') || text.includes('средн')) {
                                 value = Math.min(value + SEVERITY_BONUS_MEDIUM, 100);
                             }
-                            
+
                             let status = value >= 70 ? 'high' : value >= 50 ? 'medium' : 'low';
                             metrics.push({ name: sys.name, value, status, icon: sys.icon });
                         }
                     });
-                    
-                    return metrics.length > 0 ? metrics : systemKeywords.slice(0, 5).map(sys => ({
-                        name: sys.name,
-                        value: 50,
-                        status: 'medium',
-                        icon: sys.icon
-                    }));
+
+                    return metrics.length > 0
+                        ? metrics
+                        : systemKeywords.slice(0, 5).map((sys) => ({
+                              name: sys.name,
+                              value: 50,
+                              status: 'medium',
+                              icon: sys.icon
+                          }));
                 } else if (type === 'channels') {
                     const channels = [
                         { name: 'Черва', keyword: 'черва', icon: '🔄' },
@@ -1595,13 +1632,16 @@
                         { name: 'Кожа', keyword: 'кожа', icon: '✨' },
                         { name: 'Бели дробове', keyword: 'бели дробове', icon: '💨' }
                     ];
-                    
-                    return channels.map(ch => {
+
+                    return channels.map((ch) => {
                         const keyword = ch.keyword.toLowerCase();
                         let value = 20;
-                        
+
                         if (text.includes(keyword)) {
-                            if (text.includes('най-натоварен') || text.includes('силно натоварен')) {
+                            if (
+                                text.includes('най-натоварен') ||
+                                text.includes('силно натоварен')
+                            ) {
                                 value = 85;
                             } else if (text.includes('умерен') || text.includes('средн')) {
                                 value = 60;
@@ -1609,12 +1649,12 @@
                                 value = 40;
                             }
                         }
-                        
+
                         const status = value >= 70 ? 'high' : value >= 50 ? 'medium' : 'low';
                         return { name: ch.name, value, status, icon: ch.icon };
                     });
                 }
-                
+
                 return [];
             }
 
@@ -1626,15 +1666,23 @@
             function createMetricCards(metrics, containerId) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
-                
-                container.innerHTML = metrics.map(metric => {
-                    const statusText = metric.status === 'high' ? 'Високо натоварен' :
-                                      metric.status === 'medium' ? 'Умерено натоварен' :
-                                      'Нормално състояние';
-                    const statusIcon = metric.status === 'high' ? '🔴' :
-                                      metric.status === 'medium' ? '🟡' : '🟢';
-                    
-                    return `
+
+                container.innerHTML = metrics
+                    .map((metric) => {
+                        const statusText =
+                            metric.status === 'high'
+                                ? 'Високо натоварен'
+                                : metric.status === 'medium'
+                                  ? 'Умерено натоварен'
+                                  : 'Нормално състояние';
+                        const statusIcon =
+                            metric.status === 'high'
+                                ? '🔴'
+                                : metric.status === 'medium'
+                                  ? '🟡'
+                                  : '🟢';
+
+                        return `
                         <div class="metric-card">
                             <div class="metric-card-header">
                                 <div class="metric-label">
@@ -1652,7 +1700,8 @@
                             </div>
                         </div>
                     `;
-                }).join('');
+                    })
+                    .join('');
             }
 
             function createPrioritySystemsSection(title, content) {
@@ -1678,7 +1727,7 @@
                     requestAnimationFrame(() => {
                         const canvas = document.getElementById(chartId);
                         if (canvas) createSystemBalanceChart(content, chartId);
-                        
+
                         // Create mobile metric cards
                         const metrics = parseChartData(content, 'systems');
                         createMetricCards(metrics, mobileContainerId);
@@ -1712,7 +1761,7 @@
                     requestAnimationFrame(() => {
                         const canvas = document.getElementById(chartId);
                         if (canvas) createChannelComparisonChart(content, chartId);
-                        
+
                         // Create mobile metric cards
                         const metrics = parseChartData(content, 'channels');
                         createMetricCards(metrics, mobileContainerId);
