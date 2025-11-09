@@ -714,10 +714,6 @@
                     margin: 1rem auto;
                 }
 
-                .visual-composites-wrapper {
-                    flex-direction: column !important;
-                }
-
                 .visual-composite-container h3 {
                     font-size: 1.1rem !important;
                     margin-bottom: 1rem !important;
@@ -804,7 +800,7 @@
                 justify-content: center;
             }
 
-            .iris-image {
+            #iris-image {
                 position: absolute;
                 max-width: none;
                 transform-origin: center center;
@@ -870,7 +866,7 @@
                 transition: all 0.3s ease;
             }
 
-            .sign-markers-container {
+            #sign-markers-container {
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -879,7 +875,7 @@
                 pointer-events: none; /* Позволява кликове да преминават към изображението */
             }
 
-            .sign-markers-container .sign-marker {
+            #sign-markers-container .sign-marker {
                 pointer-events: auto; /* Маркерите са кликваеми */
             }
 
@@ -1103,19 +1099,26 @@
 
             /**
              * Създава визуален композит с изображение на ириса и SVG overlay
-             * @param {Object} eyeData - Данни за окото (alignment + identified_signs + eye)
-             * @param {string} uniqueId - Уникален идентификатор за този композит
+             * @param {Object} leftEyeData - Данни за лявото око (alignment + identified_signs)
+             * @param {Object} rightEyeData - Данни за дясното око
              * @returns {HTMLElement|null} - Контейнер с визуалния композит или null ако няма данни
              */
-            function createVisualComposite(eyeData, uniqueId) {
+            function createVisualComposite(leftEyeData, rightEyeData) {
                 // Проверка дали има alignment данни
-                if (!eyeData?.alignment) {
-                    console.log(`Няма alignment данни за ${uniqueId}`);
+                if (!leftEyeData?.alignment && !rightEyeData?.alignment) {
+                    console.log('Няма alignment данни за визуален композит');
                     return null;
                 }
 
                 const container = document.createElement('div');
                 container.className = 'visual-composite-container';
+
+                // Избираме данните с по-висока confidence
+                const eyeData =
+                    (leftEyeData?.alignment?.confidence || 0) >=
+                    (rightEyeData?.alignment?.confidence || 0)
+                        ? leftEyeData
+                        : rightEyeData;
 
                 const alignment = eyeData.alignment;
                 const signs = eyeData.identified_signs || [];
@@ -1131,10 +1134,10 @@
                     </h3>
                     <div class="visual-composite">
                         <div class="visual-composite-inner">
-                            <img id="iris-image-${uniqueId}" class="iris-image" alt="Iris ${safeEyeLabel}">
+                            <img id="iris-image" alt="Iris">
                             <svg class="iris-overlay-svg" viewBox="-380 -380 760 760" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
-                                    <filter id="glow-${uniqueId}" x="-50%" y="-50%" width="200%" height="200%">
+                                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                                         <feGaussianBlur stdDeviation="3.2" result="blur"/>
                                         <feMerge>
                                             <feMergeNode in="blur"/>
@@ -1180,14 +1183,14 @@
                                 </g>
                                 
                                 <!-- Outer ring and center -->
-                                <circle r="320" class="overlay-outer" filter="url(#glow-${uniqueId})"/>
-                                <circle r="8" class="overlay-center" filter="url(#glow-${uniqueId})"/>
+                                <circle r="320" class="overlay-outer" filter="url(#glow)"/>
+                                <circle r="8" class="overlay-center" filter="url(#glow)"/>
                                 <g stroke-opacity="0.22">
                                     <line x1="-16" y1="0" x2="16" y2="0" class="overlay-sector-line"/>
                                     <line x1="0" y1="-16" x2="0" y2="16" class="overlay-sector-line"/>
                                 </g>
                             </svg>
-                            <div id="sign-markers-container-${uniqueId}" class="sign-markers-container"></div>
+                            <div id="sign-markers-container"></div>
                         </div>
                     </div>
                     <div class="alignment-info">
@@ -1204,7 +1207,7 @@
 
                 // Apply image transformation after insertion into DOM
                 requestAnimationFrame(() => {
-                    applyIrisTransformation(alignment, signs, uniqueId);
+                    applyIrisTransformation(alignment, signs);
                 });
 
                 return container;
@@ -1214,10 +1217,9 @@
              * Прилага CSS трансформация върху изображението на ириса
              * @param {Object} alignment - Обект с center_x, center_y, radius_px
              * @param {Array} signs - Масив с идентифицирани знаци
-             * @param {string} uniqueId - Уникален идентификатор за композита
              */
-            function applyIrisTransformation(alignment, signs, uniqueId) {
-                const img = document.getElementById(`iris-image-${uniqueId}`);
+            function applyIrisTransformation(alignment, signs) {
+                const img = document.getElementById('iris-image');
                 if (!img) return;
 
                 // Опит да заредим изображението от localStorage
@@ -1225,17 +1227,8 @@
                     const formData = localStorage.getItem('iridologyFormData');
                     if (formData) {
                         const data = JSON.parse(formData);
-                        // Определяме кое изображение да използваме според uniqueId
-                        let imageData;
-                        if (uniqueId.includes('left')) {
-                            imageData = data['left-eye-upload'];
-                        } else if (uniqueId.includes('right')) {
-                            imageData = data['right-eye-upload'];
-                        } else {
-                            // Fallback - използваме което изображение е налично
-                            imageData = data['left-eye-upload'] || data['right-eye-upload'];
-                        }
-                        
+                        // Търсим изображение (left или right eye)
+                        const imageData = data['left-eye-upload'] || data['right-eye-upload'];
                         if (
                             imageData &&
                             typeof imageData === 'string' &&
@@ -1267,8 +1260,7 @@
                                         signs,
                                         containerWidth / 2,
                                         containerHeight / 2,
-                                        targetRadius,
-                                        uniqueId
+                                        targetRadius
                                     );
                                 }
                             };
@@ -1285,10 +1277,9 @@
              * @param {number} centerX - X координата на центъра в контейнера
              * @param {number} centerY - Y координата на центъра в контейнера
              * @param {number} radius - Радиусът на външния пръстен (320px)
-             * @param {string} uniqueId - Уникален идентификатор за контейнера
              */
-            function renderSignMarkers(signs, centerX, centerY, radius, uniqueId) {
-                const container = document.getElementById(`sign-markers-container-${uniqueId}`);
+            function renderSignMarkers(signs, centerX, centerY, radius) {
+                const container = document.getElementById('sign-markers-container');
                 if (!container) return;
 
                 container.innerHTML = ''; // Изчистваме предишни маркери
@@ -1363,45 +1354,14 @@
                 }
 
                 // Добавяме визуален композит ако има alignment данни
-                // Създаваме композит за всяко око поотделно
+                // Проверяваме дали има _analytics данни с информация за очите
                 if (data._analytics || data.left_eye_analysis || data.right_eye_analysis) {
                     const leftEyeData = data.left_eye_analysis || {};
                     const rightEyeData = data.right_eye_analysis || {};
 
-                    // Контейнер за двата композита
-                    const compositesContainer = document.createElement('div');
-                    compositesContainer.className = 'visual-composites-wrapper';
-                    compositesContainer.style.cssText = `
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 2rem;
-                        justify-content: center;
-                        margin: 2rem 0;
-                    `;
-
-                    // Създаваме композит за лявото око
-                    if (leftEyeData.alignment) {
-                        const leftComposite = createVisualComposite(leftEyeData, 'left-eye');
-                        if (leftComposite) {
-                            leftComposite.style.flex = '1 1 45%';
-                            leftComposite.style.minWidth = '300px';
-                            compositesContainer.appendChild(leftComposite);
-                        }
-                    }
-
-                    // Създаваме композит за дясното око
-                    if (rightEyeData.alignment) {
-                        const rightComposite = createVisualComposite(rightEyeData, 'right-eye');
-                        if (rightComposite) {
-                            rightComposite.style.flex = '1 1 45%';
-                            rightComposite.style.minWidth = '300px';
-                            compositesContainer.appendChild(rightComposite);
-                        }
-                    }
-
-                    // Добавяме контейнера само ако има поне един композит
-                    if (compositesContainer.children.length > 0) {
-                        container.appendChild(compositesContainer);
+                    const visualComposite = createVisualComposite(leftEyeData, rightEyeData);
+                    if (visualComposite) {
+                        container.appendChild(visualComposite);
                     }
                 }
 
