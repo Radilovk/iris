@@ -345,10 +345,76 @@
                                                         <stop offset="50%" style="stop-color:#00f0ff" />
                                                         <stop offset="100%" style="stop-color:#ff00cc" />
                                                     </linearGradient>
+                                                    <pattern id="leftHexPattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
+                                                        <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="#00f0ff" stroke-width="1.2"/>
+                                                    </pattern>
                                                 </defs>
-                                                <circle r="320" class="ring-main"/>
-                                                <circle r="350" class="outer-ring-grad"/>
-                                                <circle r="10" class="center-dot"/>
+                                                <g>
+                                                    <!-- Hexagonal Grid Background -->
+                                                    <circle r="335" class="hex-grid" fill="url(#leftHexPattern)" opacity="0.1"/>
+                                                    <!-- Grid circles -->
+                                                    <circle r="120" class="ring-dashed"/>
+                                                    <circle r="200" class="ring-main" stroke-width="1.5" stroke-opacity="0.5"/>
+                                                    <circle r="260" class="ring-dashed" stroke-dasharray="80, 10"/>
+                                                    <circle r="320" class="ring-main"/>
+                                                    <!-- Sector lines (every 30 degrees) -->
+                                                    <g class="sector-line">
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
+                                                    </g>
+                                                    <!-- Triangular Markers -->
+                                                    <g class="marker-shape">
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(30)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(90)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(150)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(210)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(270)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(330)"/>
+                                                    </g>
+                                                    <!-- Prominent outer ring with gradient -->
+                                                    <circle r="350" class="outer-ring-grad" stroke="url(#leftRingGradient)" stroke-width="4" fill="none" filter="url(#leftOuterGlow)"/>
+                                                    <!-- Center sensor complex -->
+                                                    <g class="center-dot-complex">
+                                                        <circle r="10" class="center-dot" filter="url(#leftCenterGlow)"/>
+                                                        <circle r="25" fill="none" stroke="#ff00cc" stroke-width="1.5" opacity="0.6"/>
+                                                        <circle r="35" class="ring-dashed" stroke-width="1" stroke-opacity="0.5"/>
+                                                        <g class="crosshair-fine">
+                                                            <line x1="-50" y1="0" x2="50" y2="0"/>
+                                                            <line x1="0" y1="-50" x2="0" y2="50"/>
+                                                        </g>
+                                                    </g>
+                                                    <!-- Targeting Brackets -->
+                                                    <g class="targeting-bracket">
+                                                        <path d="M -250 -350 L -300 -350 L -300 -300" />
+                                                        <path d="M  250 -350 L  300 -350 L  300 -300" />
+                                                        <path d="M -250  350 L -300  350 L -300  300" />
+                                                        <path d="M  250  350 L  300  350 L  300  300" />
+                                                    </g>
+                                                    <!-- Data readouts -->
+                                                    <g class="data-text">
+                                                        <text x="0" y="-285">ID: L-EYE</text>
+                                                        <text x="230" y="-230" font-size="24" fill="#00ff8c">STBL</text>
+                                                        <text x="-285" y="0" text-anchor="end" class="data-text-small" transform="rotate(-90, -285, 0)">SEQ. ACTIVE</text>
+                                                        <text x="285" y="0" text-anchor="start" class="data-text-small" transform="rotate(90, 285, 0)">LUM: 98.4</text>
+                                                    </g>
+                                                </g>
+                                                <!-- Blackout Mask -->
                                                 <path d="M-500,-500 h1000 v1000 h-1000Z M0,360 a360,360 0 1,0 0,-720 a360,360 0 1,0 0,720Z" 
                                                       fill="#040608" fill-rule="evenodd" />
                                             </svg>
@@ -383,10 +449,76 @@
                                                         <stop offset="50%" style="stop-color:#00f0ff" />
                                                         <stop offset="100%" style="stop-color:#ff00cc" />
                                                     </linearGradient>
+                                                    <pattern id="rightHexPattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
+                                                        <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="#00f0ff" stroke-width="1.2"/>
+                                                    </pattern>
                                                 </defs>
-                                                <circle r="320" class="ring-main"/>
-                                                <circle r="350" class="outer-ring-grad"/>
-                                                <circle r="10" class="center-dot"/>
+                                                <g>
+                                                    <!-- Hexagonal Grid Background -->
+                                                    <circle r="335" class="hex-grid" fill="url(#rightHexPattern)" opacity="0.1"/>
+                                                    <!-- Grid circles -->
+                                                    <circle r="120" class="ring-dashed"/>
+                                                    <circle r="200" class="ring-main" stroke-width="1.5" stroke-opacity="0.5"/>
+                                                    <circle r="260" class="ring-dashed" stroke-dasharray="80, 10"/>
+                                                    <circle r="320" class="ring-main"/>
+                                                    <!-- Sector lines (every 30 degrees) -->
+                                                    <g class="sector-line">
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
+                                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
+                                                    </g>
+                                                    <!-- Triangular Markers -->
+                                                    <g class="marker-shape">
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(30)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(90)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(150)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(210)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(270)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
+                                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(330)"/>
+                                                    </g>
+                                                    <!-- Prominent outer ring with gradient -->
+                                                    <circle r="350" class="outer-ring-grad" stroke="url(#rightRingGradient)" stroke-width="4" fill="none" filter="url(#rightOuterGlow)"/>
+                                                    <!-- Center sensor complex -->
+                                                    <g class="center-dot-complex">
+                                                        <circle r="10" class="center-dot" filter="url(#rightCenterGlow)"/>
+                                                        <circle r="25" fill="none" stroke="#ff00cc" stroke-width="1.5" opacity="0.6"/>
+                                                        <circle r="35" class="ring-dashed" stroke-width="1" stroke-opacity="0.5"/>
+                                                        <g class="crosshair-fine">
+                                                            <line x1="-50" y1="0" x2="50" y2="0"/>
+                                                            <line x1="0" y1="-50" x2="0" y2="50"/>
+                                                        </g>
+                                                    </g>
+                                                    <!-- Targeting Brackets -->
+                                                    <g class="targeting-bracket">
+                                                        <path d="M -250 -350 L -300 -350 L -300 -300" />
+                                                        <path d="M  250 -350 L  300 -350 L  300 -300" />
+                                                        <path d="M -250  350 L -300  350 L -300  300" />
+                                                        <path d="M  250  350 L  300  350 L  300  300" />
+                                                    </g>
+                                                    <!-- Data readouts -->
+                                                    <g class="data-text">
+                                                        <text x="0" y="-285">ID: R-EYE</text>
+                                                        <text x="230" y="-230" font-size="24" fill="#00ff8c">STBL</text>
+                                                        <text x="-285" y="0" text-anchor="end" class="data-text-small" transform="rotate(-90, -285, 0)">SEQ. ACTIVE</text>
+                                                        <text x="285" y="0" text-anchor="start" class="data-text-small" transform="rotate(90, 285, 0)">LUM: 98.4</text>
+                                                    </g>
+                                                </g>
+                                                <!-- Blackout Mask -->
                                                 <path d="M-500,-500 h1000 v1000 h-1000Z M0,360 a360,360 0 1,0 0,-720 a360,360 0 1,0 0,720Z" 
                                                       fill="#040608" fill-rule="evenodd" />
                                             </svg>
