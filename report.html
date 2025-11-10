@@ -1130,7 +1130,7 @@
                 container.innerHTML = `
                     <h3 style="text-align: center; color: #fff; margin-bottom: 1.5rem; font-size: 1.3rem;">
                         <i class="fas fa-eye" style="margin-right: 0.5rem;"></i>
-                        Геометрична нормализация (${safeEyeLabel})
+                        Визуализация на ириса с топографски шаблон (${safeEyeLabel})
                     </h3>
                     <div class="visual-composite">
                         <div class="visual-composite-inner">
@@ -1194,14 +1194,14 @@
                         </div>
                     </div>
                     <div class="alignment-info">
-                        <strong>Alignment информация:</strong> 
-                        Център (${ensureNumber(alignment.center_x).toFixed(0)}px, ${ensureNumber(alignment.center_y).toFixed(0)}px), 
-                        Радиус ${ensureNumber(alignment.radius_px).toFixed(0)}px
-                        <span class="confidence-badge confidence-${alignment.confidence >= 0.9 ? 'high' : alignment.confidence >= 0.6 ? 'medium' : 'low'}">
-                            Confidence: ${(ensureNumber(alignment.confidence, 0) * 100).toFixed(0)}%
+                        <strong><i class="fas fa-user-check"></i> Информация за центрирането:</strong> 
+                        Изображението е центрирано и оразмерено <strong>ръчно от потребителя</strong> при качването.
+                        <br>
+                        <span class="confidence-badge confidence-high">
+                            <i class="fas fa-check-circle"></i> Потребителско центриране
                         </span>
                         <br>
-                        <em style="font-size: 0.85rem;">${DOMPurify.sanitize(alignment.validation_message || '')}</em>
+                        <em style="font-size: 0.85rem;">Изображението се показва директно без автоматични корекции, за да запази точността на ръчното позициониране.</em>
                     </div>
                 `;
 
@@ -1214,15 +1214,17 @@
             }
 
             /**
-             * Прилага CSS трансформация върху изображението на ириса
-             * @param {Object} alignment - Обект с center_x, center_y, radius_px
+             * Зарежда центрираното от потребителя изображение на ириса
+             * Използва директно изображението без допълнителни трансформации,
+             * тъй като потребителят вече е центрирал и оразмерил снимката
+             * @param {Object} alignment - Обект с center_x, center_y, radius_px (използва се за информация)
              * @param {Array} signs - Масив с идентифицирани знаци
              */
             function applyIrisTransformation(alignment, signs) {
                 const img = document.getElementById('iris-image');
                 if (!img) return;
 
-                // Опит да заредим изображението от localStorage
+                // Опит да заредим центрираното от потребителя изображение от localStorage
                 try {
                     const formData = localStorage.getItem('iridologyFormData');
                     if (formData) {
@@ -1236,23 +1238,30 @@
                         ) {
                             img.src = imageData;
                             img.onload = () => {
-                                // Изчисляване на трансформация
-                                // Целевият радиус на SVG е 320px
-                                const targetRadius = 320;
-                                const scale = targetRadius / ensureNumber(alignment.radius_px, 1);
-
                                 // Получаване на размерите на контейнера
                                 const container = img.parentElement;
                                 const containerWidth = container.clientWidth;
                                 const containerHeight = container.clientHeight;
 
-                                // Центриране на alignment.center към центъра на контейнера
-                                const translateX =
-                                    containerWidth / 2 - ensureNumber(alignment.center_x) * scale;
-                                const translateY =
-                                    containerHeight / 2 - ensureNumber(alignment.center_y) * scale;
+                                // Използваме изображението директно без трансформация,
+                                // тъй като потребителят вече го е центрирал и оразмерил правилно
+                                // Само го центрираме в контейнера
+                                const imgAspect = img.naturalWidth / img.naturalHeight;
+                                let displayWidth, displayHeight;
+                                
+                                if (imgAspect > 1) {
+                                    displayWidth = containerWidth;
+                                    displayHeight = containerWidth / imgAspect;
+                                } else {
+                                    displayHeight = containerHeight;
+                                    displayWidth = containerHeight * imgAspect;
+                                }
 
-                                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                                img.style.width = displayWidth + 'px';
+                                img.style.height = displayHeight + 'px';
+                                img.style.transform = 'none';
+                                img.style.left = (containerWidth - displayWidth) / 2 + 'px';
+                                img.style.top = (containerHeight - displayHeight) / 2 + 'px';
 
                                 // Рендиране на маркери за знаците
                                 if (signs && signs.length > 0) {
@@ -1260,7 +1269,7 @@
                                         signs,
                                         containerWidth / 2,
                                         containerHeight / 2,
-                                        targetRadius
+                                        Math.min(displayWidth, displayHeight) * 0.4 // Приблизителен радиус за маркерите
                                     );
                                 }
                             };
