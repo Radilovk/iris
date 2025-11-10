@@ -325,6 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.height = overlaySize;
     const ctx = canvas.getContext('2d');
 
+    // Fill with black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, overlaySize, overlaySize);
+
     // Calculate the visible area dimensions
     const rect = stageWrap.getBoundingClientRect();
     const canvasSize = Math.min(rect.width, rect.height);
@@ -344,6 +348,14 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
     ctx.restore();
 
+    // Apply circular mask to match the overlay
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.beginPath();
+    ctx.arc(overlaySize / 2, overlaySize / 2, overlaySize * 0.45, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
     // Convert canvas to blob
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
@@ -359,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mark as centered
         state.centered = true;
         state.centeredFile = centeredFile;
+        state.centeredCanvas = canvas;
 
         // Hide overlay tool
         container.style.display = 'none';
@@ -367,12 +380,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const preview = document.getElementById(`${eyeSide}-eye-preview`);
         preview.style.backgroundImage = `url(${canvas.toDataURL()})`;
 
+        // Update side-by-side preview
+        updateSideBySidePreview();
+
         showMessage(`${eyeSide === 'left' ? 'Ляво' : 'Дясно'} око центрирано успешно!`, 'success');
         setTimeout(() => clearMessage(), 2000);
 
         resolve(centeredFile);
       }, 'image/png', 0.95);
     });
+  }
+
+  // Update the side-by-side preview when both eyes are centered
+  function updateSideBySidePreview() {
+    const leftCentered = overlayStates.left.centered;
+    const rightCentered = overlayStates.right.centered;
+
+    if (leftCentered || rightCentered) {
+      const previewContainer = document.getElementById('centered-preview-container');
+      previewContainer.style.display = 'block';
+
+      // Update left eye preview
+      if (leftCentered && overlayStates.left.centeredCanvas) {
+        const leftCanvas = document.getElementById('left-eye-centered-canvas');
+        const leftCtx = leftCanvas.getContext('2d');
+        leftCanvas.width = overlayStates.left.centeredCanvas.width;
+        leftCanvas.height = overlayStates.left.centeredCanvas.height;
+        leftCtx.drawImage(overlayStates.left.centeredCanvas, 0, 0);
+      }
+
+      // Update right eye preview
+      if (rightCentered && overlayStates.right.centeredCanvas) {
+        const rightCanvas = document.getElementById('right-eye-centered-canvas');
+        const rightCtx = rightCanvas.getContext('2d');
+        rightCanvas.width = overlayStates.right.centeredCanvas.width;
+        rightCanvas.height = overlayStates.right.centeredCanvas.height;
+        rightCtx.drawImage(overlayStates.right.centeredCanvas, 0, 0);
+      }
+
+      // Scroll to preview
+      previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
