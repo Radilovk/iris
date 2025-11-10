@@ -817,10 +817,94 @@
                 height: min(92%, 640px);
                 pointer-events: none;
                 z-index: 10;
+                filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
             }
 
-            .iris-overlay-svg .overlay-ring {
+            .iris-overlay-svg .ring-main {
+                stroke: #00f0ff;
+                stroke-width: 2.5;
+                stroke-opacity: 0.8;
+                fill: none;
+            }
+
+            .iris-overlay-svg .ring-dashed {
+                stroke: #00f0ff;
+                stroke-width: 1;
+                stroke-opacity: 0.4;
+                fill: none;
+                stroke-dasharray: 5, 8;
+            }
+
+            .iris-overlay-svg .sector-line {
+                stroke: #00f0ff;
+                stroke-width: 1.5;
+                stroke-opacity: 0.4;
+            }
+
+            .iris-overlay-svg .sector-line line {
+                stroke: #00f0ff;
+                stroke-width: 1.5;
+                stroke-opacity: 0.4;
+            }
+
+            .iris-overlay-svg .marker-shape {
+                fill: #ff00cc;
                 stroke: #ff00cc;
+                stroke-width: 1.5;
+                opacity: 0.8;
+            }
+
+            .iris-overlay-svg .marker-shape path {
+                fill: #ff00cc;
+                stroke: #ff00cc;
+                stroke-width: 1.5;
+                opacity: 0.8;
+            }
+
+            .iris-overlay-svg .outer-ring-grad {
+                stroke-width: 4;
+                fill: none;
+            }
+
+            .iris-overlay-svg .center-dot {
+                fill: #ff00cc;
+            }
+
+            .iris-overlay-svg .crosshair-fine line {
+                stroke: #00f0ff;
+                stroke-width: 0.8;
+                stroke-opacity: 0.3;
+            }
+
+            .iris-overlay-svg .hex-grid {
+                opacity: 0.1;
+            }
+
+            .iris-overlay-svg .targeting-bracket path {
+                stroke: #00ff8c;
+                stroke-width: 2.5;
+                fill: none;
+                opacity: 0.7;
+            }
+
+            .iris-overlay-svg .data-text text {
+                font-family: 'Lucida Console', 'Courier New', monospace;
+                font-size: 16px;
+                font-weight: 700;
+                fill: #00f0ff;
+                text-shadow: 0 0 5px #00e0ff;
+                text-anchor: middle;
+            }
+
+            .iris-overlay-svg .data-text-small {
+                font-size: 14px;
+                fill: #7a8a9a;
+                text-anchor: start;
+            }
+
+            /* Legacy styles for backwards compatibility */
+            .iris-overlay-svg .overlay-ring {
+                stroke: #00f0ff;
                 stroke-width: 2;
                 stroke-opacity: 0.4;
                 fill: none;
@@ -833,7 +917,7 @@
             }
 
             .iris-overlay-svg .overlay-sector-line {
-                stroke: #ff00cc;
+                stroke: #00f0ff;
                 stroke-width: 1.2;
                 stroke-opacity: 0.28;
             }
@@ -1130,12 +1214,12 @@
                 container.innerHTML = `
                     <h3 style="text-align: center; color: #fff; margin-bottom: 1.5rem; font-size: 1.3rem;">
                         <i class="fas fa-eye" style="margin-right: 0.5rem;"></i>
-                        Геометрична нормализация (${safeEyeLabel})
+                        Визуализация на ириса с топографски шаблон (${safeEyeLabel})
                     </h3>
                     <div class="visual-composite">
                         <div class="visual-composite-inner">
                             <img id="iris-image" alt="Iris">
-                            <svg class="iris-overlay-svg" viewBox="-380 -380 760 760" xmlns="http://www.w3.org/2000/svg">
+                            <svg class="iris-overlay-svg" viewBox="-400 -400 800 800" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
                                     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                                         <feGaussianBlur stdDeviation="3.2" result="blur"/>
@@ -1144,64 +1228,107 @@
                                             <feMergeNode in="SourceGraphic"/>
                                         </feMerge>
                                     </filter>
+                                    <filter id="outerGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
+                                    <filter id="centerGlow"><feGaussianBlur stdDeviation="4" result="blur"/></filter>
+                                    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#ff00cc" />
+                                        <stop offset="50%" style="stop-color:#00f0ff" />
+                                        <stop offset="100%" style="stop-color:#ff00cc" />
+                                    </linearGradient>
+                                    <pattern id="hexPattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
+                                        <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="#00f0ff" stroke-width="1.2"/>
+                                    </pattern>
                                 </defs>
                                 
-                                <!-- Inner and middle zone rings -->
-                                <circle r="112" class="overlay-ring"/>
-                                <circle r="256" class="overlay-ring"/>
-                                
-                                <!-- Sector lines (12 sectors) -->
-                                <g class="overlay-sector-lines">
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(0)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(30)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(60)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(90)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(120)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(150)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(180)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(210)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(240)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(270)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(300)"/>
-                                    <line x1="0" y1="0" x2="0" y2="-348" class="overlay-sector-line" transform="rotate(330)"/>
+                                <g>
+                                    <!-- Hexagonal Grid Background -->
+                                    <circle r="335" class="hex-grid" fill="url(#hexPattern)" opacity="0.1"/>
+                                    
+                                    <!-- Grid circles -->
+                                    <circle r="120" class="ring-dashed"/>
+                                    <circle r="200" class="ring-main" stroke-width="1.5" stroke-opacity="0.5"/>
+                                    <circle r="260" class="ring-dashed" stroke-dasharray="80, 10"/>
+                                    <circle r="320" class="ring-main"/>
+                                    
+                                    <!-- Sector lines (every 30 degrees) -->
+                                    <g class="sector-line">
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
+                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
+                                    </g>
+                                    
+                                    <!-- Triangular Markers -->
+                                    <g class="marker-shape">
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(30)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(90)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(150)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(210)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(270)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
+                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(330)"/>
+                                    </g>
+                                    
+                                    <!-- Prominent outer ring with gradient -->
+                                    <circle r="350" class="outer-ring-grad" stroke="url(#ringGradient)" stroke-width="4" fill="none" filter="url(#outerGlow)"/>
+                                    
+                                    <!-- Center sensor complex -->
+                                    <g class="center-dot-complex">
+                                        <circle r="10" class="center-dot" fill="#ff00cc" filter="url(#centerGlow)"/>
+                                        <circle r="25" fill="none" stroke="#ff00cc" stroke-width="1.5" opacity="0.6"/>
+                                        <circle r="35" class="ring-dashed" stroke-width="1" stroke-opacity="0.5"/>
+                                        <g class="crosshair-fine">
+                                            <line x1="-50" y1="0" x2="50" y2="0" stroke="#00f0ff" stroke-width="0.8" stroke-opacity="0.3"/>
+                                            <line x1="0" y1="-50" x2="0" y2="50" stroke="#00f0ff" stroke-width="0.8" stroke-opacity="0.3"/>
+                                        </g>
+                                    </g>
+                                    
+                                    <!-- Targeting Brackets -->
+                                    <g class="targeting-bracket">
+                                        <path d="M -250 -350 L -300 -350 L -300 -300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                        <path d="M  250 -350 L  300 -350 L  300 -300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                        <path d="M -250  350 L -300  350 L -300  300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                        <path d="M  250  350 L  300  350 L  300  300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                    </g>
+                                    
+                                    <!-- Data readouts -->
+                                    <g class="data-text">
+                                        <text x="0" y="-285" font-family="'Lucida Console', 'Courier New', monospace" font-size="16" font-weight="700" fill="#00f0ff" text-anchor="middle">IRIS-AI</text>
+                                        <text x="230" y="-230" font-size="24" fill="#00ff8c">STBL</text>
+                                        <text x="-285" y="0" text-anchor="end" font-size="14" fill="#7a8a9a" transform="rotate(-90, -285, 0)">SEQ. ACTIVE</text>
+                                        <text x="285" y="0" text-anchor="start" font-size="14" fill="#7a8a9a" transform="rotate(90, 285, 0)">LUM: 98.4</text>
+                                    </g>
                                 </g>
                                 
-                                <!-- Numbers (12 hour positions) -->
-                                <g class="overlay-numbers">
-                                    <text x="0" y="-372" class="overlay-number">12</text>
-                                    <text x="186" y="-322" class="overlay-number">1</text>
-                                    <text x="322" y="-186" class="overlay-number">2</text>
-                                    <text x="372" y="0" class="overlay-number">3</text>
-                                    <text x="322" y="186" class="overlay-number">4</text>
-                                    <text x="186" y="322" class="overlay-number">5</text>
-                                    <text x="0" y="372" class="overlay-number">6</text>
-                                    <text x="-186" y="322" class="overlay-number">7</text>
-                                    <text x="-322" y="186" class="overlay-number">8</text>
-                                    <text x="-372" y="0" class="overlay-number">9</text>
-                                    <text x="-322" y="-186" class="overlay-number">10</text>
-                                    <text x="-186" y="-322" class="overlay-number">11</text>
-                                </g>
-                                
-                                <!-- Outer ring and center -->
-                                <circle r="320" class="overlay-outer" filter="url(#glow)"/>
-                                <circle r="8" class="overlay-center" filter="url(#glow)"/>
-                                <g stroke-opacity="0.22">
-                                    <line x1="-16" y1="0" x2="16" y2="0" class="overlay-sector-line"/>
-                                    <line x1="0" y1="-16" x2="0" y2="16" class="overlay-sector-line"/>
-                                </g>
+                                <!-- Blackout Mask (Must be last) -->
+                                <path d="M-500,-500 h1000 v1000 h-1000Z M0,360 a360,360 0 1,0 0,-720 a360,360 0 1,0 0,720Z" 
+                                      fill="#0f1820" fill-rule="evenodd" />
                             </svg>
                             <div id="sign-markers-container"></div>
                         </div>
                     </div>
                     <div class="alignment-info">
-                        <strong>Alignment информация:</strong> 
-                        Център (${ensureNumber(alignment.center_x).toFixed(0)}px, ${ensureNumber(alignment.center_y).toFixed(0)}px), 
-                        Радиус ${ensureNumber(alignment.radius_px).toFixed(0)}px
-                        <span class="confidence-badge confidence-${alignment.confidence >= 0.9 ? 'high' : alignment.confidence >= 0.6 ? 'medium' : 'low'}">
-                            Confidence: ${(ensureNumber(alignment.confidence, 0) * 100).toFixed(0)}%
+                        <strong><i class="fas fa-user-check"></i> Информация за центрирането:</strong> 
+                        Изображението е центрирано и оразмерено <strong>ръчно от потребителя</strong> при качването.
+                        <br>
+                        <span class="confidence-badge confidence-high">
+                            <i class="fas fa-check-circle"></i> Потребителско центриране
                         </span>
                         <br>
-                        <em style="font-size: 0.85rem;">${DOMPurify.sanitize(alignment.validation_message || '')}</em>
+                        <em style="font-size: 0.85rem;">Изображението се показва директно без автоматични корекции, за да запази точността на ръчното позициониране.</em>
                     </div>
                 `;
 
@@ -1214,15 +1341,17 @@
             }
 
             /**
-             * Прилага CSS трансформация върху изображението на ириса
-             * @param {Object} alignment - Обект с center_x, center_y, radius_px
+             * Зарежда центрираното от потребителя изображение на ириса
+             * Използва директно изображението без допълнителни трансформации,
+             * тъй като потребителят вече е центрирал и оразмерил снимката
+             * @param {Object} alignment - Обект с center_x, center_y, radius_px (използва се за информация)
              * @param {Array} signs - Масив с идентифицирани знаци
              */
             function applyIrisTransformation(alignment, signs) {
                 const img = document.getElementById('iris-image');
                 if (!img) return;
 
-                // Опит да заредим изображението от localStorage
+                // Опит да заредим центрираното от потребителя изображение от localStorage
                 try {
                     const formData = localStorage.getItem('iridologyFormData');
                     if (formData) {
@@ -1236,23 +1365,30 @@
                         ) {
                             img.src = imageData;
                             img.onload = () => {
-                                // Изчисляване на трансформация
-                                // Целевият радиус на SVG е 320px
-                                const targetRadius = 320;
-                                const scale = targetRadius / ensureNumber(alignment.radius_px, 1);
-
                                 // Получаване на размерите на контейнера
                                 const container = img.parentElement;
                                 const containerWidth = container.clientWidth;
                                 const containerHeight = container.clientHeight;
 
-                                // Центриране на alignment.center към центъра на контейнера
-                                const translateX =
-                                    containerWidth / 2 - ensureNumber(alignment.center_x) * scale;
-                                const translateY =
-                                    containerHeight / 2 - ensureNumber(alignment.center_y) * scale;
+                                // Използваме изображението директно без трансформация,
+                                // тъй като потребителят вече го е центрирал и оразмерил правилно
+                                // Само го центрираме в контейнера
+                                const imgAspect = img.naturalWidth / img.naturalHeight;
+                                let displayWidth, displayHeight;
+                                
+                                if (imgAspect > 1) {
+                                    displayWidth = containerWidth;
+                                    displayHeight = containerWidth / imgAspect;
+                                } else {
+                                    displayHeight = containerHeight;
+                                    displayWidth = containerHeight * imgAspect;
+                                }
 
-                                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                                img.style.width = displayWidth + 'px';
+                                img.style.height = displayHeight + 'px';
+                                img.style.transform = 'none';
+                                img.style.left = (containerWidth - displayWidth) / 2 + 'px';
+                                img.style.top = (containerHeight - displayHeight) / 2 + 'px';
 
                                 // Рендиране на маркери за знаците
                                 if (signs && signs.length > 0) {
@@ -1260,7 +1396,7 @@
                                         signs,
                                         containerWidth / 2,
                                         containerHeight / 2,
-                                        targetRadius
+                                        Math.min(displayWidth, displayHeight) * 0.4 // Приблизителен радиус за маркерите
                                     );
                                 }
                             };
