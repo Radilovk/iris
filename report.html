@@ -750,11 +750,11 @@
                 }
             }
 
-            /* Visual Composite Styles - Shown on mobile, hidden on desktop */
+            /* Visual Composite Styles - Show on both mobile and desktop */
             .visual-composite-container {
                 position: relative;
                 width: 100%;
-                max-width: 700px;
+                max-width: 1000px;
                 margin: 2rem auto;
                 padding: 2rem;
                 background: linear-gradient(135deg, #0f1820 0%, #1a2332 100%);
@@ -763,7 +763,34 @@
                 overflow: hidden;
             }
 
-            /* Desktop view - show charts, hide mobile cards and visual composite */
+            /* Side-by-side eyes container */
+            .eyes-composite-side-by-side {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 2rem;
+                justify-content: center;
+            }
+
+            .eye-composite-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .eye-composite-item h4 {
+                margin-bottom: 1rem;
+                text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            }
+
+            .iris-image-composite {
+                position: absolute;
+                max-width: none;
+                transform-origin: center center;
+                will-change: transform;
+                pointer-events: none;
+            }
+
+            /* Desktop view - show charts and visual composite */
             @media (min-width: 768px) {
                 .chart-container {
                     display: block;
@@ -774,9 +801,9 @@
                     display: none;
                 }
 
-                /* Hide visual composite on desktop */
+                /* Show visual composite on desktop too */
                 .visual-composite-container {
-                    display: none;
+                    display: block;
                 }
             }
 
@@ -1182,182 +1209,198 @@
             }
 
             /**
-             * Създава визуален композит с изображение на ириса и SVG overlay
+             * Създава визуален композит с изображения на двата ириса и SVG overlay
              * @param {Object} leftEyeData - Данни за лявото око (alignment + identified_signs)
              * @param {Object} rightEyeData - Данни за дясното око
              * @returns {HTMLElement|null} - Контейнер с визуалния композит или null ако няма данни
              */
             function createVisualComposite(leftEyeData, rightEyeData) {
-                // Проверка дали има alignment данни
-                if (!leftEyeData?.alignment && !rightEyeData?.alignment) {
-                    console.log('Няма alignment данни за визуален композит');
+                // Проверка дали има поне едно око
+                const hasLeftEye = leftEyeData && (leftEyeData.alignment || true);
+                const hasRightEye = rightEyeData && (rightEyeData.alignment || true);
+
+                if (!hasLeftEye && !hasRightEye) {
+                    console.log('Няма данни за визуален композит');
                     return null;
                 }
 
                 const container = document.createElement('div');
                 container.className = 'visual-composite-container';
 
-                // Избираме данните с по-висока confidence
-                const eyeData =
-                    (leftEyeData?.alignment?.confidence || 0) >=
-                    (rightEyeData?.alignment?.confidence || 0)
-                        ? leftEyeData
-                        : rightEyeData;
-
-                const alignment = eyeData.alignment;
-                const signs = eyeData.identified_signs || [];
-                const eyeLabel = eyeData.eye || 'око';
-
-                // Sanitize user inputs to prevent XSS
-                const safeEyeLabel = DOMPurify.sanitize(eyeLabel);
-
                 container.innerHTML = `
                     <h3 style="text-align: center; color: #fff; margin-bottom: 1.5rem; font-size: 1.3rem;">
                         <i class="fas fa-eye" style="margin-right: 0.5rem;"></i>
-                        Визуализация на ириса с топографски шаблон (${safeEyeLabel})
+                        Визуализация на ирисите с топографски шаблон
                     </h3>
-                    <div class="visual-composite">
-                        <div class="visual-composite-inner">
-                            <img id="iris-image" alt="Iris">
-                            <svg class="iris-overlay-svg" viewBox="-400 -400 800 800" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                                        <feGaussianBlur stdDeviation="3.2" result="blur"/>
-                                        <feMerge>
-                                            <feMergeNode in="blur"/>
-                                            <feMergeNode in="SourceGraphic"/>
-                                        </feMerge>
-                                    </filter>
-                                    <filter id="outerGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
-                                    <filter id="centerGlow"><feGaussianBlur stdDeviation="4" result="blur"/></filter>
-                                    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#ff00cc" />
-                                        <stop offset="50%" style="stop-color:#00f0ff" />
-                                        <stop offset="100%" style="stop-color:#ff00cc" />
-                                    </linearGradient>
-                                    <pattern id="hexPattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
-                                        <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="#00f0ff" stroke-width="1.2"/>
-                                    </pattern>
-                                </defs>
-                                
-                                <g>
-                                    <!-- Hexagonal Grid Background -->
-                                    <circle r="335" class="hex-grid" fill="url(#hexPattern)" opacity="0.1"/>
-                                    
-                                    <!-- Grid circles -->
-                                    <circle r="120" class="ring-dashed"/>
-                                    <circle r="200" class="ring-main" stroke-width="1.5" stroke-opacity="0.5"/>
-                                    <circle r="260" class="ring-dashed" stroke-dasharray="80, 10"/>
-                                    <circle r="320" class="ring-main"/>
-                                    
-                                    <!-- Sector lines (every 30 degrees) -->
-                                    <g class="sector-line">
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
-                                        <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
-                                    </g>
-                                    
-                                    <!-- Triangular Markers -->
-                                    <g class="marker-shape">
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(30)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(90)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(150)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(210)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(270)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
-                                        <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(330)"/>
-                                    </g>
-                                    
-                                    <!-- Prominent outer ring with gradient -->
-                                    <circle r="350" class="outer-ring-grad" stroke="url(#ringGradient)" stroke-width="4" fill="none" filter="url(#outerGlow)"/>
-                                    
-                                    <!-- Center sensor complex -->
-                                    <g class="center-dot-complex">
-                                        <circle r="10" class="center-dot" fill="#ff00cc" filter="url(#centerGlow)"/>
-                                        <circle r="25" fill="none" stroke="#ff00cc" stroke-width="1.5" opacity="0.6"/>
-                                        <circle r="35" class="ring-dashed" stroke-width="1" stroke-opacity="0.5"/>
-                                        <g class="crosshair-fine">
-                                            <line x1="-50" y1="0" x2="50" y2="0" stroke="#00f0ff" stroke-width="0.8" stroke-opacity="0.3"/>
-                                            <line x1="0" y1="-50" x2="0" y2="50" stroke="#00f0ff" stroke-width="0.8" stroke-opacity="0.3"/>
-                                        </g>
-                                    </g>
-                                    
-                                    <!-- Targeting Brackets -->
-                                    <g class="targeting-bracket">
-                                        <path d="M -250 -350 L -300 -350 L -300 -300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
-                                        <path d="M  250 -350 L  300 -350 L  300 -300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
-                                        <path d="M -250  350 L -300  350 L -300  300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
-                                        <path d="M  250  350 L  300  350 L  300  300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
-                                    </g>
-                                    
-                                    <!-- Data readouts -->
-                                    <g class="data-text">
-                                        <text x="0" y="-285" font-family="'Lucida Console', 'Courier New', monospace" font-size="16" font-weight="700" fill="#00f0ff" text-anchor="middle">IRIS-AI</text>
-                                        <text x="230" y="-230" font-size="24" fill="#00ff8c">STBL</text>
-                                        <text x="-285" y="0" text-anchor="end" font-size="14" fill="#7a8a9a" transform="rotate(-90, -285, 0)">SEQ. ACTIVE</text>
-                                        <text x="285" y="0" text-anchor="start" font-size="14" fill="#7a8a9a" transform="rotate(90, 285, 0)">LUM: 98.4</text>
-                                    </g>
-                                </g>
-                                
-                                <!-- Blackout Mask (Must be last) -->
-                                <path d="M-500,-500 h1000 v1000 h-1000Z M0,360 a360,360 0 1,0 0,-720 a360,360 0 1,0 0,720Z" 
-                                      fill="#0f1820" fill-rule="evenodd" />
-                            </svg>
-                            <div id="sign-markers-container"></div>
-                        </div>
+                    <div class="eyes-composite-side-by-side">
+                        ${hasLeftEye ? createEyeComposite('left', leftEyeData) : ''}
+                        ${hasRightEye ? createEyeComposite('right', rightEyeData) : ''}
                     </div>
                     <div class="alignment-info">
                         <strong><i class="fas fa-user-check"></i> Информация за центрирането:</strong> 
-                        Изображението е центрирано и оразмерено <strong>ръчно от потребителя</strong> при качването.
+                        Изображенията са центрирани и оразмерени <strong>ръчно от потребителя</strong> при качването.
                         <br>
                         <span class="confidence-badge confidence-high">
                             <i class="fas fa-check-circle"></i> Потребителско центриране
                         </span>
                         <br>
-                        <em style="font-size: 0.85rem;">Изображението се показва директно без автоматични корекции, за да запази точността на ръчното позициониране.</em>
+                        <em style="font-size: 0.85rem;">Изображенията се показват директно без автоматични корекции, за да запази точността на ръчното позициониране.</em>
                     </div>
                 `;
 
                 // Apply image transformation after insertion into DOM
                 requestAnimationFrame(() => {
-                    applyIrisTransformation(alignment, signs);
+                    if (hasLeftEye) applyIrisTransformation('left', leftEyeData);
+                    if (hasRightEye) applyIrisTransformation('right', rightEyeData);
                 });
 
                 return container;
             }
 
             /**
+             * Създава HTML за единичен ирис композит
+             * @param {string} eyeSide - 'left' или 'right'
+             * @param {Object} eyeData - Данни за окото
+             * @returns {string} - HTML string
+             */
+            function createEyeComposite(eyeSide, eyeData) {
+                const eyeLabel = eyeSide === 'left' ? 'Ляво око' : 'Дясно око';
+                const signs = eyeData?.identified_signs || [];
+                
+                return `
+                    <div class="eye-composite-item">
+                        <h4 style="text-align: center; color: #00f0ff; margin-bottom: 1rem;">
+                            ${eyeLabel}
+                        </h4>
+                        <div class="visual-composite">
+                            <div class="visual-composite-inner">
+                                <img id="iris-image-${eyeSide}" class="iris-image-composite" alt="${eyeLabel}">
+                                <svg class="iris-overlay-svg" viewBox="-400 -400 800 800" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <filter id="glow-${eyeSide}" x="-50%" y="-50%" width="200%" height="200%">
+                                            <feGaussianBlur stdDeviation="3.2" result="blur"/>
+                                            <feMerge>
+                                                <feMergeNode in="blur"/>
+                                                <feMergeNode in="SourceGraphic"/>
+                                            </feMerge>
+                                        </filter>
+                                        <filter id="outerGlow-${eyeSide}"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
+                                        <filter id="centerGlow-${eyeSide}"><feGaussianBlur stdDeviation="4" result="blur"/></filter>
+                                        <linearGradient id="ringGradient-${eyeSide}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#ff00cc" />
+                                            <stop offset="50%" style="stop-color:#00f0ff" />
+                                            <stop offset="100%" style="stop-color:#ff00cc" />
+                                        </linearGradient>
+                                        <pattern id="hexPattern-${eyeSide}" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
+                                            <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="#00f0ff" stroke-width="1.2"/>
+                                        </pattern>
+                                    </defs>
+                                    
+                                    <g>
+                                        <!-- Hexagonal Grid Background -->
+                                        <circle r="335" class="hex-grid" fill="url(#hexPattern-${eyeSide})" opacity="0.1"/>
+                                        
+                                        <!-- Grid circles -->
+                                        <circle r="120" class="ring-dashed"/>
+                                        <circle r="200" class="ring-main" stroke-width="1.5" stroke-opacity="0.5"/>
+                                        <circle r="260" class="ring-dashed" stroke-dasharray="80, 10"/>
+                                        <circle r="320" class="ring-main"/>
+                                        
+                                        <!-- Sector lines (every 30 degrees) -->
+                                        <g class="sector-line">
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
+                                            <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
+                                        </g>
+                                        
+                                        <!-- Triangular Markers -->
+                                        <g class="marker-shape">
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(30)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(90)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(150)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(210)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(270)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
+                                            <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(330)"/>
+                                        </g>
+                                        
+                                        <!-- Prominent outer ring with gradient -->
+                                        <circle r="350" class="outer-ring-grad" stroke="url(#ringGradient-${eyeSide})" stroke-width="4" fill="none" filter="url(#outerGlow-${eyeSide})"/>
+                                        
+                                        <!-- Center sensor complex -->
+                                        <g class="center-dot-complex">
+                                            <circle r="10" class="center-dot" fill="#ff00cc" filter="url(#centerGlow-${eyeSide})"/>
+                                            <circle r="25" fill="none" stroke="#ff00cc" stroke-width="1.5" opacity="0.6"/>
+                                            <circle r="35" class="ring-dashed" stroke-width="1" stroke-opacity="0.5"/>
+                                            <g class="crosshair-fine">
+                                                <line x1="-50" y1="0" x2="50" y2="0" stroke="#00f0ff" stroke-width="0.8" stroke-opacity="0.3"/>
+                                                <line x1="0" y1="-50" x2="0" y2="50" stroke="#00f0ff" stroke-width="0.8" stroke-opacity="0.3"/>
+                                            </g>
+                                        </g>
+                                        
+                                        <!-- Targeting Brackets -->
+                                        <g class="targeting-bracket">
+                                            <path d="M -250 -350 L -300 -350 L -300 -300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                            <path d="M  250 -350 L  300 -350 L  300 -300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                            <path d="M -250  350 L -300  350 L -300  300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                            <path d="M  250  350 L  300  350 L  300  300" stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7"/>
+                                        </g>
+                                        
+                                        <!-- Data readouts -->
+                                        <g class="data-text">
+                                            <text x="0" y="-285" font-family="'Lucida Console', 'Courier New', monospace" font-size="16" font-weight="700" fill="#00f0ff" text-anchor="middle">${eyeSide === 'left' ? 'L-EYE' : 'R-EYE'}</text>
+                                            <text x="230" y="-230" font-size="24" fill="#00ff8c">STBL</text>
+                                            <text x="-285" y="0" text-anchor="end" font-size="14" fill="#7a8a9a" transform="rotate(-90, -285, 0)">SEQ. ACTIVE</text>
+                                            <text x="285" y="0" text-anchor="start" font-size="14" fill="#7a8a9a" transform="rotate(90, 285, 0)">LUM: 98.4</text>
+                                        </g>
+                                    </g>
+                                    
+                                    <!-- Blackout Mask (Must be last) -->
+                                    <path d="M-500,-500 h1000 v1000 h-1000Z M0,360 a360,360 0 1,0 0,-720 a360,360 0 1,0 0,720Z" 
+                                          fill="#0f1820" fill-rule="evenodd" />
+                                </svg>
+                                <div id="sign-markers-container-${eyeSide}"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            /**
              * Зарежда центрираното от потребителя изображение на ириса
              * Използва директно изображението без допълнителни трансформации,
              * тъй като потребителят вече е центрирал и оразмерил снимката
-             * @param {Object} alignment - Обект с center_x, center_y, radius_px (използва се за информация)
-             * @param {Array} signs - Масив с идентифицирани знаци
+             * @param {string} eyeSide - 'left' или 'right'
+             * @param {Object} eyeData - Обект с alignment и identified_signs
              */
-            function applyIrisTransformation(alignment, signs) {
-                const img = document.getElementById('iris-image');
+            function applyIrisTransformation(eyeSide, eyeData) {
+                const img = document.getElementById(`iris-image-${eyeSide}`);
                 if (!img) return;
+
+                const alignment = eyeData?.alignment || {};
+                const signs = eyeData?.identified_signs || [];
 
                 // Опит да заредим центрираното от потребителя изображение от localStorage
                 try {
                     const formData = localStorage.getItem('iridologyFormData');
                     if (formData) {
                         const data = JSON.parse(formData);
-                        // Търсим изображение (left или right eye)
-                        const imageData = data['left-eye-upload'] || data['right-eye-upload'];
+                        // Търсим изображение за конкретното око
+                        const imageData = data[`${eyeSide}-eye-upload`];
                         if (
                             imageData &&
                             typeof imageData === 'string' &&
@@ -1396,14 +1439,15 @@
                                         signs,
                                         containerWidth / 2,
                                         containerHeight / 2,
-                                        Math.min(displayWidth, displayHeight) * 0.4 // Приблизителен радиус за маркерите
+                                        Math.min(displayWidth, displayHeight) * 0.4, // Приблизителен радиус за маркерите
+                                        `sign-markers-container-${eyeSide}`
                                     );
                                 }
                             };
                         }
                     }
                 } catch (e) {
-                    console.error('Грешка при зареждане на изображение:', e);
+                    console.error(`Грешка при зареждане на изображение за ${eyeSide}:`, e);
                 }
             }
 
@@ -1413,9 +1457,10 @@
              * @param {number} centerX - X координата на центъра в контейнера
              * @param {number} centerY - Y координата на центъра в контейнера
              * @param {number} radius - Радиусът на външния пръстен (320px)
+             * @param {string} containerId - ID на контейнера за маркерите
              */
-            function renderSignMarkers(signs, centerX, centerY, radius) {
-                const container = document.getElementById('sign-markers-container');
+            function renderSignMarkers(signs, centerX, centerY, radius, containerId = 'sign-markers-container') {
+                const container = document.getElementById(containerId);
                 if (!container) return;
 
                 container.innerHTML = ''; // Изчистваме предишни маркери
