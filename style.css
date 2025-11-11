@@ -415,14 +415,24 @@ body.gradient-background {
   text-align: left;
 }
 
-/* ====== IRIS ZONE OVERLAY STYLES ====== */
+/* ====== IRIS ZONE OVERLAY STYLES - BIOTECH THEME ====== */
 #iris-overlay-container {
   margin-top: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #13181e 0%, #1a222a 100%);
   border-radius: 16px;
-  border: 2px solid #e0e7ff;
+  border: 2px solid #2a3540;
   animation: fadeIn 0.5s ease-in;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+}
+
+#iris-overlay-container h4 {
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+#iris-overlay-container p {
+  color: #7a8a9a;
 }
 
 @keyframes fadeIn {
@@ -444,31 +454,35 @@ body.gradient-background {
 }
 
 .overlay-item {
-  background: white;
+  background: #040608;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
   text-align: center;
+  border: 1px solid #2a3540;
 }
 
 .overlay-item h5 {
   font-size: 1.2rem;
   margin-bottom: 1rem;
-  color: #333;
+  color: #00f0ff;
   font-weight: 600;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
 }
 
 .overlay-item canvas {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
   cursor: crosshair;
   transition: transform 0.2s ease;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.25));
 }
 
 .overlay-item canvas:hover {
   transform: scale(1.02);
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.35));
 }
 
 .overlay-controls {
@@ -481,25 +495,28 @@ body.gradient-background {
 .btn-icon {
   width: 40px;
   height: 40px;
-  border: none;
+  border: 1px solid #2a3540;
   border-radius: 50%;
-  background: var(--primary-gradient);
-  color: white;
+  background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+  color: #00f0ff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(58, 123, 213, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .btn-icon:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(58, 123, 213, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 240, 255, 0.4);
+  border-color: #00f0ff;
+  background: linear-gradient(135deg, #1a3a4a, #0f2a34);
 }
 
 .btn-icon:active {
-  transform: translateY(0);
+  transform: scale(0.96);
+  background: linear-gradient(135deg, #152231, #0c151d);
 }
 
 .btn-icon i {
