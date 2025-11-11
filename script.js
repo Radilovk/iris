@@ -344,9 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.height = overlaySize;
     const ctx = canvas.getContext('2d');
 
-    // Fill with black background
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, overlaySize, overlaySize);
+    // No background fill - canvas starts transparent
+    // This creates a clean PNG with alpha channel
 
     // Calculate the visible area dimensions
     const rect = stageWrap.getBoundingClientRect();
