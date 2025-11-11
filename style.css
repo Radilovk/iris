@@ -1074,3 +1074,243 @@ button:focus {
 html {
   scroll-behavior: smooth;
 }
+
+/* ====== IRIS OVERLAY MODAL STYLES ====== */
+
+/* Preview overlay button - Mobile optimized */
+.btn-preview-overlay {
+  margin-top: 0.75rem;
+  background: linear-gradient(135deg, #00f0ff, #00a8e8);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 240, 255, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px; /* Touch target */
+}
+
+.btn-preview-overlay:active {
+  transform: scale(0.96);
+  background: linear-gradient(135deg, #00d4e6, #0095d4);
+}
+
+/* Modal overlay - Full screen mobile */
+.overlay-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.overlay-modal-content {
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.overlay-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
+  border-bottom: 2px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.2);
+}
+
+.overlay-modal-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #00f0ff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.close-modal {
+  background: rgba(255, 0, 204, 0.1);
+  border: 2px solid rgba(255, 0, 204, 0.3);
+  font-size: 1.5rem;
+  color: #ff00cc;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-modal:active {
+  background: rgba(255, 0, 204, 0.3);
+  transform: scale(0.9);
+}
+
+.overlay-modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: #000000;
+}
+
+.overlay-viewport-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, #0a0e1a 0%, #000000 100%);
+}
+
+.overlay-viewport {
+  position: relative;
+  width: min(95vw, 95vh);
+  height: min(95vw, 95vh);
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0a0e1a;
+  box-shadow:
+    0 0 60px 20px rgba(0, 240, 255, 0.4),
+    inset 0 0 40px rgba(0, 240, 255, 0.1);
+  touch-action: none;
+  border: 3px solid rgba(0, 240, 255, 0.3);
+}
+
+.overlay-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.overlay-svg-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.overlay-svg-container.hidden {
+  opacity: 0;
+}
+
+.overlay-svg-container svg {
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.6));
+}
+
+/* Overlay CSS variables for SVG */
+.overlay-modal {
+  --muted: #7a8a9a;
+  --primary: #00f0ff;
+  --accent: #ff00cc;
+  --glow: #00e0ff;
+  --success: #00ff8c;
+}
+
+.overlay-controls {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+  border-top: 2px solid rgba(0, 240, 255, 0.3);
+  flex-wrap: nowrap;
+}
+
+.btn-overlay-control {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 0.1));
+  color: #00f0ff;
+  border: 2px solid rgba(0, 240, 255, 0.5);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(0, 240, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+  min-height: 48px;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.btn-overlay-control:active {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.4), rgba(0, 240, 255, 0.2));
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.5);
+}
+
+.overlay-hint {
+  text-align: center;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 0, 204, 0.1) 100%);
+  color: #00f0ff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-top: 1px solid rgba(0, 240, 255, 0.2);
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+/* Desktop fallback - hide or show warning */
+@media (min-width: 768px) {
+  .overlay-modal::before {
+    content: '⚠️ Този интерфейс е оптимизиран за мобилни устройства';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 0, 204, 0.9);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    z-index: 10001;
+    text-align: center;
+    max-width: 80%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+}
