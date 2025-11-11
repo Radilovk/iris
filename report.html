@@ -865,6 +865,79 @@
             `;
                 container.appendChild(hero);
 
+                // Добавяме ирисови изображения с топографски шаблони ако са налични
+                if (data.leftEyeOverlay || data.rightEyeOverlay) {
+                    const irisSection = document.createElement('div');
+                    irisSection.className = 'iris-images-section';
+                    irisSection.style.cssText = `
+                        background: linear-gradient(135deg, #13181e 0%, #1a222a 100%);
+                        border-radius: 16px;
+                        padding: 2rem;
+                        margin-bottom: 2rem;
+                        border: 2px solid #2a3540;
+                        box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+                    `;
+                    
+                    let irisHTML = `
+                        <h3 style="text-align: center; color: #00f0ff; margin-bottom: 1rem; font-size: 1.4rem; text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);">
+                            <i class="fas fa-eye" style="color: #00f0ff;"></i>
+                            Биотехнологичен Скенер - Топографска Карта
+                        </h3>
+                        <p style="text-align: center; color: #7a8a9a; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                            Усъвършенстван HUD анализ на ирисовите зони
+                        </p>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                    `;
+                    
+                    if (data.leftEyeOverlay) {
+                        irisHTML += `
+                            <div style="text-align: center; background: #040608; padding: 1.5rem; border-radius: 12px; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); border: 1px solid #2a3540;">
+                                <h4 style="color: #00f0ff; margin-bottom: 1rem; font-size: 1.1rem; text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);">
+                                    <i class="fas fa-eye"></i> Ляво око
+                                </h4>
+                                <img src="${data.leftEyeOverlay}" alt="Ляво око с биотехнологичен скенер" 
+                                     style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.25));">
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.rightEyeOverlay) {
+                        irisHTML += `
+                            <div style="text-align: center; background: #040608; padding: 1.5rem; border-radius: 12px; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); border: 1px solid #2a3540;">
+                                <h4 style="color: #00f0ff; margin-bottom: 1rem; font-size: 1.1rem; text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);">
+                                    <i class="fas fa-eye"></i> Дясно око
+                                </h4>
+                                <img src="${data.rightEyeOverlay}" alt="Дясно око с биотехнологичен скенер" 
+                                     style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.25));">
+                            </div>
+                        `;
+                    }
+                    
+                    irisHTML += `
+                        </div>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: #1a222a; border-radius: 8px; border-left: 4px solid #00f0ff;">
+                            <p style="margin: 0; color: #7a8a9a; font-size: 0.9rem; line-height: 1.6;">
+                                <i class="fas fa-info-circle" style="color: #00f0ff;"></i>
+                                <strong style="color: #00f0ff;">Биотех HUD система:</strong> Усъвършенстваната визуализация използва хексагонални мрежи, радиални сектори и концентрични зони за прецизно картографиране на ирисовите области. Всяка зона представлява специфичен орган или система според топографската карта на иридологията.
+                            </p>
+                        </div>
+                    `;
+                    
+                    irisSection.innerHTML = irisHTML;
+                    container.appendChild(irisSection);
+                    
+                    // Add responsive media query for two columns on larger screens
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @media (min-width: 768px) {
+                            .iris-images-section > div:nth-child(3) {
+                                grid-template-columns: repeat(2, 1fr) !important;
+                            }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+
                 // Добавяме резюме ако е налично
                 if (data['Резюме на анализа']) {
                     const summaryBox = document.createElement('div');

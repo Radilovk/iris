@@ -1,4 +1,5 @@
 import { WORKER_URL, MAX_IMAGE_BYTES } from './config.js';
+import { createIrisOverlay, detectIrisPosition } from './iris-overlay.js';
 
 // --- КОНФИГУРАЦИЯ ---
 // Стойностите се споделят с админ панела чрез config.js
@@ -138,6 +139,98 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- КАЧВАНЕ НА ФАЙЛОВЕ ---
+  const overlayContainer = document.getElementById('iris-overlay-container');
+  const leftOverlayCanvas = document.getElementById('left-overlay-canvas');
+  const rightOverlayCanvas = document.getElementById('right-overlay-canvas');
+  const overlayImages = { left: null, right: null };
+  const overlayControllers = { left: null, right: null };
+
+  function setupOverlayControls(eye) {
+    const canvas = eye === 'left' ? leftOverlayCanvas : rightOverlayCanvas;
+    const image = overlayImages[eye];
+    if (!canvas || !image) return;
+
+    const controller = overlayControllers[eye];
+    if (!controller) return;
+
+    const zoomInBtn = document.getElementById(`${eye}-zoom-in`);
+    const zoomOutBtn = document.getElementById(`${eye}-zoom-out`);
+    const resetBtn = document.getElementById(`${eye}-reset`);
+
+    if (zoomInBtn) {
+      zoomInBtn.onclick = () => {
+        const params = controller.getParams();
+        controller.setRadius(params.irisRadius * 1.1);
+      };
+    }
+
+    if (zoomOutBtn) {
+      zoomOutBtn.onclick = () => {
+        const params = controller.getParams();
+        controller.setRadius(params.irisRadius * 0.9);
+      };
+    }
+
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        const detected = detectIrisPosition(image);
+        controller.setCenter(detected.centerX, detected.centerY);
+        controller.setRadius(detected.irisRadius);
+      };
+    }
+  }
+
+  function createOverlayForEye(eye, dataUrl) {
+    const canvas = eye === 'left' ? leftOverlayCanvas : rightOverlayCanvas;
+    if (!canvas) return;
+
+    const img = new Image();
+    img.onload = () => {
+      overlayImages[eye] = img;
+
+      // Auto-detect iris position
+      const detected = detectIrisPosition(img);
+
+      // Create interactive overlay
+      createIrisOverlay(canvas, img, {
+        centerX: detected.centerX,
+        centerY: detected.centerY,
+        irisRadius: detected.irisRadius,
+        showZones: true,
+        showSectors: true,
+        zoneOpacity: 0.4
+      });
+
+      // Store simple controller object for manual adjustments
+      let centerX = detected.centerX;
+      let centerY = detected.centerY;
+      let irisRadius = detected.irisRadius;
+
+      overlayControllers[eye] = {
+        setCenter(x, y) {
+          centerX = x;
+          centerY = y;
+          createIrisOverlay(canvas, img, { centerX, centerY, irisRadius, zoneOpacity: 0.4 });
+        },
+        setRadius(r) {
+          irisRadius = r;
+          createIrisOverlay(canvas, img, { centerX, centerY, irisRadius, zoneOpacity: 0.4 });
+        },
+        getParams() {
+          return { centerX, centerY, irisRadius };
+        }
+      };
+
+      setupOverlayControls(eye);
+
+      // Show overlay container
+      if (overlayContainer) {
+        overlayContainer.style.display = 'block';
+      }
+    };
+    img.src = dataUrl;
+  }
+
   form.querySelectorAll('input[type="file"]').forEach((input) => {
     const preview = document.getElementById(input.id.replace('-upload', '-preview'));
     if (!preview) return;
@@ -171,6 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
         preview.querySelector('p').style.display = 'none';
         preview.style.backgroundImage = `url(${e.target.result})`;
         preview.style.borderStyle = 'solid';
+
+        // Create overlay visualization
+        const eye = input.id.includes('left') ? 'left' : 'right';
+        createOverlayForEye(eye, e.target.result);
       };
       reader.readAsDataURL(file);
     });
@@ -243,6 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
       clearInterval(progressInterval);
       progressBar.style.width = '100%';
       showMessage('Успех! Пренасочваме ви към доклада...', 'success');
+
+      // Store overlay images with report data
+      if (leftOverlayCanvas) {
+        data.leftEyeOverlay = leftOverlayCanvas.toDataURL('image/png');
+      }
+      if (rightOverlayCanvas) {
+        data.rightEyeOverlay = rightOverlayCanvas.toDataURL('image/png');
+      }
+
       localStorage.setItem('iridologyReport', JSON.stringify(data));
       setTimeout(() => (window.location.href = 'report.html'), 1500);
     } catch (error) {
