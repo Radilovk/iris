@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     preview.addEventListener('click', () => input.click());
 
-    input.addEventListener('change', function () {
+    input.addEventListener('change', function() {
       const file = this.files[0];
       const parentGroup = this.closest('.form-group');
       parentGroup.classList.remove('error');
@@ -199,6 +199,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show overlay tool
         showOverlayTool(eyeSide, e.target.result);
       };
+      reader.onerror = (error) => {
+        console.error('Грешка при четене на файл:', error);
+        showMessage('Грешка при зареждане на изображението. Моля, опитайте отново.', 'error');
+        parentGroup.classList.add('error');
+        this.value = '';
+      };
       reader.readAsDataURL(file);
     });
   });
@@ -212,6 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
     img.onload = () => {
       img.style.display = 'block';
       resetOverlay(eyeSide);
+    };
+    img.onerror = () => {
+      console.error('Грешка при зареждане на изображението в overlay tool');
+      showMessage('Грешка при зареждане на изображението. Моля, опитайте отново.', 'error');
+      container.style.display = 'none';
     };
     img.src = imageDataUrl;
 
@@ -365,9 +376,16 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.globalCompositeOperation = 'source-over';
 
     // Convert canvas to blob
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => {
+          if (!blob) {
+            console.error('Грешка: canvas.toBlob върна null');
+            showMessage('Грешка при обработка на изображението. Моля, опитайте отново.', 'error');
+            reject(new Error('Failed to create blob from canvas'));
+            return;
+          }
+
           const fileName = state.file.name.replace(/\.[^/.]+$/, '_centered.png');
           const centeredFile = new File([blob], fileName, { type: 'image/png' });
 
@@ -410,24 +428,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (leftCentered || rightCentered) {
       const previewContainer = document.getElementById('centered-preview-container');
+      if (!previewContainer) {
+        console.error('Preview container not found');
+        return;
+      }
       previewContainer.style.display = 'block';
 
       // Update left eye preview
       if (leftCentered && overlayStates.left.centeredCanvas) {
         const leftCanvas = document.getElementById('left-eye-centered-canvas');
-        const leftCtx = leftCanvas.getContext('2d');
-        leftCanvas.width = overlayStates.left.centeredCanvas.width;
-        leftCanvas.height = overlayStates.left.centeredCanvas.height;
-        leftCtx.drawImage(overlayStates.left.centeredCanvas, 0, 0);
+        if (leftCanvas) {
+          const leftCtx = leftCanvas.getContext('2d');
+          leftCanvas.width = overlayStates.left.centeredCanvas.width;
+          leftCanvas.height = overlayStates.left.centeredCanvas.height;
+          leftCtx.drawImage(overlayStates.left.centeredCanvas, 0, 0);
+        } else {
+          console.warn('Left eye canvas element not found in preview');
+        }
       }
 
       // Update right eye preview
       if (rightCentered && overlayStates.right.centeredCanvas) {
         const rightCanvas = document.getElementById('right-eye-centered-canvas');
-        const rightCtx = rightCanvas.getContext('2d');
-        rightCanvas.width = overlayStates.right.centeredCanvas.width;
-        rightCanvas.height = overlayStates.right.centeredCanvas.height;
-        rightCtx.drawImage(overlayStates.right.centeredCanvas, 0, 0);
+        if (rightCanvas) {
+          const rightCtx = rightCanvas.getContext('2d');
+          rightCanvas.width = overlayStates.right.centeredCanvas.width;
+          rightCanvas.height = overlayStates.right.centeredCanvas.height;
+          rightCtx.drawImage(overlayStates.right.centeredCanvas, 0, 0);
+        } else {
+          console.warn('Right eye canvas element not found in preview');
+        }
       }
 
       // Scroll to preview
@@ -436,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
-  form.addEventListener('submit', async function (e) {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
     if (!validateCurrentStep()) return;
 
