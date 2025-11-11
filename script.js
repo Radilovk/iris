@@ -479,6 +479,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // ===================================================================
 
+      // Генерираме composite изображения с overlay за report
+      await generateAndSaveCompositeImages(leftInput, rightInput);
+
       const response = await fetch(WORKER_URL, { method: 'POST', body: formData });
       if (!response.ok) {
         const errData = await response.json().catch(() => ({ error: `Грешка ${response.status}` }));
@@ -520,6 +523,148 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 'image/png');
       };
     });
+  }
+
+  // Генериране на composite изображения с overlay
+  async function generateAndSaveCompositeImages(leftInput, rightInput) {
+    try {
+      // Функция за генериране на composite image
+      const generateComposite = async (file) => {
+        if (!file) return null;
+        
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = async () => {
+            try {
+              const canvas = document.createElement('canvas');
+              const size = 800;
+              canvas.width = size;
+              canvas.height = size;
+              const ctx = canvas.getContext('2d');
+
+              // Background
+              ctx.fillStyle = '#e0e2e5';
+              ctx.fillRect(0, 0, size, size);
+
+              // Draw image centered
+              const scale = Math.min(size / img.width, size / img.height) * 1.5;
+              const x = (size - img.width * scale) / 2;
+              const y = (size - img.height * scale) / 2;
+              ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+
+              // Create SVG overlay
+              const svgString = createOverlaySvgString();
+              const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+              const svgUrl = URL.createObjectURL(svgBlob);
+
+              const svgImage = new Image();
+              svgImage.onload = () => {
+                ctx.drawImage(svgImage, 0, 0, size, size);
+                URL.revokeObjectURL(svgUrl);
+                
+                // Convert to data URL
+                const dataUrl = canvas.toDataURL('image/png');
+                resolve(dataUrl);
+              };
+              svgImage.onerror = () => {
+                URL.revokeObjectURL(svgUrl);
+                reject(new Error('Failed to load SVG'));
+              };
+              svgImage.src = svgUrl;
+            } catch (error) {
+              reject(error);
+            }
+          };
+          img.onerror = reject;
+          img.src = URL.createObjectURL(file);
+        });
+      };
+
+      // Generate and save both images
+      if (leftInput.files[0]) {
+        const leftComposite = await generateComposite(leftInput.files[0]);
+        if (leftComposite) {
+          localStorage.setItem('left-eye-with-overlay', leftComposite);
+        }
+      }
+
+      if (rightInput.files[0]) {
+        const rightComposite = await generateComposite(rightInput.files[0]);
+        if (rightComposite) {
+          localStorage.setItem('right-eye-with-overlay', rightComposite);
+        }
+      }
+    } catch (error) {
+      console.error('Error generating composite images:', error);
+      // Don't fail the submission if composite generation fails
+    }
+  }
+
+  // Helper function to create SVG string
+  function createOverlaySvgString() {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-400 -400 800 800" width="800" height="800">
+      <defs>
+        <filter id="outerGlow"><feGaussianBlur stdDeviation="6"/></filter>
+        <filter id="centerGlow"><feGaussianBlur stdDeviation="4"/></filter>
+        <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#ff00cc" />
+          <stop offset="50%" style="stop-color:#00f0ff" />
+          <stop offset="100%" style="stop-color:#ff00cc" />
+        </linearGradient>
+        <pattern id="hexPattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
+          <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="#00f0ff" stroke-width="1.2"/>
+        </pattern>
+      </defs>
+      <g>
+        <circle r="335" fill="url(#hexPattern)" opacity="0.1"/>
+        <circle r="120" stroke="#00f0ff" stroke-width="1" stroke-opacity="0.4" fill="none" stroke-dasharray="5, 8"/>
+        <circle r="200" stroke="#00f0ff" stroke-width="1.5" stroke-opacity="0.5" fill="none"/>
+        <circle r="260" stroke="#00f0ff" stroke-width="1" stroke-opacity="0.4" fill="none" stroke-dasharray="80, 10"/>
+        <circle r="320" stroke="#00f0ff" stroke-width="2.5" stroke-opacity="0.8" fill="none"/>
+        <g stroke="#00f0ff" stroke-width="1.5" stroke-opacity="0.4">
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
+        </g>
+        <g fill="#ff00cc" stroke="#ff00cc" stroke-width="1.5" opacity="0.8">
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
+        </g>
+        <circle r="350" stroke="url(#ringGradient)" stroke-width="4" fill="none" filter="url(#outerGlow)"/>
+        <g>
+          <circle r="10" fill="#ff00cc" filter="url(#centerGlow)"/>
+          <circle r="25" fill="none" stroke="#ff00cc" stroke-width="1.5" opacity="0.6"/>
+          <circle r="35" stroke="#00f0ff" stroke-width="1" stroke-opacity="0.5" fill="none" stroke-dasharray="5, 8"/>
+          <g stroke="#00f0ff" stroke-width="0.8" stroke-opacity="0.3">
+            <line x1="-50" y1="0" x2="50" y2="0"/>
+            <line x1="0" y1="-50" x2="0" y2="50"/>
+          </g>
+        </g>
+        <g stroke="#00ff8c" stroke-width="2.5" fill="none" opacity="0.7">
+          <path d="M -250 -350 L -300 -350 L -300 -300" />
+          <path d="M  250 -350 L  300 -350 L  300 -300" />
+          <path d="M -250  350 L -300  350 L -300  300" />
+          <path d="M  250  350 L  300  350 L  300  300" />
+        </g>
+        <g font-family="'Lucida Console', 'Courier New', monospace" font-weight="700" fill="#00f0ff" text-anchor="middle">
+          <text x="0" y="-285" font-size="16">ANALYSIS</text>
+          <text x="230" y="-230" font-size="24" fill="#00ff8c">OK</text>
+        </g>
+      </g>
+    </svg>`;
   }
 
   // ===================================================================
