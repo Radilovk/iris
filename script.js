@@ -171,9 +171,255 @@ document.addEventListener('DOMContentLoaded', () => {
         preview.querySelector('p').style.display = 'none';
         preview.style.backgroundImage = `url(${e.target.result})`;
         preview.style.borderStyle = 'solid';
+        
+        // Показваме бутона за преглед с overlay
+        const eyeSide = input.id.includes('left') ? 'left' : 'right';
+        const previewBtn = parentGroup.querySelector('.btn-preview-overlay');
+        if (previewBtn) {
+          previewBtn.style.display = 'flex';
+        }
       };
       reader.readAsDataURL(file);
     });
+  });
+
+  // --- IRIS OVERLAY MODAL FUNCTIONALITY ---
+  const overlayModal = document.getElementById('overlay-modal');
+  const closeModalBtn = document.getElementById('close-overlay-modal');
+  const overlayModalImage = document.getElementById('overlay-modal-image');
+  const overlayViewport = document.getElementById('overlay-viewport');
+  const overlaySvgContainer = document.getElementById('overlay-svg-container');
+  const toggleOverlayBtn = document.getElementById('toggle-overlay');
+  const resetPositionBtn = document.getElementById('reset-position');
+  const overlayModalTitle = document.getElementById('overlay-modal-title');
+
+  let currentEye = null;
+  let overlayState = {
+    scale: 1,
+    tx: 0,
+    ty: 0,
+    pointers: new Map(),
+    startDist: 0,
+    startScale: 1,
+    startMid: { x: 0, y: 0 },
+    startTx: 0,
+    startTy: 0,
+    last: null
+  };
+
+  function applyOverlayTransform() {
+    overlayModalImage.style.transform = `translate(${overlayState.tx}px, ${overlayState.ty}px) scale(${overlayState.scale})`;
+  }
+
+  function resetOverlayPosition() {
+    overlayState.scale = 1;
+    overlayState.tx = 0;
+    overlayState.ty = 0;
+    applyOverlayTransform();
+  }
+
+  // Event listeners for preview overlay buttons
+  document.querySelectorAll('.btn-preview-overlay').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const eyeSide = this.getAttribute('data-eye');
+      const input = document.getElementById(`${eyeSide}-eye-upload`);
+      const file = input.files[0];
+      
+      if (!file) return;
+
+      currentEye = eyeSide;
+      overlayModalTitle.textContent = `${eyeSide === 'left' ? 'Ляво' : 'Дясно'} око - Топографски преглед`;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        overlayModalImage.src = e.target.result;
+        overlayModalImage.style.display = 'block';
+        overlayModalImage.onload = () => {
+          // Центрираме изображението
+          const imgW = overlayModalImage.naturalWidth;
+          const imgH = overlayModalImage.naturalHeight;
+          overlayModalImage.style.transform = `translate(-50%, -50%)`;
+          resetOverlayPosition();
+        };
+        
+        // Създаваме SVG overlay
+        createOverlaySvg();
+        
+        // Показваме модала
+        overlayModal.style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  function createOverlaySvg() {
+    // Изчистваме предишния SVG
+    overlaySvgContainer.innerHTML = '';
+    
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '-400 -400 800 800');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    
+    svg.innerHTML = `
+      <defs>
+        <filter id="outerGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
+        <filter id="centerGlow"><feGaussianBlur stdDeviation="4" result="blur"/></filter>
+        <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:var(--accent)" />
+          <stop offset="50%" style="stop-color:var(--primary)" />
+          <stop offset="100%" style="stop-color:var(--accent)" />
+        </linearGradient>
+        <pattern id="hexPattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
+          <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="var(--primary)" stroke-width="1.2"/>
+        </pattern>
+      </defs>
+      <g id="hud-elements">
+        <circle r="335" fill="url(#hexPattern)" opacity="0.1"/>
+        <circle r="120" stroke="var(--primary)" stroke-width="1" stroke-opacity="0.4" fill="none" stroke-dasharray="5, 8"/>
+        <circle r="200" stroke="var(--primary)" stroke-width="1.5" stroke-opacity="0.5" fill="none"/>
+        <circle r="260" stroke="var(--primary)" stroke-width="1" stroke-opacity="0.4" fill="none" stroke-dasharray="80, 10"/>
+        <circle r="320" stroke="var(--primary)" stroke-width="2.5" stroke-opacity="0.8" fill="none"/>
+        <g stroke="var(--primary)" stroke-width="1.5" stroke-opacity="0.4">
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
+          <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
+        </g>
+        <g fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5" opacity="0.8">
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
+          <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
+        </g>
+        <circle r="350" stroke="url(#ringGradient)" stroke-width="4" fill="none" filter="url(#outerGlow)"/>
+        <g>
+          <circle r="10" fill="var(--accent)" filter="url(#centerGlow)"/>
+          <circle r="25" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.6"/>
+          <circle r="35" stroke="var(--primary)" stroke-width="1" stroke-opacity="0.5" fill="none" stroke-dasharray="5, 8"/>
+          <g stroke="var(--primary)" stroke-width="0.8" stroke-opacity="0.3">
+            <line x1="-50" y1="0" x2="50" y2="0"/>
+            <line x1="0" y1="-50" x2="0" y2="50"/>
+          </g>
+        </g>
+        <g stroke="var(--success)" stroke-width="2.5" fill="none" opacity="0.7">
+          <path d="M -250 -350 L -300 -350 L -300 -300" />
+          <path d="M  250 -350 L  300 -350 L  300 -300" />
+          <path d="M -250  350 L -300  350 L -300  300" />
+          <path d="M  250  350 L  300  350 L  300  300" />
+        </g>
+        <g font-family="'Lucida Console', 'Courier New', monospace" font-weight="700" fill="var(--primary)" text-anchor="middle">
+          <text x="0" y="-285" font-size="16">SCAN ACTIVE</text>
+          <text x="230" y="-230" font-size="24" fill="var(--success)">OK</text>
+        </g>
+      </g>
+    `;
+    
+    overlaySvgContainer.appendChild(svg);
+  }
+
+  // Close modal
+  closeModalBtn.addEventListener('click', () => {
+    overlayModal.style.display = 'none';
+    overlayModalImage.src = '';
+    overlayModalImage.style.display = 'none';
+  });
+
+  // Toggle overlay visibility
+  toggleOverlayBtn.addEventListener('click', () => {
+    overlaySvgContainer.classList.toggle('hidden');
+  });
+
+  // Reset position
+  resetPositionBtn.addEventListener('click', () => {
+    resetOverlayPosition();
+  });
+
+  // Pointer events for pan/pinch-zoom in modal
+  overlayViewport.addEventListener('pointerdown', (e) => {
+    if (overlayModalImage.style.display === 'none') return;
+    overlayViewport.setPointerCapture(e.pointerId);
+    overlayState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    
+    if (overlayState.pointers.size === 1) {
+      const p = overlayState.pointers.values().next().value;
+      overlayState.last = { x: p.x, y: p.y };
+    }
+    if (overlayState.pointers.size === 2) {
+      const pts = Array.from(overlayState.pointers.values());
+      overlayState.startDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      overlayState.startScale = overlayState.scale;
+      overlayState.startMid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+      overlayState.startTx = overlayState.tx;
+      overlayState.startTy = overlayState.ty;
+    }
+  });
+
+  overlayViewport.addEventListener('pointermove', (e) => {
+    if (!overlayState.pointers.has(e.pointerId)) return;
+    overlayState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    
+    if (overlayState.pointers.size === 1) {
+      const p = overlayState.pointers.values().next().value;
+      if (!overlayState.last) overlayState.last = { x: p.x, y: p.y };
+      const dx = p.x - overlayState.last.x;
+      const dy = p.y - overlayState.last.y;
+      overlayState.tx += dx;
+      overlayState.ty += dy;
+      overlayState.last = { x: p.x, y: p.y };
+      applyOverlayTransform();
+    } else if (overlayState.pointers.size === 2) {
+      const pts = Array.from(overlayState.pointers.values());
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      if (overlayState.startDist > 0) {
+        const k = dist / overlayState.startDist;
+        overlayState.scale = Math.min(5, Math.max(0.3, overlayState.startScale * k));
+        
+        const currentMid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+        const newTx = overlayState.startTx + (currentMid.x - overlayState.startMid.x);
+        const newTy = overlayState.startTy + (currentMid.y - overlayState.startMid.y);
+        overlayState.tx = newTx;
+        overlayState.ty = newTy;
+        
+        applyOverlayTransform();
+      }
+    }
+  });
+
+  function endPointer(e) {
+    if (overlayViewport.hasPointerCapture(e.pointerId)) overlayViewport.releasePointerCapture(e.pointerId);
+    overlayState.pointers.delete(e.pointerId);
+    if (overlayState.pointers.size < 2) overlayState.startDist = 0;
+    if (overlayState.pointers.size === 0) overlayState.last = null;
+    else if (overlayState.pointers.size === 1) {
+      const p = overlayState.pointers.values().next().value;
+      overlayState.last = { x: p.x, y: p.y };
+    }
+  }
+
+  overlayViewport.addEventListener('pointerup', endPointer);
+  overlayViewport.addEventListener('pointercancel', endPointer);
+  overlayViewport.addEventListener('pointerleave', (e) => {
+    if (overlayState.pointers.has(e.pointerId)) endPointer(e);
+  });
+
+  // Close modal when clicking outside
+  overlayModal.addEventListener('click', (e) => {
+    if (e.target === overlayModal) {
+      overlayModal.style.display = 'none';
+      overlayModalImage.src = '';
+      overlayModalImage.style.display = 'none';
+    }
   });
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
