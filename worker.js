@@ -416,7 +416,7 @@ function getImageDimensions(arrayBuffer) {
 
   try {
     // Проверка за PNG (сигнатура: 89 50 4E 47)
-    if (view.getUint32(0) === 0x89504E47) {
+    if (view.getUint32(0) === 0x89504e47) {
       // PNG формат - размерите са в IHDR chunk (bytes 16-23)
       const width = view.getUint32(16);
       const height = view.getUint32(20);
@@ -424,12 +424,12 @@ function getImageDimensions(arrayBuffer) {
     }
 
     // Проверка за JPEG (сигнатура: FF D8)
-    if (view.getUint16(0) === 0xFFD8) {
+    if (view.getUint16(0) === 0xffd8) {
       let offset = 2;
       while (offset < view.byteLength) {
         // Търсене на SOF0 (Start of Frame) marker (0xFFC0)
         const marker = view.getUint16(offset);
-        if (marker >= 0xFFC0 && marker <= 0xFFC3) {
+        if (marker >= 0xffc0 && marker <= 0xffc3) {
           // Намерихме SOF marker - размерите са на offset + 5 и + 7
           const height = view.getUint16(offset + 5);
           const width = view.getUint16(offset + 7);
@@ -470,8 +470,15 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
   const { center_x, center_y, radius_px } = alignment;
 
   // Проверка за валидни числа включително NaN, Infinity и отрицателни стойности
-  if (typeof center_x !== 'number' || typeof center_y !== 'number' || typeof radius_px !== 'number' ||
-      !isFinite(center_x) || !isFinite(center_y) || !isFinite(radius_px) || radius_px <= 0) {
+  if (
+    typeof center_x !== 'number' ||
+    typeof center_y !== 'number' ||
+    typeof radius_px !== 'number' ||
+    !isFinite(center_x) ||
+    !isFinite(center_y) ||
+    !isFinite(radius_px) ||
+    radius_px <= 0
+  ) {
     return {
       center_x: imageWidth / 2,
       center_y: imageHeight / 2,
@@ -484,7 +491,7 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
   // Изчисляване на минималния размер на изображението
   const minDimension = Math.min(imageWidth, imageHeight);
   const minRadius = minDimension * 0.15; // 15%
-  const maxRadius = minDimension * 0.50; // 50%
+  const maxRadius = minDimension * 0.5; // 50%
 
   // Валидация на радиуса
   if (radius_px < minRadius || radius_px > maxRadius) {
@@ -497,8 +504,7 @@ function validateAlignment(alignment, imageWidth, imageHeight) {
 
   // Валидация на центъра - трябва да е в рамките на изображението
   const margin = radius_px * 1.2; // Допускаме 20% извън границите
-  if (center_x < -margin || center_x > imageWidth + margin ||
-      center_y < -margin || center_y > imageHeight + margin) {
+  if (center_x < -margin || center_x > imageWidth + margin || center_y < -margin || center_y > imageHeight + margin) {
     return {
       ...alignment,
       confidence: 0.7, // По-висока увереност, но не перфектна
@@ -678,7 +684,10 @@ async function analyzeImageWithVision(file, eyeIdentifier, irisMap, config, apiK
         imageHeight = dimensions.height;
       }
     } catch (dimError) {
-      console.warn(`Неуспешно извличане на реални размери за ${eyeIdentifier}, използваме fallback 1024x1024:`, dimError.message);
+      console.warn(
+        `Неуспешно извличане на реални размери за ${eyeIdentifier}, използваме fallback 1024x1024:`,
+        dimError.message
+      );
     }
 
     // Валидиране на alignment данните, ако са налични
@@ -1484,18 +1493,22 @@ async function generateMultiQueryReport(
   finalReport.left_eye_analysis = {
     eye: leftEyeAnalysis.eye,
     alignment: leftEyeAnalysis.alignment,
-    identified_signs: identifiedSigns.filter(sign =>
-      sign && leftEyeAnalysis.identified_signs &&
-      leftEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+    identified_signs: identifiedSigns.filter(
+      (sign) =>
+        sign &&
+        leftEyeAnalysis.identified_signs &&
+        leftEyeAnalysis.identified_signs.some((s) => s && s.sign_name === sign.sign_name)
     )
   };
 
   finalReport.right_eye_analysis = {
     eye: rightEyeAnalysis.eye,
     alignment: rightEyeAnalysis.alignment,
-    identified_signs: identifiedSigns.filter(sign =>
-      sign && rightEyeAnalysis.identified_signs &&
-      rightEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+    identified_signs: identifiedSigns.filter(
+      (sign) =>
+        sign &&
+        rightEyeAnalysis.identified_signs &&
+        rightEyeAnalysis.identified_signs.some((s) => s && s.sign_name === sign.sign_name)
     )
   };
 
@@ -1693,18 +1706,22 @@ async function generateSingleQueryReport(
     reportData.left_eye_analysis = {
       eye: leftEyeAnalysis.eye,
       alignment: leftEyeAnalysis.alignment,
-      identified_signs: identifiedSigns.filter(sign =>
-        sign && leftEyeAnalysis.identified_signs &&
-        leftEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+      identified_signs: identifiedSigns.filter(
+        (sign) =>
+          sign &&
+          leftEyeAnalysis.identified_signs &&
+          leftEyeAnalysis.identified_signs.some((s) => s && s.sign_name === sign.sign_name)
       )
     };
 
     reportData.right_eye_analysis = {
       eye: rightEyeAnalysis.eye,
       alignment: rightEyeAnalysis.alignment,
-      identified_signs: identifiedSigns.filter(sign =>
-        sign && rightEyeAnalysis.identified_signs &&
-        rightEyeAnalysis.identified_signs.some(s => s && s.sign_name === sign.sign_name)
+      identified_signs: identifiedSigns.filter(
+        (sign) =>
+          sign &&
+          rightEyeAnalysis.identified_signs &&
+          rightEyeAnalysis.identified_signs.some((s) => s && s.sign_name === sign.sign_name)
       )
     };
 
@@ -1858,8 +1875,8 @@ async function runSearchPreview({
   const messagesData = await messagesResponse.json();
   const assistantMessage = Array.isArray(messagesData?.data)
     ? messagesData.data.find(
-      (message) => message && message.role === 'assistant' && message.run_id === completedRun.id
-    ) || messagesData.data.find((message) => message && message.role === 'assistant')
+        (message) => message && message.role === 'assistant' && message.run_id === completedRun.id
+      ) || messagesData.data.find((message) => message && message.role === 'assistant')
     : null;
 
   const assistantText = extractAssistantMessageText(assistantMessage);
@@ -2020,11 +2037,11 @@ function buildFallbackExternalContext(keywordHints, interpretationKnowledge, ide
 
   const signNames = Array.isArray(identifiedSigns)
     ? identifiedSigns
-      .map((sign) =>
-        sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''
-      )
-      .filter(Boolean)
-      .slice(0, 3)
+        .map((sign) =>
+          sign && typeof sign === 'object' && typeof sign.sign_name === 'string' ? sign.sign_name.trim() : ''
+        )
+        .filter(Boolean)
+        .slice(0, 3)
     : [];
 
   const summarySegments = [];
@@ -2092,12 +2109,12 @@ function normalizeExternalEntry(entry, bucket) {
       typeof entry.summary === 'string' && entry.summary.trim()
         ? entry.summary
         : (() => {
-          try {
-            return JSON.stringify(entry);
-          } catch {
-            return String(entry);
-          }
-        })();
+            try {
+              return JSON.stringify(entry);
+            } catch {
+              return String(entry);
+            }
+          })();
 
     const normalized = { source, summary: summaryValue };
     if (typeof entry.url === 'string' && entry.url.trim()) {

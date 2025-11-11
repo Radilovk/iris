@@ -7,12 +7,12 @@ const env = {
     get: (key) =>
       key === 'iris_config_kv'
         ? Promise.resolve({
-          provider: 'gemini',
-          analysis_prompt: '',
-          analysis_model: 'gemini-1.5-flash-latest',
-          report_prompt: '',
-          report_model: 'gemini-1.5-flash-latest'
-        })
+            provider: 'gemini',
+            analysis_prompt: '',
+            analysis_model: 'gemini-1.5-flash-latest',
+            report_prompt: '',
+            report_model: 'gemini-1.5-flash-latest'
+          })
         : Promise.resolve(null)
   }
 };
@@ -1472,5 +1472,3 @@ test('validateAlignment конвертира стрингови стойност
   assert.equal(result.center_y, 384); // imageHeight / 2
   assert.ok(result.validation_message.includes('Невалидни типове данни'));
 });
-
-

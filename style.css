@@ -1078,10 +1078,9 @@ html {
 /* ====== IRIS OVERLAY TOOL STYLES ====== */
 .iris-overlay-container {
   margin: 2rem 0;
-  background: linear-gradient(135deg, #13181e 0%, #1a222a 100%);
+  background: #f0f2f5;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .iris-overlay-container h4 {
@@ -1094,13 +1093,26 @@ html {
 .stage-wrap {
   position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: min(88vh, 88vw, 500px);
   margin: 0 auto;
   aspect-ratio: 1;
-  overflow: hidden;
-  background: #000;
-  border-radius: 12px;
+  overflow: visible;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   touch-action: none;
+}
+
+/* Circular viewport with soft blue glow - from upload.html */
+.photo-viewport {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e0e2e5;
+  box-shadow: 0 0 25px 8px rgba(0, 170, 255, 0.25);
 }
 
 .stage {
@@ -1116,21 +1128,22 @@ html {
   max-width: none;
   transform-origin: center center;
   will-change: transform;
-  pointer-events: none;
 }
 
 .overlay-wrap {
   position: absolute;
-  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
 }
 
 .overlay-box {
   position: relative;
-  width: min(92%, 92vh);
+  width: 100%;
+  height: 100%;
   aspect-ratio: 1;
 }
 
@@ -1167,11 +1180,35 @@ html {
 
 .overlay-controls .btn {
   min-width: 140px;
+  background: linear-gradient(135deg, #0077ff, #00aaff);
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.overlay-controls .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+}
+
+.overlay-controls .btn:active {
+  transform: scale(0.96);
+  background: linear-gradient(135deg, #0066dd, #0099ee);
+}
+
+.overlay-controls .btn-secondary {
+  background: linear-gradient(135deg, #6c757d, #8d969e);
+  box-shadow: 0 4px 14px rgba(108, 117, 125, 0.3);
 }
 
 .overlay-hint {
   text-align: center;
-  color: #7a8a9a;
+  color: #657786;
   font-size: 0.9rem;
   margin-top: 0.5rem;
 }

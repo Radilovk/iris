@@ -1266,7 +1266,7 @@
             function createEyeComposite(eyeSide, eyeData) {
                 const eyeLabel = eyeSide === 'left' ? 'Ляво око' : 'Дясно око';
                 const signs = eyeData?.identified_signs || [];
-                
+
                 return `
                     <div class="eye-composite-item">
                         <h4 style="text-align: center; color: #00f0ff; margin-bottom: 1rem;">
@@ -1418,7 +1418,7 @@
                                 // Само го центрираме в контейнера
                                 const imgAspect = img.naturalWidth / img.naturalHeight;
                                 let displayWidth, displayHeight;
-                                
+
                                 if (imgAspect > 1) {
                                     displayWidth = containerWidth;
                                     displayHeight = containerWidth / imgAspect;
@@ -1459,7 +1459,13 @@
              * @param {number} radius - Радиусът на външния пръстен (320px)
              * @param {string} containerId - ID на контейнера за маркерите
              */
-            function renderSignMarkers(signs, centerX, centerY, radius, containerId = 'sign-markers-container') {
+            function renderSignMarkers(
+                signs,
+                centerX,
+                centerY,
+                radius,
+                containerId = 'sign-markers-container'
+            ) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
 

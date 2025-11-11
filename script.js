@@ -73,7 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const eyeSide = field.id.includes('left') ? 'left' : 'right';
           if (!overlayStates[eyeSide].centered) {
             isFieldValid = false;
-            showMessage(`Моля, центрирайте ${eyeSide === 'left' ? 'лявото' : 'дясното'} око преди да продължите.`, 'error');
+            showMessage(
+              `Моля, центрирайте ${eyeSide === 'left' ? 'лявото' : 'дясното'} око преди да продължите.`,
+              'error'
+            );
           }
         }
       } else {
@@ -157,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     preview.addEventListener('click', () => input.click());
 
-    input.addEventListener('change', function() {
+    input.addEventListener('change', function () {
       const file = this.files[0];
       const parentGroup = this.closest('.form-group');
       parentGroup.classList.remove('error');
@@ -232,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Setup pointer events for both overlays
-  ['left', 'right'].forEach(eyeSide => {
+  ['left', 'right'].forEach((eyeSide) => {
     const container = document.getElementById(`${eyeSide}-eye-container`);
     if (!container) return;
 
@@ -248,10 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const captureBtn = container.querySelector('.capture-btn');
     captureBtn.addEventListener('click', () => captureImage(eyeSide));
 
-    // Pointer events for pan and pinch-zoom
+    // Pointer events for pan and pinch-zoom - attach to stageWrap
     stageWrap.addEventListener('pointerdown', (e) => {
       if (img.style.display === 'none') return;
-      img.setPointerCapture(e.pointerId);
+      stageWrap.setPointerCapture(e.pointerId);
       state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
       if (state.pointers.size === 1) {
@@ -298,10 +301,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function endPointer(e) {
-      if (img.hasPointerCapture(e.pointerId)) img.releasePointerCapture(e.pointerId);
+      if (stageWrap.hasPointerCapture(e.pointerId)) stageWrap.releasePointerCapture(e.pointerId);
       state.pointers.delete(e.pointerId);
       if (state.pointers.size < 2) state.startDist = 0;
       if (state.pointers.size === 0) state.last = null;
+      // If one finger remains, reset its 'last' position to prevent jumps
+      else if (state.pointers.size === 1) {
+        const p = state.pointers.values().next().value;
+        state.last = { x: p.x, y: p.y };
+      }
     }
 
     stageWrap.addEventListener('pointerup', endPointer);
@@ -358,36 +366,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Convert canvas to blob
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        const fileName = state.file.name.replace(/\.[^/.]+$/, '_centered.png');
-        const centeredFile = new File([blob], fileName, { type: 'image/png' });
+      canvas.toBlob(
+        (blob) => {
+          const fileName = state.file.name.replace(/\.[^/.]+$/, '_centered.png');
+          const centeredFile = new File([blob], fileName, { type: 'image/png' });
 
-        // Update the file input
-        const fileInput = document.getElementById(`${eyeSide}-eye-upload`);
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(centeredFile);
-        fileInput.files = dataTransfer.files;
+          // Update the file input
+          const fileInput = document.getElementById(`${eyeSide}-eye-upload`);
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(centeredFile);
+          fileInput.files = dataTransfer.files;
 
-        // Mark as centered
-        state.centered = true;
-        state.centeredFile = centeredFile;
-        state.centeredCanvas = canvas;
+          // Mark as centered
+          state.centered = true;
+          state.centeredFile = centeredFile;
+          state.centeredCanvas = canvas;
 
-        // Hide overlay tool
-        container.style.display = 'none';
+          // Hide overlay tool
+          container.style.display = 'none';
 
-        // Update preview with centered image
-        const preview = document.getElementById(`${eyeSide}-eye-preview`);
-        preview.style.backgroundImage = `url(${canvas.toDataURL()})`;
+          // Update preview with centered image
+          const preview = document.getElementById(`${eyeSide}-eye-preview`);
+          preview.style.backgroundImage = `url(${canvas.toDataURL()})`;
 
-        // Update side-by-side preview
-        updateSideBySidePreview();
+          // Update side-by-side preview
+          updateSideBySidePreview();
 
-        showMessage(`${eyeSide === 'left' ? 'Ляво' : 'Дясно'} око центрирано успешно!`, 'success');
-        setTimeout(() => clearMessage(), 2000);
+          showMessage(`${eyeSide === 'left' ? 'Ляво' : 'Дясно'} око центрирано успешно!`, 'success');
+          setTimeout(() => clearMessage(), 2000);
 
-        resolve(centeredFile);
-      }, 'image/png', 0.95);
+          resolve(centeredFile);
+        },
+        'image/png',
+        0.95
+      );
     });
   }
 
@@ -424,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
     if (!validateCurrentStep()) return;
 
