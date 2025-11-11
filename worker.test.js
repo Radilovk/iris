@@ -233,10 +233,7 @@ test('analyzeImageWithVision приема масив от части в content'
       '[]'
     );
 
-    // Функцията сега автоматично добавя alignment данни
-    assert.equal(result.ok, 1);
-    assert.ok(result.alignment, 'Трябва да има alignment данни');
-    assert.equal(typeof result.alignment.confidence, 'number');
+    assert.deepEqual(result, { ok: 1 });
   } finally {
     global.fetch = originalFetch;
   }
@@ -1376,99 +1373,4 @@ test('generateMultiQueryReport извършва 4 фокусирани AI зая
   } finally {
     global.fetch = originalFetch;
   }
-});
-
-test('validateAlignment връща confidence 1.0 при валидни данни', () => {
-  const { validateAlignment } = __testables__;
-
-  const alignment = {
-    center_x: 512,
-    center_y: 512,
-    radius_px: 320
-  };
-
-  const result = validateAlignment(alignment, 1024, 1024);
-
-  assert.equal(result.confidence, 1.0);
-  assert.equal(result.center_x, 512);
-  assert.equal(result.center_y, 512);
-  assert.equal(result.radius_px, 320);
-  assert.ok(result.validation_message.includes('валидни'));
-});
-
-test('validateAlignment връща confidence 0.5 при радиус извън границите', () => {
-  const { validateAlignment } = __testables__;
-
-  // Радиус твърде малък (< 15%)
-  const alignment = {
-    center_x: 512,
-    center_y: 512,
-    radius_px: 50 // Само ~5% от 1024
-  };
-
-  const result = validateAlignment(alignment, 1024, 1024);
-
-  assert.equal(result.confidence, 0.5);
-  assert.ok(result.validation_message.includes('извън допустимите граници'));
-});
-
-test('validateAlignment връща default стойности при липсващи данни', () => {
-  const { validateAlignment } = __testables__;
-
-  const result = validateAlignment(null, 1024, 768);
-
-  assert.equal(result.confidence, 0.5);
-  assert.equal(result.center_x, 512); // 1024 / 2
-  assert.equal(result.center_y, 384); // 768 / 2
-  assert.ok(result.validation_message.includes('Липсват alignment данни'));
-});
-
-test('validateAlignment връща confidence 0.7 при център близо до границата', () => {
-  const { validateAlignment } = __testables__;
-
-  // Първо тестваме случай където центърът е в границите
-  const alignment = {
-    center_x: -200,
-    center_y: 512,
-    radius_px: 250
-  };
-
-  const result = validateAlignment(alignment, 1024, 1024);
-
-  // margin = 250 * 1.2 = 300, така че -200 > -300 и е валидно
-  assert.equal(result.confidence, 1.0, 'Трябва да е валидно когато е в границите');
-  assert.ok(result.validation_message.includes('валидни'));
-
-  // Сега тестваме случай където центърът е извън границите (близо до края)
-  const alignment2 = {
-    center_x: -400,
-    center_y: 512,
-    radius_px: 250
-  };
-
-  const result2 = validateAlignment(alignment2, 1024, 1024);
-  assert.equal(result2.confidence, 0.7);
-  assert.ok(result2.validation_message.includes('близо до границата'));
-});
-
-test('validateAlignment конвертира стрингови стойности към default числа', () => {
-  const { validateAlignment } = __testables__;
-
-  // AI може да върне стрингови стойности вместо числа
-  const alignment = {
-    center_x: '512',
-    center_y: '384',
-    radius_px: '300'
-  };
-
-  const result = validateAlignment(alignment, 1024, 768);
-
-  // Трябва да върне default стойности, защото типовете са невалидни
-  assert.equal(result.confidence, 0.5);
-  assert.equal(typeof result.center_x, 'number', 'center_x трябва да е число');
-  assert.equal(typeof result.center_y, 'number', 'center_y трябва да е число');
-  assert.equal(typeof result.radius_px, 'number', 'radius_px трябва да е число');
-  assert.equal(result.center_x, 512); // imageWidth / 2
-  assert.equal(result.center_y, 384); // imageHeight / 2
-  assert.ok(result.validation_message.includes('Невалидни типове данни'));
 });
