@@ -8,16 +8,16 @@
  * @returns {SVGElement} SVG елемент с топографския overlay
  */
 export function createIrisTopographicOverlay() {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '-400 -400 800 800');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.style.pointerEvents = 'none';
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '-400 -400 800 800');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.pointerEvents = 'none';
+  svg.style.position = 'absolute';
+  svg.style.top = '0';
+  svg.style.left = '0';
 
-    svg.innerHTML = `
+  svg.innerHTML = `
         <defs>
             <!-- Filters for Glows -->
             <filter id="outerGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
@@ -110,7 +110,7 @@ export function createIrisTopographicOverlay() {
         </g>
     `;
 
-    return svg;
+  return svg;
 }
 
 /**
@@ -121,72 +121,72 @@ export function createIrisTopographicOverlay() {
  * @returns {Promise<Blob>} Blob на комбинираното изображение
  */
 export async function generateIrisWithOverlay(irisImage, transform = {}, outputSize = 800) {
-    return new Promise((resolve, reject) => {
-        try {
-            const { scale = 1, tx = 0, ty = 0 } = transform;
+  return new Promise((resolve, reject) => {
+    try {
+      const { scale = 1, tx = 0, ty = 0 } = transform;
 
-            // Създаваме canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = outputSize;
-            canvas.height = outputSize;
-            const ctx = canvas.getContext('2d');
+      // Създаваме canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+      const ctx = canvas.getContext('2d');
 
-            // Изчистваме canvas
-            ctx.fillStyle = '#e0e2e5';
-            ctx.fillRect(0, 0, outputSize, outputSize);
+      // Изчистваме canvas
+      ctx.fillStyle = '#e0e2e5';
+      ctx.fillRect(0, 0, outputSize, outputSize);
 
-            // Изчисляваме центъра
-            const centerX = outputSize / 2;
-            const centerY = outputSize / 2;
+      // Изчисляваме центъра
+      const centerX = outputSize / 2;
+      const centerY = outputSize / 2;
 
-            // Запазваме контекста
-            ctx.save();
+      // Запазваме контекста
+      ctx.save();
 
-            // Прилагаме трансформации
-            ctx.translate(centerX + tx, centerY + ty);
-            ctx.scale(scale, scale);
+      // Прилагаме трансформации
+      ctx.translate(centerX + tx, centerY + ty);
+      ctx.scale(scale, scale);
 
-            // Рисуваме изображението центрирано
-            const imgX = -irisImage.naturalWidth / 2;
-            const imgY = -irisImage.naturalHeight / 2;
-            ctx.drawImage(irisImage, imgX, imgY, irisImage.naturalWidth, irisImage.naturalHeight);
+      // Рисуваме изображението центрирано
+      const imgX = -irisImage.naturalWidth / 2;
+      const imgY = -irisImage.naturalHeight / 2;
+      ctx.drawImage(irisImage, imgX, imgY, irisImage.naturalWidth, irisImage.naturalHeight);
 
-            // Възстановяваме контекста
-            ctx.restore();
+      // Възстановяваме контекста
+      ctx.restore();
 
-            // Създаваме SVG overlay
-            const svgOverlay = createIrisTopographicOverlay();
-            const svgString = new XMLSerializer().serializeToString(svgOverlay);
-            const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-            const svgUrl = URL.createObjectURL(svgBlob);
+      // Създаваме SVG overlay
+      const svgOverlay = createIrisTopographicOverlay();
+      const svgString = new XMLSerializer().serializeToString(svgOverlay);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
 
-            // Зареждаме SVG като изображение
-            const svgImage = new Image();
-            svgImage.onload = () => {
-                // Рисуваме SVG overlay върху canvas
-                ctx.drawImage(svgImage, 0, 0, outputSize, outputSize);
-                URL.revokeObjectURL(svgUrl);
+      // Зареждаме SVG като изображение
+      const svgImage = new Image();
+      svgImage.onload = () => {
+        // Рисуваме SVG overlay върху canvas
+        ctx.drawImage(svgImage, 0, 0, outputSize, outputSize);
+        URL.revokeObjectURL(svgUrl);
 
-                // Конвертираме canvas в blob
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        resolve(blob);
-                    } else {
-                        reject(new Error('Неуспешно генериране на изображение'));
-                    }
-                }, 'image/png');
-            };
+        // Конвертираме canvas в blob
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Неуспешно генериране на изображение'));
+          }
+        }, 'image/png');
+      };
 
-            svgImage.onerror = () => {
-                URL.revokeObjectURL(svgUrl);
-                reject(new Error('Неуспешно зареждане на SVG overlay'));
-            };
+      svgImage.onerror = () => {
+        URL.revokeObjectURL(svgUrl);
+        reject(new Error('Неуспешно зареждане на SVG overlay'));
+      };
 
-            svgImage.src = svgUrl;
-        } catch (error) {
-            reject(error);
-        }
-    });
+      svgImage.src = svgUrl;
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
 
 /**

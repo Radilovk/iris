@@ -171,9 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
         preview.querySelector('p').style.display = 'none';
         preview.style.backgroundImage = `url(${e.target.result})`;
         preview.style.borderStyle = 'solid';
-        
+
         // Показваме бутона за преглед с overlay
-        const eyeSide = input.id.includes('left') ? 'left' : 'right';
         const previewBtn = parentGroup.querySelector('.btn-preview-overlay');
         if (previewBtn) {
           previewBtn.style.display = 'flex';
@@ -193,8 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetPositionBtn = document.getElementById('reset-position');
   const overlayModalTitle = document.getElementById('overlay-modal-title');
 
-  let currentEye = null;
-  let overlayState = {
+  let currentEye = null; // eslint-disable-line no-unused-vars
+  const overlayState = {
     scale: 1,
     tx: 0,
     ty: 0,
@@ -224,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const eyeSide = this.getAttribute('data-eye');
       const input = document.getElementById(`${eyeSide}-eye-upload`);
       const file = input.files[0];
-      
+
       if (!file) return;
 
       currentEye = eyeSide;
@@ -236,15 +235,13 @@ document.addEventListener('DOMContentLoaded', () => {
         overlayModalImage.style.display = 'block';
         overlayModalImage.onload = () => {
           // Центрираме изображението
-          const imgW = overlayModalImage.naturalWidth;
-          const imgH = overlayModalImage.naturalHeight;
-          overlayModalImage.style.transform = `translate(-50%, -50%)`;
+          overlayModalImage.style.transform = 'translate(-50%, -50%)';
           resetOverlayPosition();
         };
-        
+
         // Създаваме SVG overlay
         createOverlaySvg();
-        
+
         // Показваме модала
         overlayModal.style.display = 'flex';
       };
@@ -255,12 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function createOverlaySvg() {
     // Изчистваме предишния SVG
     overlaySvgContainer.innerHTML = '';
-    
+
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '-400 -400 800 800');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
-    
+
     svg.innerHTML = `
       <defs>
         <filter id="outerGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
@@ -324,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </g>
       </g>
     `;
-    
+
     overlaySvgContainer.appendChild(svg);
   }
 
@@ -350,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlayModalImage.style.display === 'none') return;
     overlayViewport.setPointerCapture(e.pointerId);
     overlayState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    
+
     if (overlayState.pointers.size === 1) {
       const p = overlayState.pointers.values().next().value;
       overlayState.last = { x: p.x, y: p.y };
@@ -368,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
   overlayViewport.addEventListener('pointermove', (e) => {
     if (!overlayState.pointers.has(e.pointerId)) return;
     overlayState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    
+
     if (overlayState.pointers.size === 1) {
       const p = overlayState.pointers.values().next().value;
       if (!overlayState.last) overlayState.last = { x: p.x, y: p.y };
@@ -384,13 +381,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (overlayState.startDist > 0) {
         const k = dist / overlayState.startDist;
         overlayState.scale = Math.min(5, Math.max(0.3, overlayState.startScale * k));
-        
+
         const currentMid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
         const newTx = overlayState.startTx + (currentMid.x - overlayState.startMid.x);
         const newTy = overlayState.startTy + (currentMid.y - overlayState.startMid.y);
         overlayState.tx = newTx;
         overlayState.ty = newTy;
-        
+
         applyOverlayTransform();
       }
     }
@@ -531,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Функция за генериране на composite image
       const generateComposite = async (file) => {
         if (!file) return null;
-        
+
         return new Promise((resolve, reject) => {
           const img = new Image();
           img.onload = async () => {
@@ -561,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
               svgImage.onload = () => {
                 ctx.drawImage(svgImage, 0, 0, size, size);
                 URL.revokeObjectURL(svgUrl);
-                
+
                 // Convert to data URL
                 const dataUrl = canvas.toDataURL('image/png');
                 resolve(dataUrl);
