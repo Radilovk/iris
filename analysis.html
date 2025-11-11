@@ -344,6 +344,52 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Iris Zone Overlay Preview -->
+                        <div id="iris-overlay-container" style="display: none;">
+                            <h4 style="text-align: center; margin: 2rem 0 1rem; color: #333;">
+                                <i class="fas fa-layer-group"></i> Преглед със зонови шаблони
+                            </h4>
+                            <p style="text-align: center; color: #666; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                                Топографските зони са наслоени върху вашите ириси за прецизен анализ
+                            </p>
+                            <div class="overlay-grid">
+                                <div class="overlay-item">
+                                    <h5>Ляво око</h5>
+                                    <canvas id="left-overlay-canvas" width="400" height="400"></canvas>
+                                    <div class="overlay-controls">
+                                        <button type="button" class="btn-icon" id="left-zoom-in" title="Увеличи">
+                                            <i class="fas fa-search-plus"></i>
+                                        </button>
+                                        <button type="button" class="btn-icon" id="left-zoom-out" title="Намали">
+                                            <i class="fas fa-search-minus"></i>
+                                        </button>
+                                        <button type="button" class="btn-icon" id="left-reset" title="Нулирай">
+                                            <i class="fas fa-redo"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="overlay-item">
+                                    <h5>Дясно око</h5>
+                                    <canvas id="right-overlay-canvas" width="400" height="400"></canvas>
+                                    <div class="overlay-controls">
+                                        <button type="button" class="btn-icon" id="right-zoom-in" title="Увеличи">
+                                            <i class="fas fa-search-plus"></i>
+                                        </button>
+                                        <button type="button" class="btn-icon" id="right-zoom-out" title="Намали">
+                                            <i class="fas fa-search-minus"></i>
+                                        </button>
+                                        <button type="button" class="btn-icon" id="right-reset" title="Нулирай">
+                                            <i class="fas fa-redo"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p style="text-align: center; color: #666; margin-top: 1rem; font-size: 0.9rem;">
+                                <i class="fas fa-info-circle"></i> Използвайте контролите за регулиране на позицията и мащаба
+                            </p>
+                        </div>
+                        
                         <div class="disclaimer-note">
                             <i class="fas fa-info-circle"></i>
                             <p>
