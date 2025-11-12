@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="bg">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <title>Позициониране на Iris - Iris-Holistica AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        />
+        <style>
+            :root {
+                --primary-color: #3a7bd5;
+                --secondary-color: #3aaced;
+                --text-color: #333;
+                --bg-color: #0a0f1e;
+                --card-bg: rgba(255, 255, 255, 0.95);
+                --border-color: #e0e6ed;
+                --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                --gradient: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+                --iris-primary: #00f0ff;
+                --iris-accent: #ff00cc;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                background: var(--gradient);
+                color: var(--text-color);
+                line-height: 1.6;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 1rem;
+            }
+
+            .header {
+                text-align: center;
+                color: white;
+                margin: 2rem 0;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+                text-shadow: 0 2px 10px rgba(0, 240, 255, 0.3);
+            }
+
+            .header p {
+                font-size: 1rem;
+                opacity: 0.9;
+            }
+
+            .upload-container {
+                width: 100%;
+                max-width: 600px;
+                background: var(--card-bg);
+                border-radius: 20px;
+                padding: 2rem;
+                box-shadow: var(--shadow);
+                margin-bottom: 2rem;
+            }
+
+            .eye-selector {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 2rem;
+                justify-content: center;
+            }
+
+            .eye-button {
+                flex: 1;
+                padding: 1rem;
+                border: 2px solid var(--border-color);
+                border-radius: 12px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--text-color);
+                position: relative;
+            }
+
+            .eye-button:hover {
+                border-color: var(--primary-color);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(58, 123, 213, 0.2);
+            }
+
+            .eye-button.active {
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                color: white;
+                border-color: var(--primary-color);
+            }
+
+            .eye-button i {
+                font-size: 1.5rem;
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+
+            .canvas-container {
+                position: relative;
+                width: 100%;
+                height: 500px;
+                background: #f8f9fa;
+                border-radius: 12px;
+                overflow: hidden;
+                touch-action: none;
+                margin-bottom: 1.5rem;
+                border: 2px solid var(--border-color);
+            }
+
+            .canvas-container canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                cursor: grab;
+            }
+
+            .canvas-container canvas:active {
+                cursor: grabbing;
+            }
+
+            .overlay-svg {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                pointer-events: none;
+                opacity: 0.7;
+                width: 350px;
+                height: 350px;
+            }
+
+            .crop-circle {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 350px;
+                height: 350px;
+                border: 3px solid var(--iris-primary);
+                border-radius: 50%;
+                pointer-events: none;
+                box-shadow:
+                    0 0 20px rgba(0, 240, 255, 0.4),
+                    inset 0 0 20px rgba(0, 240, 255, 0.2);
+            }
+
+            .instructions {
+                background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+                padding: 1rem;
+                border-radius: 10px;
+                margin-bottom: 1.5rem;
+                border-left: 4px solid var(--primary-color);
+            }
+
+            .instructions h3 {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+                color: var(--primary-color);
+            }
+
+            .instructions ul {
+                list-style: none;
+                padding-left: 0;
+            }
+
+            .instructions li {
+                padding: 0.3rem 0;
+                font-size: 0.9rem;
+                color: #555;
+            }
+
+            .instructions li i {
+                color: var(--primary-color);
+                margin-right: 0.5rem;
+            }
+
+            .controls {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                margin-bottom: 1.5rem;
+                flex-wrap: wrap;
+            }
+
+            .control-btn {
+                padding: 0.75rem 1.5rem;
+                border: none;
+                border-radius: 10px;
+                background: white;
+                border: 2px solid var(--border-color);
+                cursor: pointer;
+                transition: all 0.3s ease;
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--text-color);
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .control-btn:hover {
+                border-color: var(--primary-color);
+                color: var(--primary-color);
+                transform: translateY(-2px);
+            }
+
+            .control-btn i {
+                font-size: 1.2rem;
+            }
+
+            .action-buttons {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+            }
+
+            .btn {
+                padding: 1rem 2rem;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                color: white;
+                box-shadow: 0 4px 15px rgba(58, 123, 213, 0.3);
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(58, 123, 213, 0.4);
+            }
+
+            .btn-secondary {
+                background: white;
+                color: var(--text-color);
+                border: 2px solid var(--border-color);
+            }
+
+            .btn-secondary:hover {
+                border-color: var(--primary-color);
+                color: var(--primary-color);
+            }
+
+            .file-input-wrapper {
+                position: relative;
+                overflow: hidden;
+                display: inline-block;
+                width: 100%;
+                margin-bottom: 1.5rem;
+            }
+
+            .file-input-wrapper input[type='file'] {
+                position: absolute;
+                left: -9999px;
+            }
+
+            .file-input-label {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.75rem;
+                padding: 1.5rem;
+                border: 2px dashed var(--border-color);
+                border-radius: 12px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: white;
+                color: var(--text-color);
+                font-weight: 600;
+            }
+
+            .file-input-label:hover {
+                border-color: var(--primary-color);
+                background: #f0f9ff;
+            }
+
+            .file-input-label i {
+                font-size: 2rem;
+                color: var(--primary-color);
+            }
+
+            .preview-container {
+                display: none;
+                margin-top: 1rem;
+            }
+
+            .preview-container.active {
+                display: block;
+            }
+
+            .zoom-indicator {
+                position: absolute;
+                bottom: 1rem;
+                left: 1rem;
+                background: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                pointer-events: none;
+            }
+
+            .status-message {
+                padding: 1rem;
+                border-radius: 10px;
+                margin-bottom: 1rem;
+                display: none;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .status-message.active {
+                display: flex;
+            }
+
+            .status-message.success {
+                background: #d1fae5;
+                color: #065f46;
+                border-left: 4px solid #10b981;
+            }
+
+            .status-message.error {
+                background: #fee2e2;
+                color: #991b1b;
+                border-left: 4px solid #ef4444;
+            }
+
+            .eye-button.completed::after {
+                content: '✓';
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: #10b981;
+                color: white;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: bold;
+            }
+
+            @media (max-width: 768px) {
+                .upload-container {
+                    padding: 1.5rem;
+                }
+
+                .canvas-container {
+                    height: 400px;
+                }
+
+                .overlay-svg,
+                .crop-circle {
+                    width: 280px;
+                    height: 280px;
+                }
+
+                .controls {
+                    flex-direction: column;
+                }
+
+                .control-btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+
+                .action-buttons {
+                    flex-direction: column;
+                }
+
+                .btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1><i class="fas fa-eye"></i> Позициониране на Iris</h1>
+            <p>Прецизно подравнете вашите iris снимки за оптимален анализ</p>
+        </div>
+
+        <div class="upload-container">
+            <div class="status-message" id="statusMessage">
+                <i class="fas fa-check-circle"></i>
+                <span id="statusText"></span>
+            </div>
+
+            <div class="eye-selector">
+                <button class="eye-button active" data-eye="left">
+                    <i class="fas fa-eye"></i>
+                    <div>Ляво Око</div>
+                </button>
+                <button class="eye-button" data-eye="right">
+                    <i class="fas fa-eye"></i>
+                    <div>Дясно Око</div>
+                </button>
+            </div>
+
+            <div class="file-input-wrapper">
+                <input type="file" id="imageInput" accept="image/*" />
+                <label for="imageInput" class="file-input-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Изберете снимка или я плъзнете тук</span>
+                </label>
+            </div>
+
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> Как да позиционирате:</h3>
+                <ul>
+                    <li>
+                        <i class="fas fa-hand-pointer"></i> <strong>Плъзгане:</strong> Дръпнете
+                        снимката с пръст/мишка
+                    </li>
+                    <li>
+                        <i class="fas fa-search-plus"></i> <strong>Zoom:</strong> Щипнете с 2 пръста
+                        или използвайте скролането
+                    </li>
+                    <li>
+                        <i class="fas fa-crosshairs"></i> <strong>Центриране:</strong> Подравнете
+                        ириса в кръглата зона
+                    </li>
+                    <li>
+                        <i class="fas fa-layer-group"></i> <strong>Overlay:</strong> Топографската
+                        карта показва зоните на ириса
+                    </li>
+                </ul>
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="imageCanvas"></canvas>
+                    <div class="crop-circle"></div>
+                    <svg class="overlay-svg" id="irisOverlay"></svg>
+                    <div class="zoom-indicator" id="zoomIndicator">Zoom: 100%</div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" id="zoomInBtn">
+                        <i class="fas fa-search-plus"></i>
+                        <span>Приближи</span>
+                    </button>
+                    <button class="control-btn" id="zoomOutBtn">
+                        <i class="fas fa-search-minus"></i>
+                        <span>Отдалечи</span>
+                    </button>
+                    <button class="control-btn" id="resetBtn">
+                        <i class="fas fa-redo"></i>
+                        <span>Нулирай</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" id="backBtn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Назад</span>
+                </button>
+                <button class="btn btn-primary" id="confirmBtn" style="display: none">
+                    <i class="fas fa-check"></i>
+                    <span>Потвърди</span>
+                </button>
+            </div>
+        </div>
+
+        <script type="module">
+            // State management
+            let currentEye = 'left';
+            let images = {
+                left: { file: null, transform: { x: 0, y: 0, scale: 1 } },
+                right: { file: null, transform: { x: 0, y: 0, scale: 1 } }
+            };
+
+            let isDragging = false;
+            let lastX = 0;
+            let lastY = 0;
+            let lastTouchDistance = 0;
+
+            // Elements
+            const imageInput = document.getElementById('imageInput');
+            const previewContainer = document.getElementById('previewContainer');
+            const canvas = document.getElementById('imageCanvas');
+            const ctx = canvas.getContext('2d');
+            const canvasContainer = document.getElementById('canvasContainer');
+            const zoomIndicator = document.getElementById('zoomIndicator');
+            const irisOverlay = document.getElementById('irisOverlay');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusText = document.getElementById('statusText');
+            const confirmBtn = document.getElementById('confirmBtn');
+            const backBtn = document.getElementById('backBtn');
+
+            // Eye selector buttons
+            const eyeButtons = document.querySelectorAll('.eye-button');
+            eyeButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    eyeButtons.forEach((b) => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentEye = btn.dataset.eye;
+                    loadCurrentEyeImage();
+                });
+            });
+
+            // File input handling
+            imageInput.addEventListener('change', handleImageSelect);
+
+            // Drag and drop
+            const fileInputLabel = document.querySelector('.file-input-label');
+            fileInputLabel.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileInputLabel.style.borderColor = 'var(--primary-color)';
+            });
+
+            fileInputLabel.addEventListener('dragleave', () => {
+                fileInputLabel.style.borderColor = 'var(--border-color)';
+            });
+
+            fileInputLabel.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileInputLabel.style.borderColor = 'var(--border-color)';
+                if (e.dataTransfer.files.length > 0) {
+                    handleImageSelect({ target: { files: [e.dataTransfer.files[0]] } });
+                }
+            });
+
+            function handleImageSelect(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                if (!file.type.startsWith('image/')) {
+                    showStatus('Моля, изберете изображение', 'error');
+                    return;
+                }
+
+                images[currentEye].file = file;
+                images[currentEye].transform = { x: 0, y: 0, scale: 1 };
+
+                loadImageToCanvas(file);
+                previewContainer.classList.add('active');
+                confirmBtn.style.display = 'flex';
+                showStatus(
+                    `${currentEye === 'left' ? 'Лявото' : 'Дясното'} око е заредено успешно`,
+                    'success'
+                );
+
+                // Mark the current eye button as completed
+                updateEyeButtonStatus();
+            }
+
+            function updateEyeButtonStatus() {
+                eyeButtons.forEach((btn) => {
+                    const eye = btn.dataset.eye;
+                    if (images[eye].file) {
+                        btn.classList.add('completed');
+                    } else {
+                        btn.classList.remove('completed');
+                    }
+                });
+            }
+
+            function loadCurrentEyeImage() {
+                const eyeData = images[currentEye];
+                if (eyeData.file) {
+                    loadImageToCanvas(eyeData.file);
+                    previewContainer.classList.add('active');
+                    confirmBtn.style.display = 'flex';
+                } else {
+                    previewContainer.classList.remove('active');
+                    confirmBtn.style.display = 'none';
+                }
+                updateEyeButtonStatus();
+            }
+
+            function loadImageToCanvas(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        images[currentEye].imageData = img;
+                        initializeCanvas();
+                        renderCanvas();
+                        loadIrisOverlay();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function initializeCanvas() {
+                const containerRect = canvasContainer.getBoundingClientRect();
+                canvas.width = containerRect.width;
+                canvas.height = containerRect.height;
+
+                const img = images[currentEye].imageData;
+                const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                images[currentEye].transform = {
+                    x: (canvas.width - img.width * scale) / 2,
+                    y: (canvas.height - img.height * scale) / 2,
+                    scale: scale
+                };
+            }
+
+            function renderCanvas() {
+                const eyeData = images[currentEye];
+                if (!eyeData.imageData) return;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const img = eyeData.imageData;
+                const { x, y, scale } = eyeData.transform;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.scale(scale, scale);
+                ctx.drawImage(img, 0, 0);
+                ctx.restore();
+
+                updateZoomIndicator();
+            }
+
+            function updateZoomIndicator() {
+                const scale = images[currentEye].transform.scale;
+                const percentage = Math.round(scale * 100);
+                zoomIndicator.textContent = `Zoom: ${percentage}%`;
+            }
+
+            // Load iris overlay SVG
+            function loadIrisOverlay() {
+                fetch('irismap.svg')
+                    .then((response) => response.text())
+                    .then((svgText) => {
+                        const parser = new DOMParser();
+                        const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+                        const svgElement = svgDoc.querySelector('svg');
+
+                        // Copy attributes and content
+                        irisOverlay.setAttribute('viewBox', svgElement.getAttribute('viewBox'));
+                        irisOverlay.innerHTML = svgElement.innerHTML;
+                    })
+                    .catch((err) => console.warn('Could not load iris overlay:', err));
+            }
+
+            // Mouse/touch event handlers
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', drag);
+            canvas.addEventListener('mouseup', endDrag);
+            canvas.addEventListener('mouseleave', endDrag);
+            canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+            // Touch events
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', endDrag);
+
+            function startDrag(e) {
+                isDragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+
+                images[currentEye].transform.x += dx;
+                images[currentEye].transform.y += dy;
+
+                lastX = e.clientX;
+                lastY = e.clientY;
+
+                renderCanvas();
+            }
+
+            function endDrag() {
+                isDragging = false;
+            }
+
+            function handleWheel(e) {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                zoom(delta, e.offsetX, e.offsetY);
+            }
+
+            function handleTouchStart(e) {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    isDragging = false;
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    lastTouchDistance = Math.hypot(
+                        touch2.clientX - touch1.clientX,
+                        touch2.clientY - touch1.clientY
+                    );
+                }
+            }
+
+            function handleTouchMove(e) {
+                e.preventDefault();
+
+                if (e.touches.length === 1 && isDragging) {
+                    const dx = e.touches[0].clientX - lastX;
+                    const dy = e.touches[0].clientY - lastY;
+
+                    images[currentEye].transform.x += dx;
+                    images[currentEye].transform.y += dy;
+
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+
+                    renderCanvas();
+                } else if (e.touches.length === 2) {
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    const distance = Math.hypot(
+                        touch2.clientX - touch1.clientX,
+                        touch2.clientY - touch1.clientY
+                    );
+
+                    if (lastTouchDistance > 0) {
+                        const delta = distance / lastTouchDistance;
+                        const centerX = (touch1.clientX + touch2.clientX) / 2 - canvas.offsetLeft;
+                        const centerY = (touch1.clientY + touch2.clientY) / 2 - canvas.offsetTop;
+                        zoom(delta, centerX, centerY);
+                    }
+
+                    lastTouchDistance = distance;
+                }
+            }
+
+            function zoom(factor, centerX, centerY) {
+                const transform = images[currentEye].transform;
+                const oldScale = transform.scale;
+                const newScale = Math.max(0.5, Math.min(5, oldScale * factor));
+
+                if (newScale !== oldScale) {
+                    const scaleFactor = newScale / oldScale;
+                    transform.x = centerX - (centerX - transform.x) * scaleFactor;
+                    transform.y = centerY - (centerY - transform.y) * scaleFactor;
+                    transform.scale = newScale;
+
+                    renderCanvas();
+                }
+            }
+
+            // Control buttons
+            document.getElementById('zoomInBtn').addEventListener('click', () => {
+                zoom(1.2, canvas.width / 2, canvas.height / 2);
+            });
+
+            document.getElementById('zoomOutBtn').addEventListener('click', () => {
+                zoom(0.8, canvas.width / 2, canvas.height / 2);
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                if (images[currentEye].imageData) {
+                    initializeCanvas();
+                    renderCanvas();
+                }
+            });
+
+            // Show status message
+            function showStatus(message, type) {
+                statusText.textContent = message;
+                statusMessage.className = `status-message active ${type}`;
+                setTimeout(() => {
+                    statusMessage.classList.remove('active');
+                }, 3000);
+            }
+
+            // Confirm button - save positioned images
+            confirmBtn.addEventListener('click', async () => {
+                // Check if both eyes have images
+                if (!images.left.file || !images.right.file) {
+                    showStatus('Моля, заредете и двете очи', 'error');
+                    return;
+                }
+
+                // Save images to localStorage for use in analysis
+                const leftCanvas = await capturePositionedImage('left');
+                const rightCanvas = await capturePositionedImage('right');
+
+                localStorage.setItem(
+                    'positionedIrisImages',
+                    JSON.stringify({
+                        left: leftCanvas,
+                        right: rightCanvas,
+                        timestamp: Date.now()
+                    })
+                );
+
+                showStatus('Снимките са запазени успешно!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'analysis.html';
+                }, 1500);
+            });
+
+            async function capturePositionedImage(eye) {
+                const eyeData = images[eye];
+                const captureCanvas = document.createElement('canvas');
+                const size = 800; // High resolution output
+                captureCanvas.width = size;
+                captureCanvas.height = size;
+                const captureCtx = captureCanvas.getContext('2d');
+
+                const img = eyeData.imageData;
+                const { x, y, scale } = eyeData.transform;
+
+                // Calculate crop area (centered circle)
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = 175; // Half of 350px crop circle
+
+                // Map the crop area to the image coordinates
+                const imgCenterX = (centerX - x) / scale;
+                const imgCenterY = (centerY - y) / scale;
+                const imgRadius = radius / scale;
+
+                captureCtx.clearRect(0, 0, size, size);
+                captureCtx.drawImage(
+                    img,
+                    imgCenterX - imgRadius,
+                    imgCenterY - imgRadius,
+                    imgRadius * 2,
+                    imgRadius * 2,
+                    0,
+                    0,
+                    size,
+                    size
+                );
+
+                return captureCanvas.toDataURL('image/png');
+            }
+
+            // Back button
+            backBtn.addEventListener('click', () => {
+                window.location.href = 'analysis.html';
+            });
+        </script>
+    </body>
+</html>
