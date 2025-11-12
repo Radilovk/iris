@@ -2,7 +2,10 @@
 <html lang="bg">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
         <title>Позициониране на Iris - Iris-Holistica AI</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -91,6 +94,7 @@
                 font-size: 1rem;
                 font-weight: 600;
                 color: var(--text-color);
+                position: relative;
             }
 
             .eye-button:hover {
@@ -155,7 +159,7 @@
                 border: 3px solid var(--iris-primary);
                 border-radius: 50%;
                 pointer-events: none;
-                box-shadow: 
+                box-shadow:
                     0 0 20px rgba(0, 240, 255, 0.4),
                     inset 0 0 20px rgba(0, 240, 255, 0.2);
             }
@@ -273,7 +277,7 @@
                 margin-bottom: 1.5rem;
             }
 
-            .file-input-wrapper input[type="file"] {
+            .file-input-wrapper input[type='file'] {
                 position: absolute;
                 left: -9999px;
             }
@@ -349,6 +353,23 @@
                 border-left: 4px solid #ef4444;
             }
 
+            .eye-button.completed::after {
+                content: '✓';
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: #10b981;
+                color: white;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: bold;
+            }
+
             @media (max-width: 768px) {
                 .upload-container {
                     padding: 1.5rem;
@@ -418,10 +439,22 @@
             <div class="instructions">
                 <h3><i class="fas fa-info-circle"></i> Как да позиционирате:</h3>
                 <ul>
-                    <li><i class="fas fa-hand-pointer"></i> <strong>Плъзгане:</strong> Дръпнете снимката с пръст/мишка</li>
-                    <li><i class="fas fa-search-plus"></i> <strong>Zoom:</strong> Щипнете с 2 пръста или използвайте скролането</li>
-                    <li><i class="fas fa-crosshairs"></i> <strong>Центриране:</strong> Подравнете ириса в кръглата зона</li>
-                    <li><i class="fas fa-layer-group"></i> <strong>Overlay:</strong> Топографската карта показва зоните на ириса</li>
+                    <li>
+                        <i class="fas fa-hand-pointer"></i> <strong>Плъзгане:</strong> Дръпнете
+                        снимката с пръст/мишка
+                    </li>
+                    <li>
+                        <i class="fas fa-search-plus"></i> <strong>Zoom:</strong> Щипнете с 2 пръста
+                        или използвайте скролането
+                    </li>
+                    <li>
+                        <i class="fas fa-crosshairs"></i> <strong>Центриране:</strong> Подравнете
+                        ириса в кръглата зона
+                    </li>
+                    <li>
+                        <i class="fas fa-layer-group"></i> <strong>Overlay:</strong> Топографската
+                        карта показва зоните на ириса
+                    </li>
                 </ul>
             </div>
 
@@ -454,7 +487,7 @@
                     <i class="fas fa-arrow-left"></i>
                     <span>Назад</span>
                 </button>
-                <button class="btn btn-primary" id="confirmBtn" style="display: none;">
+                <button class="btn btn-primary" id="confirmBtn" style="display: none">
                     <i class="fas fa-check"></i>
                     <span>Потвърди</span>
                 </button>
@@ -468,7 +501,7 @@
                 left: { file: null, transform: { x: 0, y: 0, scale: 1 } },
                 right: { file: null, transform: { x: 0, y: 0, scale: 1 } }
             };
-            
+
             let isDragging = false;
             let lastX = 0;
             let lastY = 0;
@@ -489,9 +522,9 @@
 
             // Eye selector buttons
             const eyeButtons = document.querySelectorAll('.eye-button');
-            eyeButtons.forEach(btn => {
+            eyeButtons.forEach((btn) => {
                 btn.addEventListener('click', () => {
-                    eyeButtons.forEach(b => b.classList.remove('active'));
+                    eyeButtons.forEach((b) => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentEye = btn.dataset.eye;
                     loadCurrentEyeImage();
@@ -535,7 +568,24 @@
                 loadImageToCanvas(file);
                 previewContainer.classList.add('active');
                 confirmBtn.style.display = 'flex';
-                showStatus(`${currentEye === 'left' ? 'Лявото' : 'Дясното'} око е заредено успешно`, 'success');
+                showStatus(
+                    `${currentEye === 'left' ? 'Лявото' : 'Дясното'} око е заредено успешно`,
+                    'success'
+                );
+
+                // Mark the current eye button as completed
+                updateEyeButtonStatus();
+            }
+
+            function updateEyeButtonStatus() {
+                eyeButtons.forEach((btn) => {
+                    const eye = btn.dataset.eye;
+                    if (images[eye].file) {
+                        btn.classList.add('completed');
+                    } else {
+                        btn.classList.remove('completed');
+                    }
+                });
             }
 
             function loadCurrentEyeImage() {
@@ -548,6 +598,7 @@
                     previewContainer.classList.remove('active');
                     confirmBtn.style.display = 'none';
                 }
+                updateEyeButtonStatus();
             }
 
             function loadImageToCanvas(file) {
@@ -584,7 +635,7 @@
                 if (!eyeData.imageData) return;
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
+
                 const img = eyeData.imageData;
                 const { x, y, scale } = eyeData.transform;
 
@@ -606,17 +657,17 @@
             // Load iris overlay SVG
             function loadIrisOverlay() {
                 fetch('irismap.svg')
-                    .then(response => response.text())
-                    .then(svgText => {
+                    .then((response) => response.text())
+                    .then((svgText) => {
                         const parser = new DOMParser();
                         const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
                         const svgElement = svgDoc.querySelector('svg');
-                        
+
                         // Copy attributes and content
                         irisOverlay.setAttribute('viewBox', svgElement.getAttribute('viewBox'));
                         irisOverlay.innerHTML = svgElement.innerHTML;
                     })
-                    .catch(err => console.warn('Could not load iris overlay:', err));
+                    .catch((err) => console.warn('Could not load iris overlay:', err));
             }
 
             // Mouse/touch event handlers
@@ -764,11 +815,14 @@
                 const leftCanvas = await capturePositionedImage('left');
                 const rightCanvas = await capturePositionedImage('right');
 
-                localStorage.setItem('positionedIrisImages', JSON.stringify({
-                    left: leftCanvas,
-                    right: rightCanvas,
-                    timestamp: Date.now()
-                }));
+                localStorage.setItem(
+                    'positionedIrisImages',
+                    JSON.stringify({
+                        left: leftCanvas,
+                        right: rightCanvas,
+                        timestamp: Date.now()
+                    })
+                );
 
                 showStatus('Снимките са запазени успешно!', 'success');
                 setTimeout(() => {
@@ -804,7 +858,10 @@
                     imgCenterY - imgRadius,
                     imgRadius * 2,
                     imgRadius * 2,
-                    0, 0, size, size
+                    0,
+                    0,
+                    size,
+                    size
                 );
 
                 return captureCanvas.toDataURL('image/png');

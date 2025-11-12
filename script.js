@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
           leftPreview.style.borderStyle = 'solid';
 
           // Convert data URL to File object
-          dataURLtoFile(data.left, 'left-eye.png').then(file => {
+          dataURLtoFile(data.left, 'left-eye.png').then((file) => {
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);
             leftInput.files = dataTransfer.files;
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
           rightPreview.style.borderStyle = 'solid';
 
           // Convert data URL to File object
-          dataURLtoFile(data.right, 'right-eye.png').then(file => {
+          dataURLtoFile(data.right, 'right-eye.png').then((file) => {
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);
             rightInput.files = dataTransfer.files;
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     preview.addEventListener('click', () => input.click());
 
-    input.addEventListener('change', function() {
+    input.addEventListener('change', function () {
       const file = this.files[0];
       const parentGroup = this.closest('.form-group');
       parentGroup.classList.remove('error');
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
     if (!validateCurrentStep()) return;
 
