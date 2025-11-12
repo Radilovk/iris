@@ -865,6 +865,18 @@
             `;
                 container.appendChild(hero);
 
+                // Добавяме секция за iris снимки с overlay ако има позиционирани снимки
+                const positionedImages = localStorage.getItem('positionedIrisImages');
+                if (positionedImages) {
+                    try {
+                        const imageData = JSON.parse(positionedImages);
+                        const irisSection = createIrisImagesSection(imageData);
+                        container.appendChild(irisSection);
+                    } catch (err) {
+                        console.warn('Could not load positioned iris images:', err);
+                    }
+                }
+
                 // Добавяме резюме ако е налично
                 if (data['Резюме на анализа']) {
                     const summaryBox = document.createElement('div');
@@ -925,6 +937,72 @@
                     disclaimer.innerHTML = `<i class="fas fa-info-circle"></i>${formatTextContent(data['Задължителен отказ от отговорност'])}`;
                     container.appendChild(disclaimer);
                 }
+            }
+
+            function createIrisImagesSection(imageData) {
+                const section = document.createElement('div');
+                section.className = 'report-section';
+                section.style.padding = '2rem';
+                section.style.marginBottom = '2rem';
+                section.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <h3 style="color: #1e3a8a; font-size: 1.5rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-eye" style="margin-right: 0.75rem; color: #3b82f6;"></i>
+                            Топографски анализ на ириса
+                        </h3>
+                        <p style="color: #64748b; font-size: 1rem;">Вашите iris снимки с приложена топографска карта на зоните</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 1.5rem;">
+                        <div class="iris-display-card">
+                            <h4 style="text-align: center; color: #1e293b; margin-bottom: 1rem; font-size: 1.1rem;">
+                                <i class="fas fa-eye" style="margin-right: 0.5rem; color: #3b82f6;"></i>
+                                Ляво око
+                            </h4>
+                            <div class="iris-image-container" style="position: relative; width: 100%; max-width: 400px; margin: 0 auto;">
+                                <img src="${imageData.left}" alt="Ляво око" style="width: 100%; border-radius: 50%; border: 3px solid #3b82f6; box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);" />
+                                <div class="iris-overlay-wrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                                    <svg viewBox="-400 -400 800 800" style="width: 100%; height: 100%; opacity: 0.6;" id="left-iris-overlay"></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="iris-display-card">
+                            <h4 style="text-align: center; color: #1e293b; margin-bottom: 1rem; font-size: 1.1rem;">
+                                <i class="fas fa-eye" style="margin-right: 0.5rem; color: #3b82f6;"></i>
+                                Дясно око
+                            </h4>
+                            <div class="iris-image-container" style="position: relative; width: 100%; max-width: 400px; margin: 0 auto;">
+                                <img src="${imageData.right}" alt="Дясно око" style="width: 100%; border-radius: 50%; border: 3px solid #3b82f6; box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);" />
+                                <div class="iris-overlay-wrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                                    <svg viewBox="-400 -400 800 800" style="width: 100%; height: 100%; opacity: 0.6;" id="right-iris-overlay"></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Load the iris overlay SVG for both eyes
+                setTimeout(() => {
+                    fetch('irismap.svg')
+                        .then(response => response.text())
+                        .then(svgText => {
+                            const parser = new DOMParser();
+                            const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+                            const svgElement = svgDoc.querySelector('svg');
+                            
+                            const leftOverlay = document.getElementById('left-iris-overlay');
+                            const rightOverlay = document.getElementById('right-iris-overlay');
+                            
+                            if (leftOverlay && svgElement) {
+                                leftOverlay.innerHTML = svgElement.innerHTML;
+                            }
+                            if (rightOverlay && svgElement) {
+                                rightOverlay.innerHTML = svgElement.innerHTML;
+                            }
+                        })
+                        .catch(err => console.warn('Could not load iris overlay:', err));
+                }, 100);
+
+                return section;
             }
 
             function createCollapsibleSection(title, contentHTML, defaultOpen = false) {

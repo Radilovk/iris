@@ -22,6 +22,66 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentMessage = '';
   let currentMessageType = 'info';
 
+  // --- Зареждане на позиционирани снимки от localStorage ---
+  loadPositionedImages();
+
+  function loadPositionedImages() {
+    const positionedData = localStorage.getItem('positionedIrisImages');
+    if (!positionedData) return;
+
+    try {
+      const data = JSON.parse(positionedData);
+      
+      // Load left eye
+      if (data.left) {
+        const leftPreview = document.getElementById('left-eye-preview');
+        const leftInput = document.getElementById('left-eye-upload');
+        if (leftPreview) {
+          leftPreview.querySelector('i').style.display = 'none';
+          leftPreview.querySelector('p').style.display = 'none';
+          leftPreview.style.backgroundImage = `url(${data.left})`;
+          leftPreview.style.borderStyle = 'solid';
+          
+          // Convert data URL to File object
+          dataURLtoFile(data.left, 'left-eye.png').then(file => {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            leftInput.files = dataTransfer.files;
+          });
+        }
+      }
+
+      // Load right eye
+      if (data.right) {
+        const rightPreview = document.getElementById('right-eye-preview');
+        const rightInput = document.getElementById('right-eye-upload');
+        if (rightPreview) {
+          rightPreview.querySelector('i').style.display = 'none';
+          rightPreview.querySelector('p').style.display = 'none';
+          rightPreview.style.backgroundImage = `url(${data.right})`;
+          rightPreview.style.borderStyle = 'solid';
+          
+          // Convert data URL to File object
+          dataURLtoFile(data.right, 'right-eye.png').then(file => {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            rightInput.files = dataTransfer.files;
+          });
+        }
+      }
+
+      showMessage('Позиционирани снимки са заредени успешно', 'info');
+    } catch (error) {
+      console.warn('Could not load positioned images:', error);
+    }
+  }
+
+  async function dataURLtoFile(dataurl, filename) {
+    const res = await fetch(dataurl);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: 'image/png' });
+  }
+
   // --- ОСНОВНА ЛОГИКА ЗА НАВИГАЦИЯ ---
   function showStep(stepNumber) {
     currentStep = stepNumber;
