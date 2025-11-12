@@ -865,12 +865,6 @@
             `;
                 container.appendChild(hero);
 
-                // Добавяме изображения на ирисите с overlay (ако са налични)
-                const irisImages = createIrisImagesSection(data);
-                if (irisImages) {
-                    container.appendChild(irisImages);
-                }
-
                 // Добавяме резюме ако е налично
                 if (data['Резюме на анализа']) {
                     const summaryBox = document.createElement('div');
@@ -952,55 +946,6 @@
                 <div class="content">${contentHTML}</div>
             `;
                 return details;
-            }
-
-            function createIrisImagesSection(data) {
-                // Проверяваме дали има запазени изображения с overlay
-                const leftEyeWithOverlay = localStorage.getItem('left-eye-with-overlay');
-                const rightEyeWithOverlay = localStorage.getItem('right-eye-with-overlay');
-                
-                if (!leftEyeWithOverlay && !rightEyeWithOverlay) {
-                    return null;
-                }
-
-                const section = document.createElement('div');
-                section.className = 'report-section iris-images-section';
-                section.style.background = 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)';
-                section.style.border = '2px solid #93c5fd';
-                section.style.borderRadius = '16px';
-                section.style.padding = '2rem';
-                section.style.marginBottom = '2rem';
-
-                let imagesHTML = '<h3 style="text-align: center; color: #1e3a8a; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem;"><i class="fas fa-eye" style="color: #3b82f6;"></i>Топографски анализ на ирисите</h3>';
-                imagesHTML += '<div class="iris-images-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 1.5rem;">';
-
-                if (leftEyeWithOverlay) {
-                    imagesHTML += `
-                        <div class="iris-image-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transition: transform 0.3s ease;">
-                            <h4 style="text-align: center; color: #334155; margin-bottom: 1rem; font-weight: 600;">Ляво око</h4>
-                            <div style="position: relative; border-radius: 50%; overflow: hidden; box-shadow: 0 0 30px 8px rgba(0, 170, 255, 0.2);">
-                                <img src="${leftEyeWithOverlay}" alt="Ляво око с топографски шаблон" style="width: 100%; height: auto; display: block;">
-                            </div>
-                        </div>
-                    `;
-                }
-
-                if (rightEyeWithOverlay) {
-                    imagesHTML += `
-                        <div class="iris-image-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transition: transform 0.3s ease;">
-                            <h4 style="text-align: center; color: #334155; margin-bottom: 1rem; font-weight: 600;">Дясно око</h4>
-                            <div style="position: relative; border-radius: 50%; overflow: hidden; box-shadow: 0 0 30px 8px rgba(0, 170, 255, 0.2);">
-                                <img src="${rightEyeWithOverlay}" alt="Дясно око с топографски шаблон" style="width: 100%; height: auto; display: block;">
-                            </div>
-                        </div>
-                    `;
-                }
-
-                imagesHTML += '</div>';
-                imagesHTML += '<p style="text-align: center; margin-top: 1.5rem; color: #64748b; font-size: 0.9rem;"><i class="fas fa-info-circle" style="margin-right: 0.5rem; color: #3b82f6;"></i>Топографските зони показват връзките между различни области на ириса и съответните органи и системи</p>';
-
-                section.innerHTML = imagesHTML;
-                return section;
             }
 
             function createRecommendationsSection(title, recommendationsData) {
