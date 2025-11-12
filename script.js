@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const data = JSON.parse(positionedData);
-      
+
       // Load left eye
       if (data.left) {
         const leftPreview = document.getElementById('left-eye-preview');
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
           leftPreview.querySelector('p').style.display = 'none';
           leftPreview.style.backgroundImage = `url(${data.left})`;
           leftPreview.style.borderStyle = 'solid';
-          
+
           // Convert data URL to File object
           dataURLtoFile(data.left, 'left-eye.png').then(file => {
             const dataTransfer = new DataTransfer();
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
           rightPreview.querySelector('p').style.display = 'none';
           rightPreview.style.backgroundImage = `url(${data.right})`;
           rightPreview.style.borderStyle = 'solid';
-          
+
           // Convert data URL to File object
           dataURLtoFile(data.right, 'right-eye.png').then(file => {
             const dataTransfer = new DataTransfer();
