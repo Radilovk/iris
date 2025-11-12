@@ -22,58 +22,360 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentMessage = '';
   let currentMessageType = 'info';
 
-  // --- Зареждане на позиционирани снимки от localStorage ---
-  loadPositionedImages();
+  // --- POSITIONING INTERFACE ---
+  let currentEye = 'left';
+  const images = {
+    left: { file: null, transform: { x: 0, y: 0, scale: 1 }, imageData: null },
+    right: { file: null, transform: { x: 0, y: 0, scale: 1 }, imageData: null }
+  };
 
-  function loadPositionedImages() {
-    const positionedData = localStorage.getItem('positionedIrisImages');
-    if (!positionedData) return;
+  let isDragging = false;
+  let lastX = 0;
+  let lastY = 0;
+  let lastTouchDistance = 0;
 
-    try {
-      const data = JSON.parse(positionedData);
+  // Elements for positioning
+  const imageInput = document.getElementById('imageInput');
+  const previewContainer = document.getElementById('previewContainer');
+  const canvas = document.getElementById('imageCanvas');
+  const ctx = canvas ? canvas.getContext('2d') : null;
+  const canvasContainer = document.getElementById('canvasContainer');
+  const zoomIndicator = document.getElementById('zoomIndicator');
+  const irisOverlay = document.getElementById('irisOverlay');
 
-      // Load left eye
-      if (data.left) {
-        const leftPreview = document.getElementById('left-eye-preview');
-        const leftInput = document.getElementById('left-eye-upload');
-        if (leftPreview) {
-          leftPreview.querySelector('i').style.display = 'none';
-          leftPreview.querySelector('p').style.display = 'none';
-          leftPreview.style.backgroundImage = `url(${data.left})`;
-          leftPreview.style.borderStyle = 'solid';
+  // Eye selector buttons
+  const eyeButtons = document.querySelectorAll('.eye-button');
+  eyeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      eyeButtons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentEye = btn.dataset.eye;
+      loadCurrentEyeImage();
+    });
+  });
 
-          // Convert data URL to File object
-          dataURLtoFile(data.left, 'left-eye.png').then((file) => {
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            leftInput.files = dataTransfer.files;
-          });
+  // File input handling
+  if (imageInput) {
+    imageInput.addEventListener('change', handleImageSelect);
+
+    // Drag and drop
+    const fileInputLabel = document.querySelector('.file-input-label');
+    if (fileInputLabel) {
+      fileInputLabel.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileInputLabel.style.borderColor = 'var(--primary-color)';
+      });
+
+      fileInputLabel.addEventListener('dragleave', () => {
+        fileInputLabel.style.borderColor = 'var(--border-color)';
+      });
+
+      fileInputLabel.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileInputLabel.style.borderColor = 'var(--border-color)';
+        if (e.dataTransfer.files.length > 0) {
+          handleImageSelect({ target: { files: [e.dataTransfer.files[0]] } });
         }
-      }
-
-      // Load right eye
-      if (data.right) {
-        const rightPreview = document.getElementById('right-eye-preview');
-        const rightInput = document.getElementById('right-eye-upload');
-        if (rightPreview) {
-          rightPreview.querySelector('i').style.display = 'none';
-          rightPreview.querySelector('p').style.display = 'none';
-          rightPreview.style.backgroundImage = `url(${data.right})`;
-          rightPreview.style.borderStyle = 'solid';
-
-          // Convert data URL to File object
-          dataURLtoFile(data.right, 'right-eye.png').then((file) => {
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            rightInput.files = dataTransfer.files;
-          });
-        }
-      }
-
-      showMessage('Позиционирани снимки са заредени успешно', 'info');
-    } catch (error) {
-      console.warn('Could not load positioned images:', error);
+      });
     }
+  }
+
+  function handleImageSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showMessage('Моля, изберете изображение', 'error');
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      showMessage(`Файлът трябва да е до ${MAX_IMAGE_BYTES / 1024 / 1024}MB.`, 'error');
+      return;
+    }
+
+    images[currentEye].file = file;
+    images[currentEye].transform = { x: 0, y: 0, scale: 1 };
+
+    loadImageToCanvas(file);
+    if (previewContainer) previewContainer.classList.add('active');
+    showMessage(
+      `${currentEye === 'left' ? 'Лявото' : 'Дясното'} око е заредено успешно. Позиционирайте го в кръга.`,
+      'info'
+    );
+
+    updateEyeButtonStatus();
+  }
+
+  function updateEyeButtonStatus() {
+    eyeButtons.forEach((btn) => {
+      const eye = btn.dataset.eye;
+      if (images[eye].file) {
+        btn.classList.add('completed');
+      } else {
+        btn.classList.remove('completed');
+      }
+    });
+  }
+
+  function loadCurrentEyeImage() {
+    const eyeData = images[currentEye];
+    if (eyeData.file) {
+      loadImageToCanvas(eyeData.file);
+      if (previewContainer) previewContainer.classList.add('active');
+    } else {
+      if (previewContainer) previewContainer.classList.remove('active');
+    }
+    updateEyeButtonStatus();
+  }
+
+  function loadImageToCanvas(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        images[currentEye].imageData = img;
+        initializeCanvas();
+        renderCanvas();
+        loadIrisOverlay();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function initializeCanvas() {
+    if (!canvas || !canvasContainer) return;
+    const containerRect = canvasContainer.getBoundingClientRect();
+    canvas.width = containerRect.width;
+    canvas.height = containerRect.height;
+
+    const img = images[currentEye].imageData;
+    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    images[currentEye].transform = {
+      x: (canvas.width - img.width * scale) / 2,
+      y: (canvas.height - img.height * scale) / 2,
+      scale: scale
+    };
+  }
+
+  function renderCanvas() {
+    if (!canvas || !ctx) return;
+    const eyeData = images[currentEye];
+    if (!eyeData.imageData) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const img = eyeData.imageData;
+    const { x, y, scale } = eyeData.transform;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0);
+    ctx.restore();
+
+    updateZoomIndicator();
+  }
+
+  function updateZoomIndicator() {
+    if (!zoomIndicator) return;
+    const scale = images[currentEye].transform.scale;
+    const percentage = Math.round(scale * 100);
+    zoomIndicator.textContent = `Zoom: ${percentage}%`;
+  }
+
+  // Load iris overlay SVG
+  function loadIrisOverlay() {
+    if (!irisOverlay) return;
+    fetch('irismap.svg')
+      .then((response) => response.text())
+      .then((svgText) => {
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+        const svgElement = svgDoc.querySelector('svg');
+
+        // Copy attributes and content
+        irisOverlay.setAttribute('viewBox', svgElement.getAttribute('viewBox'));
+        irisOverlay.innerHTML = svgElement.innerHTML;
+      })
+      .catch((err) => console.warn('Could not load iris overlay:', err));
+  }
+
+  // Mouse/touch event handlers
+  if (canvas) {
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', drag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+    // Touch events
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', endDrag);
+  }
+
+  function startDrag(e) {
+    isDragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+  }
+
+  function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+
+    images[currentEye].transform.x += dx;
+    images[currentEye].transform.y += dy;
+
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    renderCanvas();
+  }
+
+  function endDrag() {
+    isDragging = false;
+  }
+
+  function handleWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    zoom(delta, e.offsetX, e.offsetY);
+  }
+
+  function handleTouchStart(e) {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      isDragging = false;
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      lastTouchDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+    }
+  }
+
+  function handleTouchMove(e) {
+    e.preventDefault();
+
+    if (e.touches.length === 1 && isDragging) {
+      const dx = e.touches[0].clientX - lastX;
+      const dy = e.touches[0].clientY - lastY;
+
+      images[currentEye].transform.x += dx;
+      images[currentEye].transform.y += dy;
+
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+
+      renderCanvas();
+    } else if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+
+      if (lastTouchDistance > 0) {
+        const delta = distance / lastTouchDistance;
+        const centerX = (touch1.clientX + touch2.clientX) / 2 - canvas.offsetLeft;
+        const centerY = (touch1.clientY + touch2.clientY) / 2 - canvas.offsetTop;
+        zoom(delta, centerX, centerY);
+      }
+
+      lastTouchDistance = distance;
+    }
+  }
+
+  function zoom(factor, centerX, centerY) {
+    const transform = images[currentEye].transform;
+    const oldScale = transform.scale;
+    const newScale = Math.max(0.5, Math.min(5, oldScale * factor));
+
+    if (newScale !== oldScale) {
+      const scaleFactor = newScale / oldScale;
+      transform.x = centerX - (centerX - transform.x) * scaleFactor;
+      transform.y = centerY - (centerY - transform.y) * scaleFactor;
+      transform.scale = newScale;
+
+      renderCanvas();
+    }
+  }
+
+  // Control buttons
+  const zoomInBtn = document.getElementById('zoomInBtn');
+  const zoomOutBtn = document.getElementById('zoomOutBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener('click', () => {
+      if (canvas) zoom(1.2, canvas.width / 2, canvas.height / 2);
+    });
+  }
+
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener('click', () => {
+      if (canvas) zoom(0.8, canvas.width / 2, canvas.height / 2);
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (images[currentEye].imageData) {
+        initializeCanvas();
+        renderCanvas();
+      }
+    });
+  }
+
+  async function capturePositionedImage(eye) {
+    if (!canvas) return null;
+    const eyeData = images[eye];
+    if (!eyeData.imageData) return null;
+
+    const captureCanvas = document.createElement('canvas');
+    const size = 800; // High resolution output
+    captureCanvas.width = size;
+    captureCanvas.height = size;
+    const captureCtx = captureCanvas.getContext('2d');
+
+    const img = eyeData.imageData;
+    const { x, y, scale } = eyeData.transform;
+
+    // Calculate crop area (centered circle)
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 175; // Half of 350px crop circle
+
+    // Map the crop area to the image coordinates
+    const imgCenterX = (centerX - x) / scale;
+    const imgCenterY = (centerY - y) / scale;
+    const imgRadius = radius / scale;
+
+    captureCtx.clearRect(0, 0, size, size);
+    captureCtx.drawImage(
+      img,
+      imgCenterX - imgRadius,
+      imgCenterY - imgRadius,
+      imgRadius * 2,
+      imgRadius * 2,
+      0,
+      0,
+      size,
+      size
+    );
+
+    return captureCanvas.toDataURL('image/png');
   }
 
   async function dataURLtoFile(dataurl, filename) {
@@ -121,9 +423,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let isStepValid = true;
     let firstInvalidField = null;
 
+    // Special validation for step 3 (image positioning)
+    if (currentStep === 3) {
+      // Check if both eyes have positioned images
+      if (!images.left.file || !images.right.file) {
+        isStepValid = false;
+        showMessage('Моля, качете и позиционирайте и двете очи.', 'error');
+        return false;
+      }
+    }
+
     requiredFields.forEach((field) => {
+      // Skip the hidden file inputs for left/right eye upload
+      if (field.id === 'left-eye-upload' || field.id === 'right-eye-upload') {
+        return;
+      }
+
       const parentGroup = field.closest('.form-group');
-      parentGroup.classList.remove('error');
+      if (parentGroup) parentGroup.classList.remove('error');
 
       let isFieldValid = true;
       if (field.type === 'file') {
@@ -134,17 +451,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!isFieldValid) {
         isStepValid = false;
-        parentGroup.classList.add('error');
+        if (parentGroup) parentGroup.classList.add('error');
         if (!firstInvalidField) firstInvalidField = field;
       }
     });
 
-    if (!isStepValid) {
+    if (!isStepValid && currentStep !== 3) {
       showMessage('Моля, попълнете задължителните полета.', 'error');
       if (firstInvalidField) {
         firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    } else {
+    } else if (isStepValid) {
       clearMessage();
     }
 
@@ -197,47 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMessage();
   }
 
-  // --- КАЧВАНЕ НА ФАЙЛОВЕ ---
-  form.querySelectorAll('input[type="file"]').forEach((input) => {
-    const preview = document.getElementById(input.id.replace('-upload', '-preview'));
-    if (!preview) return;
-
-    preview.addEventListener('click', () => input.click());
-
-    input.addEventListener('change', function () {
-      const file = this.files[0];
-      const parentGroup = this.closest('.form-group');
-      parentGroup.classList.remove('error');
-
-      if (!file) return;
-
-      if (!file.type.startsWith('image/')) {
-        this.value = '';
-        showMessage('Моля, качете изображение.', 'error');
-        parentGroup.classList.add('error');
-        return;
-      }
-
-      if (file.size > MAX_IMAGE_BYTES) {
-        this.value = '';
-        showMessage(`Файлът трябва да е до ${MAX_IMAGE_BYTES / 1024 / 1024}MB.`, 'error');
-        parentGroup.classList.add('error');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        preview.querySelector('i').style.display = 'none';
-        preview.querySelector('p').style.display = 'none';
-        preview.style.backgroundImage = `url(${e.target.result})`;
-        preview.style.borderStyle = 'solid';
-      };
-      reader.readAsDataURL(file);
-    });
-  });
-
   // --- ИЗПРАЩАНЕ НА ФОРМАТА ---
-  form.addEventListener('submit', async function (e) {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
     if (!validateCurrentStep()) return;
 
@@ -269,14 +547,29 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const formData = new FormData(form);
 
-      const leftInput = document.getElementById('left-eye-upload');
-      const rightInput = document.getElementById('right-eye-upload');
-      const [leftOptimized, rightOptimized] = await Promise.all([
-        leftInput.files[0] ? optimizeImage(leftInput.files[0]) : null,
-        rightInput.files[0] ? optimizeImage(rightInput.files[0]) : null
+      // Convert positioned images to files
+      const [leftDataUrl, rightDataUrl] = await Promise.all([
+        capturePositionedImage('left'),
+        capturePositionedImage('right')
       ]);
-      if (leftOptimized) formData.set('left-eye-upload', leftOptimized, leftOptimized.name);
-      if (rightOptimized) formData.set('right-eye-upload', rightOptimized, rightOptimized.name);
+
+      if (!leftDataUrl || !rightDataUrl) {
+        throw new Error('Моля, качете и позиционирайте и двете очи.');
+      }
+
+      const [leftFile, rightFile] = await Promise.all([
+        dataURLtoFile(leftDataUrl, 'left-eye.png'),
+        dataURLtoFile(rightDataUrl, 'right-eye.png')
+      ]);
+
+      // Optimize the captured images
+      const [leftOptimized, rightOptimized] = await Promise.all([
+        optimizeImage(leftFile),
+        optimizeImage(rightFile)
+      ]);
+
+      formData.set('left-eye-upload', leftOptimized, leftOptimized.name);
+      formData.set('right-eye-upload', rightOptimized, rightOptimized.name);
 
       // ===================================================================
       // ▼▼▼ НОВО: Запазваме данните за бутона "Повтори анализа" ▼▼▼

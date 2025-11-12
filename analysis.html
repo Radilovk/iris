@@ -293,9 +293,9 @@
                         </div>
                     </div>
 
-                    <!-- СТЪПКА 3: КАЧВАНЕ НА СНИМКИ -->
+                    <!-- СТЪПКА 3: КАЧВАНЕ И ПОЗИЦИОНИРАНЕ НА СНИМКИ -->
                     <div class="form-step" data-step="3">
-                        <h3>Стъпка 3: Качете снимки на вашите очи</h3>
+                        <h3>Стъпка 3: Качете и позиционирайте снимките на вашите очи</h3>
                         <div class="upload-instructions">
                             <h4>Инструкции за перфектната снимка:</h4>
                             <ul>
@@ -314,46 +314,80 @@
                                 </li>
                             </ul>
                         </div>
-                        <div style="text-align: center; margin-bottom: 1.5rem">
-                            <a
-                                href="upload.html"
-                                class="btn btn-primary"
-                                style="text-decoration: none"
-                            >
-                                <i class="fas fa-crosshairs"></i> Прецизно позициониране с
-                                топографска карта
-                            </a>
+                        
+                        <!-- Eye selector -->
+                        <div class="eye-selector">
+                            <button type="button" class="eye-button active" data-eye="left">
+                                <i class="fas fa-eye"></i>
+                                <div>Ляво Око</div>
+                            </button>
+                            <button type="button" class="eye-button" data-eye="right">
+                                <i class="fas fa-eye"></i>
+                                <div>Дясно Око</div>
+                            </button>
                         </div>
-                        <div class="upload-area-container">
-                            <div class="upload-area form-group">
-                                <label for="left-eye-upload">Ляво око</label>
-                                <input
-                                    type="file"
-                                    id="left-eye-upload"
-                                    name="left-eye-upload"
-                                    accept="image/*"
-                                    required
-                                />
-                                <div class="upload-preview" id="left-eye-preview">
-                                    <i class="fas fa-eye"></i>
-                                    <p>Качи снимка</p>
-                                </div>
+
+                        <!-- File input -->
+                        <div class="file-input-wrapper">
+                            <input type="file" id="imageInput" accept="image/*" />
+                            <label for="imageInput" class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Изберете снимка или я плъзнете тук</span>
+                            </label>
+                        </div>
+
+                        <!-- Hidden inputs for form submission -->
+                        <input type="file" id="left-eye-upload" name="left-eye-upload" accept="image/*" required style="display: none;" />
+                        <input type="file" id="right-eye-upload" name="right-eye-upload" accept="image/*" required style="display: none;" />
+
+                        <!-- Positioning instructions -->
+                        <div class="positioning-instructions">
+                            <h4><i class="fas fa-info-circle"></i> Как да позиционирате:</h4>
+                            <ul>
+                                <li>
+                                    <i class="fas fa-hand-pointer"></i> <strong>Плъзгане:</strong> Дръпнете
+                                    снимката с пръст/мишка
+                                </li>
+                                <li>
+                                    <i class="fas fa-search-plus"></i> <strong>Zoom:</strong> Щипнете с 2 пръста
+                                    или използвайте скролането
+                                </li>
+                                <li>
+                                    <i class="fas fa-crosshairs"></i> <strong>Центриране:</strong> Подравнете
+                                    ириса в кръглата зона
+                                </li>
+                                <li>
+                                    <i class="fas fa-layer-group"></i> <strong>Overlay:</strong> Топографската
+                                    карта показва зоните на ириса
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Canvas preview container -->
+                        <div class="preview-container" id="previewContainer">
+                            <div class="canvas-container" id="canvasContainer">
+                                <canvas id="imageCanvas"></canvas>
+                                <div class="crop-circle"></div>
+                                <svg class="overlay-svg" id="irisOverlay"></svg>
+                                <div class="zoom-indicator" id="zoomIndicator">Zoom: 100%</div>
                             </div>
-                            <div class="upload-area form-group">
-                                <label for="right-eye-upload">Дясно око</label>
-                                <input
-                                    type="file"
-                                    id="right-eye-upload"
-                                    name="right-eye-upload"
-                                    accept="image/*"
-                                    required
-                                />
-                                <div class="upload-preview" id="right-eye-preview">
-                                    <i class="fas fa-eye"></i>
-                                    <p>Качи снимка</p>
-                                </div>
+
+                            <div class="controls">
+                                <button type="button" class="control-btn" id="zoomInBtn">
+                                    <i class="fas fa-search-plus"></i>
+                                    <span>Приближи</span>
+                                </button>
+                                <button type="button" class="control-btn" id="zoomOutBtn">
+                                    <i class="fas fa-search-minus"></i>
+                                    <span>Отдалечи</span>
+                                </button>
+                                <button type="button" class="control-btn" id="resetBtn">
+                                    <i class="fas fa-redo"></i>
+                                    <span>Нулирай</span>
+                                </button>
                             </div>
                         </div>
+
                         <div class="disclaimer-note">
                             <i class="fas fa-info-circle"></i>
                             <p>
