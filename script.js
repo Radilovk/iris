@@ -99,12 +99,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadImageToCanvas(file);
     if (previewContainer) previewContainer.classList.add('active');
+
+    const eyeName = currentEye === 'left' ? 'Лявото' : 'Дясното';
     showMessage(
-      `${currentEye === 'left' ? 'Лявото' : 'Дясното'} око е заредено успешно. Позиционирайте го в кръга.`,
-      'info'
+      `${eyeName} око е заредено успешно. Позиционирайте го в кръга.`,
+      'success'
     );
 
     updateEyeButtonStatus();
+
+    // Auto-switch to the other eye if this one is completed and the other isn't
+    const otherEye = currentEye === 'left' ? 'right' : 'left';
+    if (!images[otherEye].file) {
+      setTimeout(() => {
+        const otherButton = document.querySelector(`.eye-button[data-eye="${otherEye}"]`);
+        if (otherButton) {
+          otherButton.click();
+          showMessage(`Отлично! Сега качете ${otherEye === 'left' ? 'лявото' : 'дясното'} око.`, 'info');
+        }
+      }, 1500);
+    } else {
+      // Both eyes are uploaded
+      setTimeout(() => {
+        showMessage('✓ И двете очи са качени! Можете да изпратите за анализ.', 'success');
+      }, 1500);
+    }
   }
 
   function updateEyeButtonStatus() {
