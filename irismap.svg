@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-400 -400 800 800" aria-label="Futuristic iris scanner overlay">
+  <defs>
+    <!-- Вградени стилове, за да е напълно самостоятелен файл -->
+    <style>
+      :root {
+        --bg: #040608;
+        --panel: #13181e;
+        --muted: #7a8a9a;
+        --text: #e0e8f0;
+        --primary: #00f0ff;
+        --accent: #ff00cc;
+        --glow: #00e0ff;
+        --success: #00ff8c;
+      }
+      #hud-elements {
+        filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
+      }
+      .sector-line {
+        stroke: var(--primary);
+        stroke-width: 1.5;
+        stroke-opacity: 0.4;
+      }
+      .ring-main {
+        stroke: var(--primary);
+        stroke-width: 2.5;
+        stroke-opacity: 0.8;
+        fill: none;
+      }
+      .ring-dashed {
+        stroke: var(--primary);
+        stroke-width: 1;
+        stroke-opacity: 0.4;
+        fill: none;
+        stroke-dasharray: 5, 8;
+      }
+      .outer-ring-grad {
+        stroke: url(#ringGradient);
+        stroke-width: 4;
+        fill: none;
+        filter: url(#outerGlow);
+      }
+      .center-dot {
+        fill: var(--accent);
+        filter: url(#centerGlow);
+      }
+      .crosshair-fine {
+        stroke: var(--primary);
+        stroke-width: 0.8;
+        stroke-opacity: 0.3;
+      }
+      .marker-shape {
+        fill: var(--accent);
+        stroke: var(--accent);
+        stroke-width: 1.5;
+        opacity: 0.8;
+      }
+      .hex-grid {
+        fill: url(#hexPattern);
+        opacity: 0.1;
+      }
+      .targeting-bracket {
+        stroke: var(--success);
+        stroke-width: 2.5;
+        fill: none;
+        opacity: 0.7;
+      }
+      .data-text {
+        font-family: 'Lucida Console', 'Courier New', monospace;
+        font-size: 16px;
+        font-weight: 700;
+        fill: var(--primary);
+        text-shadow: 0 0 5px var(--glow);
+        text-anchor: middle;
+      }
+      .data-text-small {
+        font-size: 14px;
+        fill: var(--muted);
+        text-anchor: start;
+      }
+    </style>
+
+    <!-- Филтри за светене -->
+    <filter id="outerGlow"><feGaussianBlur stdDeviation="6" result="blur"/></filter>
+    <filter id="centerGlow"><feGaussianBlur stdDeviation="4" result="blur"/></filter>
+
+    <!-- Градиент за външния пръстен -->
+    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:var(--accent)" />
+      <stop offset="50%" style="stop-color:var(--primary)" />
+      <stop offset="100%" style="stop-color:var(--accent)" />
+    </linearGradient>
+
+    <!-- Шаблон за хексагонална мрежа -->
+    <pattern id="hexPattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
+      <path d="M15 0 L30 7.5 L30 22.5 L15 30 L0 22.5 L0 7.5 Z" fill="none" stroke="var(--primary)" stroke-width="1.2"/>
+    </pattern>
+  </defs>
+
+  <!-- Основна група с HUD елементите -->
+  <g id="hud-elements">
+
+    <!-- Фина хексагонална мрежа на заден план -->
+    <circle r="335" class="hex-grid"/>
+
+    <!-- Полупрозрачни пръстени -->
+    <circle r="120" class="ring-dashed"/>
+    <circle r="200" class="ring-main" stroke-width="1.5" stroke-opacity="0.5"/>
+    <circle r="260" class="ring-dashed" stroke-dasharray="80, 10"/>
+    <circle r="320" class="ring-main"/>
+
+    <!-- Секторни линии (на всеки 30 градуса) -->
+    <g class="sector-line">
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(0)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(30)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(60)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(90)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(120)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(150)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(180)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(210)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(240)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(270)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(300)"/>
+      <line x1="0" y1="-80" x2="0" y2="-320" transform="rotate(330)"/>
+    </g>
+
+    <!-- Триъгълни маркери на външния пръстен -->
+    <g class="marker-shape">
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(0)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(30)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(60)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(90)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(120)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(150)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(180)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(210)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(240)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(270)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(300)"/>
+      <path d="M -8 -320 L 8 -320 L 0 -335 Z" transform="rotate(330)"/>
+    </g>
+
+    <!-- Основен външен пръстен с градиент -->
+    <circle r="350" class="outer-ring-grad"/>
+
+    <!-- Централен сензорен комплекс -->
+    <g class="center-dot-complex">
+      <circle r="10" class="center-dot"/>
+      <circle r="25" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.6"/>
+      <circle r="35" class="ring-dashed" stroke-width="1" stroke-opacity="0.5"/>
+      <g class="crosshair-fine">
+        <line x1="-50" y1="0" x2="50" y2="0"/>
+        <line x1="0" y1="-50" x2="0" y2="50"/>
+      </g>
+    </g>
+
+    <!-- Скоби за прицелване / HUD елементи -->
+    <g class="targeting-bracket">
+      <path d="M -250 -350 L -300 -350 L -300 -300" />
+      <path d="M  250 -350 L  300 -350 L  300 -300" />
+      <path d="M -250  350 L -300  350 L -300  300" />
+      <path d="M  250  350 L  300  350 L  300  300" />
+    </g>
+
+    <!-- Текстови данни -->
+    <g class="data-text">
+      <text x="0" y="-285">ID: 84-TRX</text>
+      <text x="230" y="-230" font-size="24" fill="var(--success)">STBL</text>
+      <text x="-285" y="0" text-anchor="end" class="data-text-small" transform="rotate(-90, -285, 0)">SEQ. ACTIVE</text>
+      <text x="285" y="0" text-anchor="start" class="data-text-small" transform="rotate(90, 285, 0)">LUM: 98.4</text>
+    </g>
+
+  </g>
+</svg>
