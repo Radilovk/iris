@@ -261,6 +261,7 @@ ISC License
 
 **За повече информация вижте:**
 
+- [AI_VISION_DOCUMENTATION.md](AI_VISION_DOCUMENTATION.md) - Какво "вижда" AI моделът при анализ
 - [PROJECT_GUIDE.md](PROJECT_GUIDE.md) - Детайлно ръководство за организация
 - [MULTI_QUERY_REPORT.md](MULTI_QUERY_REPORT.md) - Multi-Query генериране на доклади
 - [AGENTS.md](AGENTS.md) - Инструкции за AI agents
